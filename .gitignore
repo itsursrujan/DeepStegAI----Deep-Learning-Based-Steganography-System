@@ -1,0 +1,32 @@
+# General Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+
+# Data and Experiments (Avoid large uploads)
+data/
+experiment_data/
+experiment_data_rigorous/
+test_data_dl/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project Specific
+*.png
+!web_app/static/img/*.png
+*.jpg
+*.jpeg
+*.webp
+temp_*/
+debug_*.txt
+test_output.txt

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepStegAI | Next-Gen Steganography</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;700&display=swap"
+        rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar glass">
+        <div class="logo">
+            <i class="fa-solid fa-brain-circuit"></i> DeepStegAI
+        </div>
+        <div class="nav-links">
+            <a href="#" onclick="showSection('landing')">Home</a>
+            <a href="#" onclick="showSection('app')">App</a>
+            <a href="/docs">Docs</a>
+            <a href="/admin" style="color: var(--primary);">Admin</a>
+            <a href="https://github.com" target="_blank">GitHub</a>
+        </div>
+        <div class="user-profile">
+            <div class="status-indicator"></div>
+            <span>Secure Mode</span>
+        </div>
+    </nav>
+
+    <!-- LANDING PAGE SECTION -->
+    <section id="landing-section" class="active-section">
+        <div class="hero-content">
+            <h1 class="glow-text">Deep Learning <br> Steganography</h1>
+            <p class="hero-sub">Secure your secrets with adaptive edge embedding and AI-powered detection. The future of
+                covert communication is here.</p>
+
+            <div class="cta-group">
+                <button class="btn btn-primary btn-lg" onclick="enterApp()">Launch App <i
+                        class="fa-solid fa-rocket"></i></button>
+                <a href="/docs" class="btn btn-outline btn-lg">Read Docs</a>
+            </div>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card glass">
+                <div class="icon-box"><i class="fa-solid fa-lock"></i></div>
+                <h3>AES-256 Encryption</h3>
+                <p>Military-grade encryption protects your payload before it's even embedded. Your secrets remain yours.
+                </p>
+            </div>
+            <div class="feature-card glass">
+                <div class="icon-box"><i class="fa-solid fa-eye-slash"></i></div>
+                <h3>Adaptive Edge</h3>
+                <p>Proprietary algorithms hide data in complex image textures (edges), making it invisible to the human
+                    eye.</p>
+            </div>
+            <div class="feature-card glass">
+                <div class="icon-box"><i class="fa-solid fa-microscope"></i></div>
+                <h3>Deep Detection</h3>
+                <p>Powered by Deep Learning (SRM-CNN) to detect hidden data with state-of-the-art accuracy.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- APP INTERFACE SECTION -->
+    <section id="app-section" class="hidden-section">
+        <div class="app-container">
+            <!-- App Tabs -->
+            <div class="app-tabs glass">
+                <button class="tab-btn active" onclick="switchTab('hide')"><i class="fa-solid fa-eye-slash"></i> Hide
+                    Data</button>
+                <button class="tab-btn" onclick="switchTab('extract')"><i class="fa-solid fa-file-export"></i> Extract
+                    Data</button>
+                <button class="tab-btn" onclick="switchTab('batch')"><i class="fa-solid fa-layer-group"></i>
+                    Batch</button>
+                <button class="tab-btn" onclick="switchTab('analyze')"><i
+                        class="fa-solid fa-magnifying-glass-chart"></i> Detection</button>
+                <button class="tab-btn" onclick="switchTab('contact')"><i class="fa-solid fa-envelope"></i>
+                    Contact</button>
+            </div>
+
+            <!-- TAB: HIDE DATA -->
+            <div id="view-hide" class="app-view active">
+                <div class="panel glass">
+                    <h2><i class="fa-solid fa-user-secret"></i> Embed Data</h2>
+
+                    <form id="form-embed">
+                        <div class="input-group">
+                            <label>1. Select Cover Image</label>
+                            <div class="file-drop-zone" id="drop-cover">
+                                <input type="file" id="file-cover" accept="image/png, image/jpeg" required>
+                                <div class="drop-content">
+                                    <i class="fa-regular fa-image"></i>
+                                    <p>Drag & Drop Cover Image<br><span>Supports PNG, JPG</span></p>
+                                </div>
+                                <div class="preview-area" id="preview-cover"></div>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>2. Select Secret File</label>
+                            <div class="file-small-zone">
+                                <input type="file" id="file-secret" required>
+                                <span id="lbl-secret">Choose file to hide...</span>
+                            </div>
+                        </div>
+
+                        <div class="options-grid">
+                            <div class="input-group">
+                                <label>Method</label>
+                                <select id="sel-method" class="styled-select">
+                                    <option value="LSB">Standard LSB (High Capacity)</option>
+                                    <option value="Adaptive">Adaptive Edge (High Security)</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Password (Encryption)</label>
+                                <input type="password" id="inp-pass-embed" placeholder="Enter secure key..."
+                                    class="styled-input">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block" id="btn-embed">
+                            <span class="btn-text">Encrypt & Embed</span>
+                            <span class="loader"></span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- TAB: BATCH PROCESSING -->
+            <div id="view-batch" class="app-view">
+                <div class="panel glass">
+                    <h2><i class="fa-solid fa-layer-group"></i> Batch Processing</h2>
+
+                    <div class="batch-mode-switch">
+                        <button class="mode-btn active" onclick="setBatchMode('hide')" id="btn-batch-mode-hide">Batch
+                            Hide</button>
+                        <button class="mode-btn" onclick="setBatchMode('extract')" id="btn-batch-mode-extract">Batch
+                            Detection</button>
+                    </div>
+
+                    <!-- Batch Hide Form -->
+                    <form id="form-batch-hide" class="batch-form active">
+                        <div class="input-group">
+                            <label>1. Select Cover Images (Multiple)</label>
+                            <div class="file-drop-zone" id="drop-batch-covers">
+                                <input type="file" id="file-batch-covers" accept="image/png, image/jpeg" multiple
+                                    required>
+                                <div class="drop-content">
+                                    <i class="fa-regular fa-images"></i>
+                                    <p>Drag & Drop Multiple Images</p>
+                                </div>
+                                <div class="preview-text" id="preview-batch-covers"></div>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>2. Secret File (To hide in all)</label>
+                            <input type="file" id="file-batch-secret" class="styled-input" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Password (Optional)</label>
+                            <input type="password" id="inp-pass-batch-hide" class="styled-input">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block" id="btn-batch-hide">Process Batch
+                            Hide</button>
+                    </form>
+
+                    <!-- Batch Extract Form -->
+                    <form id="form-batch-extract" class="batch-form">
+                        <div class="input-group">
+                            <label>Select Stego Images (Multiple)</label>
+                            <div class="file-drop-zone" id="drop-batch-stegos">
+                                <input type="file" id="file-batch-stegos" accept="image/png, image/jpeg" multiple
+                                    required>
+                                <div class="drop-content">
+                                    <i class="fa-solid fa-mask"></i>
+                                    <p>Drag & Drop Stego Images</p>
+                                </div>
+                                <div class="preview-text" id="preview-batch-stegos"></div>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Password</label>
+                            <input type="password" id="inp-pass-batch-extract" class="styled-input">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block" id="btn-batch-extract">Process Batch
+                            Detection</button>
+                    </form>
+
+                </div>
+            </div>
+
+            <!-- TAB: EXTRACT DATA -->
+            <div id="view-extract" class="app-view">
+                <div class="panel glass">
+                    <h2><i class="fa-solid fa-unlock-keyhole"></i> Extract Data</h2>
+                    <form id="form-extract">
+                        <div class="input-group">
+                            <label>Select Stego Image</label>
+                            <div class="file-drop-zone" id="drop-stego">
+                                <input type="file" id="file-stego" accept="image/png, image/jpeg" required>
+                                <div class="drop-content">
+                                    <i class="fa-solid fa-mask"></i>
+                                    <p>Drag & Drop Stego Image</p>
+                                </div>
+                                <div class="preview-area" id="preview-stego"></div>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Decryption Password</label>
+                            <input type="password" id="inp-pass-extract" placeholder="Enter original key..."
+                                class="styled-input">
+
+                            <div class="forgot-pass-toggle"
+                                style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="chk-forgot-pass" onchange="toggleRecoveryInput()">
+                                <label for="chk-forgot-pass"
+                                    style="margin:0; font-size: 0.9rem; cursor: pointer; color: var(--danger);">I lost
+                                    my password (Use Recovery Token)</label>
+                            </div>
+
+                            <input type="text" id="inp-token-extract" placeholder="Paste Recovery Token (e.g. gD7...)"
+                                class="styled-input"
+                                style="display: none; margin-top: 10px; border-color: var(--danger);">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block" id="btn-extract">
+                            <span class="btn-text">Extract File</span>
+                            <span class="loader"></span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- TAB: AI ANALYSIS -->
+            <div id="view-analyze" class="app-view">
+                <div class="panel glass">
+                    <h2><i class="fa-solid fa-robot"></i> Steganalysis</h2>
+                    <p class="panel-desc">Upload an image to scan for hidden content using Deep Learning.</p>
+
+                    <div class="split-view">
+                        <div class="left-col">
+                            <div class="file-drop-zone tall" id="drop-analyze">
+                                <input type="file" id="file-analyze" accept="image/png, image/jpeg">
+                                <div class="drop-content">
+                                    <i class="fa-solid fa-radar"></i>
+                                    <p>Scan Image</p>
+                                </div>
+                                <div class="preview-area" id="preview-analyze"></div>
+                            </div>
+                            <button id="btn-analyze" class="btn btn-primary btn-block mt-4">Run Analysis</button>
+                        </div>
+
+                        <div class="right-col">
+                            <div id="result-placeholder" class="result-box empty">
+                                <i class="fa-solid fa-chart-line"></i>
+                                <p>Results will appear here</p>
+                            </div>
+
+                            <div id="result-content" class="result-box hidden">
+                                <div class="verdict-badge" id="res-verdict">DETECTED</div>
+                                <h3 id="res-title">Suspicious Activity</h3>
+                                <p id="res-desc">The file contains statistical anomalies consistent with LSB embedding.
+                                </p>
+
+                                <div class="stats-grid">
+                                    <div class="stat-item">
+                                        <label>Method</label>
+                                        <span id="res-method">LSB</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <label>AI Confidence</label>
+                                        <span id="res-conf">98.5%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: CONTACT -->
+            <div id="view-contact" class="app-view">
+                <div class="panel glass" style="max-width: 600px; margin: 0 auto;">
+                    <h2><i class="fa-solid fa-paper-plane"></i> Contact Us</h2>
+                    <p class="panel-desc">Have a question or feature request? Send it directly to the developer.</p>
+
+                    <form id="form-contact">
+                        <div class="input-group">
+                            <label>Name (Optional)</label>
+                            <input type="text" id="inp-contact-name" class="styled-input" placeholder="Your Name">
+                        </div>
+                        <div class="input-group">
+                            <label>Email (Optional)</label>
+                            <input type="email" id="inp-contact-email" class="styled-input"
+                                placeholder="For replies...">
+                        </div>
+                        <div class="input-group">
+                            <label>Message</label>
+                            <textarea id="inp-contact-msg" class="styled-input" rows="5"
+                                placeholder="Type your message..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Send Message</button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container"></div>
+
+    <!-- Recovery Token Modal -->
+    <div id="modal-token" class="modal-overlay hidden">
+        <div class="modal glass">
+            <h2 style="color: var(--success);"><i class="fa-solid fa-shield-cat"></i> Encryption Successful!</h2>
+            <p>Your file has been secured. Below is your <strong>Emergency Recovery Token</strong>.</p>
+            <p style="color: var(--danger); font-size: 0.9rem;"><strong>WARNING:</strong> If you lose your password,
+                this is the ONLY way to recover your data. Save it now.</p>
+
+            <div class="token-box">
+                <code id="display-token">Generating...</code>
+                <button onclick="copyToken()" class="btn-copy"><i class="fa-regular fa-copy"></i></button>
+            </div>
+
+            <button class="btn btn-primary btn-block" onclick="closeModal()">I have saved it</button>
+        </div>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+
+</html>

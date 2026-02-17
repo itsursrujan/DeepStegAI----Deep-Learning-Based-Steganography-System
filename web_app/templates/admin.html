@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | DeepStegAI</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .admin-box {
+            max-width: 800px;
+            margin: 100px auto;
+            padding: 40px;
+            background: rgba(10, 15, 25, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+        }
+
+        .message-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            border-left: 3px solid var(--primary);
+        }
+
+        .msg-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        .msg-body {
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .login-form {
+            text-align: center;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar glass">
+        <div class="logo"><i class="fa-solid fa-shield-halved"></i> Admin Panel</div>
+        <div class="nav-links">
+            <a href="/">Back to App</a>
+            {% if not login_required %}
+            <a href="/admin/logout" style="color: var(--danger);">Logout</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <div class="admin-box glass">
+        {% if login_required %}
+        <div class="login-form">
+            <h2>Admin Login</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Enter verification PIN to access messages.</p>
+            {% if error %}
+            <div class="toast error" style="position: static; margin-bottom: 20px;">{{ error }}</div>
+            {% endif %}
+            <form method="POST">
+                <input type="password" name="pin" class="styled-input" placeholder="Enter PIN..."
+                    style="text-align: center; font-size: 1.5rem; letter-spacing: 5px;" required>
+                <button type="submit" class="btn btn-primary btn-block">Access Dashboard</button>
+            </form>
+        </div>
+        {% else %}
+        <h2>User Messages ({{ messages|length }})</h2>
+        <div class="msg-list" style="margin-top: 30px;">
+            {% for msg in messages %}
+            <div class="message-card">
+                <div class="msg-meta">
+                    <span><strong>{{ msg.name }}</strong> ({{ msg.email }})</span>
+                    <span>{{ msg.timestamp }}</span>
+                </div>
+                <div class="msg-body">
+                    {{ msg.message }}
+                </div>
+            </div>
+            {% else %}
+            <p style="text-align: center; color: var(--text-muted);">No messages yet.</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</body>
+
+</html>
