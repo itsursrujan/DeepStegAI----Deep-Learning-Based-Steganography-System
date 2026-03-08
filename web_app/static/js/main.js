@@ -1,484 +1,627 @@
-document.addEventListener("DOMContentLoaded", () => {
-    // Initial Setup
-    setupDragAndDrop();
-    setupForms();
-});
+/**
+ * DeepStegAI - Production Grade Frontend Logic
+ * Refactored for stability, performance, and cyber aesthetics.
+ */
 
-// --- Navigation ---
+const DeepStegAI = (() => {
+    // --- Constants & Config ---
+    const CONFIG = {
+        ANIMATION_DURATION: 1500,
+        TOAST_DURATION: 4000,
+        SCAN_STATUSES: [
+            "Analyzing pixel patterns...",
+            "Scrutinizing bitstream residuals...",
+            "Running SRM-CNN inference...",
+            "Validating heuristic signatures...",
+            "Decrypting entropy layers...",
+            "Executing neuralaudit.sh..."
+        ]
+    };
 
-function showSection(sectionId) {
-    document.querySelectorAll('section').forEach(sec => sec.classList.add('hidden-section'));
-    document.querySelector('section').classList.remove('active-section');
+    // --- State Management ---
+    const state = {
+        progressInterval: null,
+        activeSection: 'landing',
+        isProcessing: false,
+        initTabSet: false
+    };
 
-    const target = document.getElementById(sectionId + '-section');
-    target.classList.remove('hidden-section');
-    target.classList.add('active-section');
+    // --- DOM Utilities ---
+    const $ = (selector) => {
+        const el = document.querySelector(selector);
+        if (!el && !selector.startsWith('#scan-')) {
+            // console.warn(`Element not found: ${selector}`);
+        }
+        return el;
+    };
 
-    // Update Nav
-    document.querySelectorAll('.nav-links a').forEach(a => {
-        if (a.innerText.toLowerCase().includes(sectionId)) a.style.color = 'var(--primary)';
-        else a.style.color = 'var(--text-muted)';
-    });
-}
+    const $$ = (selector) => document.querySelectorAll(selector);
 
-function enterApp() {
-    showSection('app');
-}
+    // --- Navigation Logic ---
+    const navigation = {
+        showSection(sectionId) {
+            const target = $(`#${sectionId}-section`);
+            if (!target) return;
 
-function switchTab(tabName) {
-    // Buttons
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    document.querySelector(`.tab-btn[onclick="switchTab('${tabName}')"]`).classList.add('active');
-
-    // Views
-    document.querySelectorAll('.app-view').forEach(view => view.classList.remove('active'));
-    document.getElementById(`view-${tabName}`).classList.add('active');
-}
-
-function setBatchMode(mode) {
-    document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-    document.getElementById(`btn-batch-mode-${mode}`).classList.add('active');
-
-    document.querySelectorAll('.batch-form').forEach(f => f.classList.remove('active'));
-    document.getElementById(`form-batch-${mode}`).classList.add('active');
-}
-
-
-// --- File Handling ---
-
-function setupDragAndDrop() {
-    const zones = [
-        { drop: 'drop-cover', input: 'file-cover', preview: 'preview-cover', type: 'single' },
-        { drop: 'drop-stego', input: 'file-stego', preview: 'preview-stego', type: 'single' },
-        { drop: 'drop-analyze', input: 'file-analyze', preview: 'preview-analyze', type: 'single' },
-        { drop: 'drop-batch-covers', input: 'file-batch-covers', preview: 'preview-batch-covers', type: 'multiple' },
-        { drop: 'drop-batch-stegos', input: 'file-batch-stegos', preview: 'preview-batch-stegos', type: 'multiple' }
-    ];
-
-    zones.forEach(z => {
-        const dropZone = document.getElementById(z.drop);
-        const input = document.getElementById(z.input);
-        const preview = document.getElementById(z.preview);
-
-        // Drag Events
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, (e) => {
-                e.preventDefault();
-                dropZone.classList.add('dragover');
+            $$('section').forEach(s => {
+                s.classList.remove('active-section');
+                s.classList.add('hidden-section');
             });
-        });
 
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, (e) => {
-                e.preventDefault();
-                dropZone.classList.remove('dragover');
+            target.classList.remove('hidden-section');
+            target.classList.add('active-section');
+            target.scrollIntoView({ behavior: 'smooth' });
+
+            // Update Nav links
+            $$('.nav-links a').forEach(a => {
+                const text = (a.textContent || "").toLowerCase();
+                const matches = (text.includes('home') && sectionId === 'landing') ||
+                    (text.includes('dashboard') && sectionId === 'app') ||
+                    (text.includes('knowledge') && sectionId === 'docs');
+                a.classList.toggle('active', matches);
             });
-        });
 
-        // Drop
-        dropZone.addEventListener('drop', (e) => {
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                input.files = files;
-                handleFileSelect(files[0], dropZone, preview);
+            state.activeSection = sectionId;
+
+            // CRITICAL: If entering app, ensure default tab is set
+            if (sectionId === 'app' && !state.initTabSet) {
+                navigation.switchTab('hide');
+                state.initTabSet = true;
             }
-        });
+        },
 
-        // Click - Only if NOT clicking the input itself
-        dropZone.addEventListener('click', (e) => {
-            if (e.target !== input) {
-                input.click();
-            }
-        });
+        switchTab(tabName) {
+            // Update Buttons - search for button containing the tabName in its click handler
+            $$('.tab-btn').forEach(btn => {
+                const isActive = btn.getAttribute('onclick')?.includes(`'${tabName}'`);
+                btn.classList.toggle('active', isActive);
+            });
 
-        // Change
-        input.addEventListener('change', () => {
-            if (input.files.length > 0) {
-                if (z.type === 'multiple') {
-                    preview.innerHTML = `<div class="file-icon"><i class="fa-solid fa-copy"></i> ${input.files.length} Files Selected</div>`;
-                    dropZone.classList.add('has-file');
-                } else {
-                    handleFileSelect(input.files[0], dropZone, preview);
-                }
-            }
-        });
-    });
+            // Update Views
+            $$('.app-view').forEach(v => v.classList.remove('active'));
+            const target = $(`#view-${tabName}`);
+            if (target) target.classList.add('active');
 
-    // Secret File (Simple Label Update)
-    const secInput = document.getElementById('file-secret');
-    secInput.addEventListener('change', () => {
-        if (secInput.files.length > 0) {
-            document.getElementById('lbl-secret').innerText = secInput.files[0].name;
+            console.log(`[DeepStegAI] View switched to: ${tabName}`);
+        },
+
+        setBatchMode(mode) {
+            $$('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            const targetBtn = $(`#btn-batch-mode-${mode}`);
+            if (targetBtn) targetBtn.classList.add('active');
+
+            $$('.batch-form').forEach(f => f.classList.remove('active'));
+            const targetForm = $(`#form-batch-${mode}`);
+            if (targetForm) targetForm.classList.add('active');
+        },
+
+        setScanMode(mode) {
+            // Update Views using classes
+            $$('.scan-view').forEach(v => v.classList.remove('active'));
+            const target = $(`#scan-${mode}`);
+            if (target) target.classList.add('active');
+
+            // Update Buttons
+            $$('#view-analyze .mode-btn').forEach(b => b.classList.remove('active'));
+            const btn = $(`#btn-scan-${mode}`);
+            if (btn) btn.classList.add('active');
         }
-    });
+    };
 
-}
+    // --- File Handling ---
+    const files = {
+        init() {
+            const zones = [
+                { drop: '#drop-cover', input: '#file-cover', preview: '#preview-cover', type: 'single' },
+                { drop: '#drop-stego', input: '#file-stego', preview: '#preview-stego', type: 'single' },
+                { drop: '#drop-analyze', input: '#file-analyze', preview: '#preview-analyze', type: 'single' },
+                { drop: '#drop-batch-covers', input: '#file-batch-covers', preview: '#preview-batch-covers', type: 'multiple' },
+                { drop: '#drop-batch-stegos', input: '#file-batch-stegos', preview: '#preview-batch-stegos', type: 'multiple' }
+            ];
 
-function handleFileSelect(file, zone, preview) {
-    zone.classList.add('has-file');
+            zones.forEach(z => {
+                const dropZone = $(z.drop);
+                if (!dropZone) return;
 
-    let content = '';
-    if (file.type.startsWith('image/')) {
-        const url = URL.createObjectURL(file);
-        content = `<img src="${url}" alt="Preview" class="preview-img">`;
-        // Clean up memory later if needed, but for single page app URL.revokeObjectURL is good practice
-    } else {
-        content = `<div class="file-icon"><i class="fa-solid fa-file"></i> ${file.name}</div>`;
-    }
+                const input = $(z.input);
+                const preview = $(z.preview);
 
-    // Add Clear Button
-    content += `<button type="button" class="btn-clear" onclick="clearFile('${zone.id}', '${preview.id}', '${zone.querySelector('input').id}')"><i class="fa-solid fa-times"></i> Remove</button>`;
-
-    preview.innerHTML = content;
-}
-
-window.clearFile = function (zoneId, previewId, inputId) {
-    document.getElementById(zoneId).classList.remove('has-file');
-    document.getElementById(previewId).innerHTML = '';
-    document.getElementById(inputId).value = '';
-
-    // Stop propagation if inside drop zone
-    event.stopPropagation();
-}
-
-
-// --- API Interaction ---
-
-function setupForms() {
-
-    // 1. EMBED
-    document.getElementById('form-embed').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('btn-embed');
-        setLoading(btn, true);
-
-        try {
-            const formData = new FormData();
-            formData.append('cover', document.getElementById('file-cover').files[0]);
-            formData.append('secret', document.getElementById('file-secret').files[0]);
-            formData.append('method', document.getElementById('sel-method').value);
-            formData.append('password', document.getElementById('inp-pass-embed').value);
-
-            const res = await fetch('/api/embed', { method: 'POST', body: formData });
-            const data = await res.json();
-
-            if (res.ok && data.success) {
-                // Determine file extension from base64 if needed, but we saved as .png
-                // Convert Base64 to Blob for download
-                const byteCharacters = atob(data.image_data);
-                const byteNumbers = new Array(byteCharacters.length);
-                for (let i = 0; i < byteCharacters.length; i++) {
-                    byteNumbers[i] = byteCharacters.charCodeAt(i);
-                }
-                const byteArray = new Uint8Array(byteNumbers);
-                const blob = new Blob([byteArray], { type: "image/png" });
-
-                triggerDownload(blob, data.filename);
-                showToast('Data embedded successfully!', 'success');
-
-                // Show Recovery Token if available
-                if (data.recovery_token) {
-                    showRecoveryModal(data.recovery_token);
-                }
-            } else {
-                showToast(data.error || 'Embedding failed', 'error');
-            }
-        } catch (error) {
-            console.error(error);
-            showToast('Network error', 'error');
-        } finally {
-            setLoading(btn, false);
-        }
-    });
-
-    // 2. EXTRACT
-    document.getElementById('form-extract').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('btn-extract');
-        setLoading(btn, true);
-
-        try {
-            const formData = new FormData();
-            formData.append('stego', document.getElementById('file-stego').files[0]);
-
-            // Check if using Token or Password
-            const useToken = document.getElementById('chk-forgot-pass').checked;
-            if (useToken) {
-                formData.append('recovery_token', document.getElementById('inp-token-extract').value);
-            } else {
-                formData.append('password', document.getElementById('inp-pass-extract').value);
-            }
-
-            const res = await fetch('/api/extract', { method: 'POST', body: formData });
-
-            if (res.ok) {
-                // Get filename from header if possible, else default
-                // Content-Disposition: attachment; filename="extracted.txt"
-                let filename = "extracted_file";
-                const disposition = res.headers.get('Content-Disposition');
-                if (disposition && disposition.indexOf('attachment') !== -1) {
-                    const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
-                    const matches = filenameRegex.exec(disposition);
-                    if (matches != null && matches[1]) {
-                        filename = matches[1].replace(/['"]/g, '');
-                    }
-                }
-
-                const blob = await res.blob();
-                triggerDownload(blob, filename);
-                showToast('Data extracted successfully!', 'success');
-            } else {
-                const err = await res.json();
-                showToast(err.error || 'Extraction failed', 'error');
-            }
-        } catch (error) {
-            showToast('Network error', 'error');
-        } finally {
-            setLoading(btn, false);
-        }
-    });
-
-    // 3. ANALYZE
-    document.getElementById('btn-analyze').addEventListener('click', async () => {
-        const fileInput = document.getElementById('file-analyze');
-        if (!fileInput.files.length) {
-            showToast('Please select an image first', 'error');
-            return;
-        }
-
-        const btn = document.getElementById('btn-analyze');
-        btn.innerText = 'Scanning...';
-        btn.disabled = true;
-
-        try {
-            const formData = new FormData();
-            formData.append('image', fileInput.files[0]);
-
-            const res = await fetch('/api/analyze', { method: 'POST', body: formData });
-            const data = await res.json();
-
-            if (res.ok) {
-                displayAnalysisResult(data);
-                showToast('Analysis complete', 'success');
-            } else {
-                showToast(data.error || 'Analysis failed', 'error');
-            }
-
-        } catch (error) {
-            showToast('Network error', 'error');
-        } finally {
-            btn.innerText = 'Run Analysis';
-            btn.disabled = false;
-        }
-    });
-
-    // 6. CONTACT FORM
-    const formContact = document.getElementById('form-contact');
-    if (formContact) {
-        formContact.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            try {
-                const payload = {
-                    name: document.getElementById('inp-contact-name').value,
-                    email: document.getElementById('inp-contact-email').value,
-                    message: document.getElementById('inp-contact-msg').value
-                };
-
-                const res = await fetch('/api/contact', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                ['dragenter', 'dragover'].forEach(name => {
+                    dropZone.addEventListener(name, (e) => {
+                        e.preventDefault();
+                        dropZone.classList.add('dragover');
+                    });
                 });
 
-                if (res.ok) {
-                    showToast('Message sent successfully!', 'success');
-                    formContact.reset();
-                } else {
-                    showToast('Failed to send message', 'error');
-                }
-            } catch (e) {
-                showToast('Network error', 'error');
+                ['dragleave', 'drop'].forEach(name => {
+                    dropZone.addEventListener(name, (e) => {
+                        e.preventDefault();
+                        dropZone.classList.remove('dragover');
+                    });
+                });
+
+                dropZone.addEventListener('drop', (e) => {
+                    const droppedFiles = e.dataTransfer.files;
+                    if (droppedFiles.length > 0) {
+                        input.files = droppedFiles;
+                        this.handleSelection(droppedFiles, dropZone, preview, z.type);
+                    }
+                });
+
+                dropZone.addEventListener('click', (e) => {
+                    if (e.target !== input && !e.target.closest('.btn-clear')) {
+                        input.click();
+                    }
+                });
+
+                input.addEventListener('change', () => {
+                    if (input.files.length > 0) {
+                        this.handleSelection(input.files, dropZone, preview, z.type);
+                    }
+                });
+            });
+
+            // Special handling for secret payload input
+            const secInput = $('#file-secret');
+            if (secInput) {
+                secInput.addEventListener('change', () => {
+                    const lbl = $('#lbl-secret');
+                    if (lbl && secInput.files.length > 0) {
+                        lbl.innerText = secInput.files[0].name;
+                        lbl.style.color = 'var(--primary)';
+                    }
+                });
             }
-        });
-    }
+        },
 
-    // 4. BATCH HIDE
-    const formBatchHide = document.getElementById('form-batch-hide');
-    if (formBatchHide) {
-        formBatchHide.addEventListener('submit', async (e) => {
+        handleSelection(inputFiles, zone, preview, type) {
+            if (type === 'multiple') {
+                preview.innerHTML = `<div class="file-icon"><i class="fa-solid fa-copy"></i> ${inputFiles.length} Targets Selected</div>`;
+                zone.classList.add('has-file');
+                ui.updateCapacity();
+                return;
+            }
+
+            const file = inputFiles[0];
+            zone.classList.add('has-file');
+
+            let content = '';
+            if (file.type?.startsWith('image/')) {
+                const url = URL.createObjectURL(file);
+                content = `<img src="${url}" alt="Preview" class="preview-img">`;
+            } else {
+                content = `<div class="file-icon"><i class="fa-solid fa-file-shield"></i> ${file.name}</div>`;
+            }
+
+            content += `
+                <button type="button" class="btn-clear" onclick="DeepStegAI.clearFile('${zone.id}', '${preview.id}', '${zone.querySelector('input').id}', event)">
+                    <i class="fa-solid fa-times"></i> CLR
+                </button>`;
+            preview.innerHTML = content;
+        },
+
+        clear(zoneId, previewId, inputId, e) {
+            if (e) e.stopPropagation();
+            const zone = document.getElementById(zoneId);
+            const preview = document.getElementById(previewId);
+            const input = document.getElementById(inputId);
+
+            if (zone) zone.classList.remove('has-file');
+            if (preview) preview.innerHTML = '';
+            if (input) input.value = '';
+            ui.updateCapacity();
+        }
+    };
+
+    // --- UI Helpers ---
+    const ui = {
+        showToast(msg, type = 'success') {
+            const container = $('#toast-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icon = type === 'success' ? 'check-double' : 'triangle-exclamation';
+            toast.innerHTML = `<i class="fa-solid fa-${icon}"></i> <span>${msg}</span>`;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'toastOut 0.4s forwards';
+                setTimeout(() => toast.remove(), 400);
+            }, CONFIG.TOAST_DURATION);
+        },
+
+        setLoading(btn, isLoading) {
+            if (!btn) return;
+            btn.disabled = isLoading;
+            const originalText = btn.getAttribute('data-text') || btn.innerText;
+            if (isLoading) {
+                btn.setAttribute('data-text', originalText);
+                btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> PROCESSING...`;
+            } else {
+                btn.innerText = originalText;
+            }
+        },
+
+        showProgress(label, subtext = '') {
+            const overlay = $('#progress-overlay');
+            if (!overlay) return;
+            overlay.classList.add('active');
+
+            const labelEl = $('#loader-text');
+            const subEl = $('#loader-subtext');
+            const bar = $('#loader-bar');
+
+            if (labelEl) labelEl.innerText = label || "INITIALIZING...";
+            if (subEl) subEl.innerText = subtext || "Accessing Core...";
+            if (bar) bar.style.width = '0%';
+
+            let idx = 0;
+            if (state.progressInterval) clearInterval(state.progressInterval);
+            state.progressInterval = setInterval(() => {
+                if (subEl) subEl.innerText = CONFIG.SCAN_STATUSES[idx % CONFIG.SCAN_STATUSES.length];
+                idx++;
+            }, 1200);
+        },
+
+        updateProgress(percent, customSubtext) {
+            const bar = $('#loader-bar');
+            if (bar) bar.style.width = `${percent}%`;
+            if (customSubtext) {
+                const subEl = $('#loader-subtext');
+                if (subEl) subEl.innerText = customSubtext;
+            }
+        },
+
+        hideProgress() {
+            const overlay = $('#progress-overlay');
+            if (overlay) overlay.classList.remove('active');
+            if (state.progressInterval) clearInterval(state.progressInterval);
+        },
+
+        animateValue(id, start, end, duration) {
+            const obj = document.getElementById(id);
+            if (!obj) return;
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                obj.innerText = (progress * (end - start) + start).toFixed(1) + "%";
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        },
+
+        updateCapacity() {
+            const coversInput = $('#file-batch-covers');
+            const secretInput = $('#file-batch-secret');
+            const infoBox = $('#batch-capacity-info');
+            const stat = $('#cap-stat-count');
+
+            if (!coversInput?.files.length || !secretInput?.files.length) {
+                if (infoBox) infoBox.style.display = 'none';
+                return;
+            }
+
+            if (infoBox) infoBox.style.display = 'block';
+            const secretSize = secretInput.files[0].size;
+            let okCount = 0;
+
+            Array.from(coversInput.files).forEach(f => {
+                const estimatedCap = (f.size / 3) / 8;
+                if (estimatedCap > secretSize + 512) okCount++;
+            });
+
+            if (stat) {
+                stat.innerText = `${okCount}/${coversInput.files.length} CARRIERS VALID`;
+                stat.className = `cap-badge ${okCount === coversInput.files.length ? 'cap-good' : 'cap-bad'}`;
+            }
+        }
+    };
+
+    // --- API Service ---
+    const api = {
+        async post(url, formData) {
+            const response = await fetch(url, { method: 'POST', body: formData });
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({ error: 'Connection failed' }));
+                throw new Error(error.error || 'Operation failed');
+            }
+            return response;
+        }
+    };
+
+    // --- Action Handlers ---
+    const handlers = {
+        async handleEmbed(e) {
             e.preventDefault();
-            const btn = document.getElementById('btn-batch-hide');
-            setLoading(btn, true);
+            const btn = $('#btn-embed');
+            const cover = $('#file-cover')?.files[0];
+            const secret = $('#file-secret')?.files[0];
 
+            if (!cover || !secret) return ui.showToast('Select all required files', 'error');
+
+            ui.setLoading(btn, true);
+            try {
+                const formData = new FormData();
+                formData.append('cover', cover);
+                formData.append('secret', secret);
+                formData.append('method', $('#sel-method').value);
+                formData.append('password', $('#inp-pass-embed').value);
+
+                const res = await api.post('/api/embed', formData);
+                const data = await res.json();
+
+                if (data.success) {
+                    const byteCharacters = atob(data.image_data);
+                    const byteNumbers = new Int8Array(byteCharacters.length);
+                    for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    const blob = new Blob([byteNumbers], { type: "image/png" });
+
+                    this.triggerDownload(blob, data.filename || 'stego.png');
+                    ui.showToast('Carrier secured successfully', 'success');
+                }
+            } catch (err) {
+                ui.showToast(err.message, 'error');
+            } finally {
+                ui.setLoading(btn, false);
+            }
+        },
+
+        async handleExtract(e) {
+            e.preventDefault();
+            const btn = $('#btn-extract');
+            const stego = $('#file-stego')?.files[0];
+            if (!stego) return ui.showToast('Select stego image', 'error');
+
+            ui.setLoading(btn, true);
+            try {
+                const formData = new FormData();
+                formData.append('stego', stego);
+                formData.append('password', $('#inp-pass-extract').value);
+
+                const res = await api.post('/api/extract', formData);
+                const blob = await res.blob();
+
+                let filename = "extracted_data.bin";
+                const disposition = res.headers.get('content-disposition');
+                if (disposition?.includes('filename')) {
+                    const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
+                    if (matches?.[1]) filename = matches[1].replace(/['"]/g, '').trim();
+                }
+
+                this.triggerDownload(blob, filename);
+                ui.showToast('Hidden payload recovered', 'success');
+            } catch (err) {
+                ui.showToast(err.message, 'error');
+            } finally {
+                ui.setLoading(btn, false);
+            }
+        },
+
+        async handleAnalyze() {
+            const btn = $('#btn-analyze');
+            const file = $('#file-analyze')?.files[0];
+            if (!file) return ui.showToast('Select target image', 'error');
+
+            ui.setLoading(btn, true);
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+
+                const res = await api.post('/api/analyze', formData);
+                const data = await res.json();
+                this.displayResults(data);
+                ui.showToast('Neural scan complete', 'success');
+            } catch (err) {
+                ui.showToast(err.message, 'error');
+            } finally {
+                ui.setLoading(btn, false);
+            }
+        },
+
+        async handleBatchHide(e) {
+            e.preventDefault();
+            const covers = $('#file-batch-covers')?.files;
+            const secret = $('#file-batch-secret')?.files[0];
+            if (!covers?.length || !secret) return ui.showToast('Batch preparation incomplete', 'error');
+
+            ui.showProgress('Initiating Mass Embed...', 'Encrypting payload...');
             try {
                 const formData = new FormData();
                 formData.append('mode', 'hide');
-                const files = document.getElementById('file-batch-covers').files;
-                for (let i = 0; i < files.length; i++) {
-                    formData.append('covers', files[i]);
-                }
-                formData.append('secret', document.getElementById('file-batch-secret').files[0]);
-                formData.append('password', document.getElementById('inp-pass-batch-hide').value);
+                formData.append('method', $('#sel-batch-method').value);
+                formData.append('password', $('#inp-pass-batch-hide').value);
+                formData.append('secret', secret);
+                Array.from(covers).forEach(f => formData.append('covers', f));
 
-                const res = await fetch('/api/batch', { method: 'POST', body: formData });
+                ui.updateProgress(20, 'Distributing data across batch...');
+                const res = await api.post('/api/batch', formData);
+                ui.updateProgress(80, 'Finalizing secure archive...');
 
-                if (res.ok) {
-                    const blob = await res.blob();
-                    triggerDownload(blob, 'batch_stego.zip');
-                    showToast('Batch processing complete!', 'success');
-                } else {
-                    const err = await res.json();
-                    showToast(err.error || 'Batch failed', 'error');
-                }
-            } catch (error) {
-                showToast('Network error', 'error');
+                const blob = await res.blob();
+                this.triggerDownload(blob, 'deepsteg_batch_secured.zip');
+                ui.showToast('Batch protocol executed', 'success');
+            } catch (err) {
+                ui.showToast(err.message, 'error');
             } finally {
-                setLoading(btn, false);
+                ui.hideProgress();
             }
-        });
-    }
+        },
 
-    // 5. BATCH EXTRACT
-    const formBatchExtract = document.getElementById('form-batch-extract');
-    if (formBatchExtract) {
-        formBatchExtract.addEventListener('submit', async (e) => {
+        async handleBatchExtract(e) {
             e.preventDefault();
-            const btn = document.getElementById('btn-batch-extract');
-            setLoading(btn, true);
+            const stegos = $('#file-batch-stegos')?.files;
+            if (!stegos?.length) return ui.showToast('Selection pool empty', 'error');
 
+            ui.showProgress('Processing Dataset...', 'Scanning for signatures...');
             try {
                 const formData = new FormData();
                 formData.append('mode', 'extract');
-                const files = document.getElementById('file-batch-stegos').files;
-                for (let i = 0; i < files.length; i++) {
-                    formData.append('stegos', files[i]);
-                }
-                formData.append('password', document.getElementById('inp-pass-batch-extract').value);
+                formData.append('batch_keys', $('#inp-batch-keys').value);
+                Array.from(stegos).forEach(f => formData.append('stegos', f));
 
-                const res = await fetch('/api/batch', { method: 'POST', body: formData });
+                ui.updateProgress(40, 'Running trial decryption...');
+                const res = await api.post('/api/batch', formData);
+                ui.updateProgress(90, 'Packing recovery files...');
 
-                if (res.ok) {
-                    const blob = await res.blob();
-                    triggerDownload(blob, 'batch_extracted.zip');
-                    showToast('Batch extraction complete!', 'success');
-                } else {
-                    const err = await res.json();
-                    showToast(err.error || 'Batch failed', 'error');
-                }
-            } catch (error) {
-                showToast('Network error', 'error');
+                const blob = await res.blob();
+                this.triggerDownload(blob, 'deepsteg_batch_recovery.zip');
+                ui.showToast('Dataset extraction complete', 'success');
+            } catch (err) {
+                ui.showToast(err.message, 'error');
             } finally {
-                setLoading(btn, false);
+                ui.hideProgress();
             }
-        });
-    }
-}
+        },
 
-// --- Helpers ---
+        async handleBatchAnalyze() {
+            const files = $('#file-batch-scan')?.files;
+            if (!files?.length) return ui.showToast('Target pool empty', 'error');
 
-function setLoading(btn, isLoading) {
-    if (isLoading) {
-        btn.classList.add('loading');
-        btn.disabled = true;
-    } else {
-        btn.classList.remove('loading');
-        btn.disabled = false;
-    }
-}
+            ui.showProgress('Deep Neural Audit...', `Scanning ${files.length} targets`);
+            const container = $('#batch-scan-results');
+            if (container) container.innerHTML = '';
 
-function triggerDownload(blob, filename) {
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    a.remove();
-}
+            try {
+                const formData = new FormData();
+                Array.from(files).forEach(f => formData.append('images', f));
 
-function showToast(msg, type = 'success') {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `<i class="fa-solid fa-${type === 'success' ? 'check' : 'triangle-exclamation'}"></i> ${msg}`;
+                const res = await api.post('/api/batch_analyze', formData);
+                const data = await res.json();
 
-    container.appendChild(toast);
+                if (data.results && container) {
+                    data.results.forEach(r => {
+                        const div = document.createElement('div');
+                        div.className = 'scan-item';
+                        const verdict = (r.verdict || 'UNKNOWN').toUpperCase();
+                        const riskClass = verdict === 'CLEAN' ? 'risk-low' : (verdict === 'SUSPICIOUS' ? 'risk-warn' : 'risk-high');
 
-    setTimeout(() => {
-        toast.style.animation = 'slideIn 0.3s reverse';
-        setTimeout(() => toast.remove(), 300);
-    }, 4000);
-}
+                        div.innerHTML = `
+                            <div>
+                                <strong style="font-size:0.85rem">${r.filename}</strong>
+                                <div style="font-size:0.75rem; color:var(--text-muted)">${r.heuristic || 'No signature found'}</div>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:12px">
+                                <div style="text-align:right">
+                                    <div style="font-size:0.6rem; opacity:0.6">AI SCORE</div>
+                                    <div style="font-weight:700; color:var(--primary); font-size:0.9rem">${(r.ai_score || 0).toFixed(1)}%</div>
+                                </div>
+                                <span class="risk-tag ${riskClass}">${verdict}</span>
+                            </div>
+                        `;
+                        container.appendChild(div);
+                    });
+                }
+            } catch (err) {
+                ui.showToast(err.message, 'error');
+            } finally {
+                ui.hideProgress();
+            }
+        },
 
-function displayAnalysisResult(data) {
-    const placeholder = document.getElementById('result-placeholder');
-    const content = document.getElementById('result-content');
+        displayResults(data) {
+            const ph = $('#result-placeholder');
+            const ct = $('#result-content');
+            if (!ph || !ct) return;
 
-    placeholder.style.display = 'none';
-    content.classList.remove('hidden');
-    content.classList.remove('result-box'); // Reset valid classes
-    content.classList.add('result-box');
+            ph.style.display = 'none';
+            ct.classList.remove('hidden');
+            ct.classList.add('active');
 
-    const verdictBadge = document.getElementById('res-verdict');
+            const badge = $('#res-verdict');
+            const title = $('#res-title');
+            const desc = $('#res-desc');
+            const eng = $('#res-method');
 
-    if (data.detected) {
-        verdictBadge.innerText = 'DETECTED';
-        verdictBadge.className = 'verdict-badge DETECTED';
-        document.getElementById('res-title').innerText = "Steganography Found";
-    } else {
-        verdictBadge.innerText = 'CLEAN';
-        verdictBadge.className = 'verdict-badge CLEAN';
-        document.getElementById('res-title').innerText = "Safe Image";
-    }
+            const verdict = (data.verdict || 'CLEAN').toUpperCase();
+            badge.innerText = verdict;
+            badge.className = `verdict-badge ${verdict}`;
 
-    document.getElementById('res-desc').innerText = data.description;
+            if (verdict === 'DETECTED') {
+                title.innerText = "MALICIOUS PAYLOAD DETECTED";
+                title.style.color = "var(--danger)";
+            } else if (verdict === 'SUSPICIOUS') {
+                title.innerText = "ANOMALOUS ACTIVITY";
+                title.style.color = "var(--warning)";
+            } else {
+                title.innerText = "SYSTEM CLEARANCE";
+                title.style.color = "var(--success)";
+            }
 
-    // Stats
-    let methodText = "None";
-    if (data.static_analysis.detected) methodText = "Static Signature";
-    else if (data.ai_analysis.available && data.ai_analysis.score > 0.5) methodText = "Deep Learning (SRM)";
+            desc.innerText = data.description || "Neutral pixel distribution verified.";
 
-    document.getElementById('res-method').innerText = methodText;
+            let method = "ZERO-SIG";
+            if (data.static_analysis?.detected) method = "STATIC SIGNATURE";
+            else if (data.ai_analysis?.available) method = "SRM-CNN NEURAL";
+            if (eng) eng.innerText = method;
 
-    if (data.ai_analysis.available) {
-        const conf = ((data.detected ? data.ai_analysis.score : (1 - data.ai_analysis.score)) * 100).toFixed(1);
-        document.getElementById('res-conf').innerText = `${conf}%`;
-    } else {
-        document.getElementById('res-conf').innerText = "Model N/A";
-    }
-}
+            if (data.ai_analysis?.available) {
+                const score = data.ai_analysis.score;
+                const conf = ((data.detected ? score : (1 - score)) * 100);
+                ui.animateValue('res-conf', 0, conf, CONFIG.ANIMATION_DURATION);
+            }
+        },
 
-// --- New UI Helpers ---
+        triggerDownload(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+                a.remove();
+            }, 100);
+        }
+    };
 
-function toggleRecoveryInput() {
-    const isChecked = document.getElementById('chk-forgot-pass').checked;
-    const passInput = document.getElementById('inp-pass-extract');
-    const tokenInput = document.getElementById('inp-token-extract');
+    // --- Public API ---
+    return {
+        init() {
+            files.init();
+            this.bindEvents();
+            // Ensure first tab is active
+            navigation.switchTab('hide');
+            console.log("DeepStegAI Core Protocol Activated");
+        },
 
-    if (isChecked) {
-        passInput.style.display = 'none';
-        tokenInput.style.display = 'block';
-    } else {
-        passInput.style.display = 'block';
-        tokenInput.style.display = 'none';
-    }
-}
+        bindEvents() {
+            const b = (id, handler) => {
+                const el = $(id);
+                if (el) el.addEventListener('submit', handler.bind(handlers));
+            };
 
-function showRecoveryModal(token) {
-    const modal = document.getElementById('modal-token');
-    const display = document.getElementById('display-token');
-    display.innerText = token;
-    modal.classList.remove('hidden');
-}
+            b('#form-embed', handlers.handleEmbed);
+            b('#form-extract', handlers.handleExtract);
+            b('#form-batch-hide', handlers.handleBatchHide);
+            b('#form-batch-extract', handlers.handleBatchExtract);
 
-function closeModal() {
-    document.getElementById('modal-token').classList.add('hidden');
-}
+            const btnClick = (id, handler) => {
+                const el = $(id);
+                if (el) el.addEventListener('click', handler.bind(handlers));
+            };
 
-function copyToken() {
-    const token = document.getElementById('display-token').innerText;
-    navigator.clipboard.writeText(token).then(() => {
-        showToast('Token copied to clipboard', 'success');
-    });
-}
+            btnClick('#btn-analyze', handlers.handleAnalyze);
+            btnClick('#btn-batch-scan', handlers.handleBatchAnalyze);
+
+            // Special: Batch secret change listener
+            const bsc = $('#file-batch-secret');
+            if (bsc) bsc.addEventListener('change', ui.updateCapacity);
+        },
+
+        // Exported UI functions for HTML attributes
+        showSection: navigation.showSection,
+        enterApp: () => navigation.showSection('app'),
+        switchTab: navigation.switchTab,
+        setBatchMode: navigation.setBatchMode,
+        setScanMode: navigation.setScanMode,
+        clearFile: files.clear
+    };
+})();
+
+// Initialization
+document.addEventListener("DOMContentLoaded", () => DeepStegAI.init());

@@ -66,14 +66,14 @@ def train_model(image_dir, epochs=5):
     image_paths = [os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.lower().endswith(exts)]
     
     if not image_paths:
-        print("❌ No images found for training!")
+        print("Training Error: No images found in directory.")
         return None
         
-    print(f"✅ Found {len(image_paths)} images. Generating {len(image_paths)*2} samples (Cover+Stego).")
+    print(f"Dataset initialized: Found {len(image_paths)} images. Generated {len(image_paths)*2} samples (Cover+Stego).")
     
     # 2. Setup
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"🚀 Training on: {device}")
+    print(f"Device configuration: Training on {device}")
     
     model = StegoCNN().to(device)
     optimizer = optim.Adam(model.parameters(), lr=0.001)
@@ -108,7 +108,7 @@ def train_model(image_dir, epochs=5):
         
     # 4. Save
     torch.save(model.state_dict(), "stego_model.pth")
-    print("💾 Model saved to 'stego_model.pth'")
+    print("Model training complete. Weights saved to 'stego_model.pth'")
     return model
 
 def predict_image(model, img_input):

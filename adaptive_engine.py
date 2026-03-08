@@ -156,7 +156,8 @@ def extract_file_adaptive(stego_img: Image.Image, password: str = '', recovery_t
             for i in range(bpc - 1, -1, -1):
                 all_extracted_bits.append((val >> i) & 1)
                 
-    # 5. Final Parse
+    # 5. Final Parse (Slicing to exact expected bit count is CRITICAL)
+    all_extracted_bits = all_extracted_bits[:total_bits_needed]
     data_bytes = np.packbits(np.array(all_extracted_bits, dtype=np.uint8)).tobytes()
     cursor = 12 if is_signed else 8
     filename = data_bytes[cursor : cursor+f_len].decode('utf-8', errors='ignore')

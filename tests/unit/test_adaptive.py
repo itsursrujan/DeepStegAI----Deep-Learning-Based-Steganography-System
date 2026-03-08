@@ -30,9 +30,9 @@ class TestAdaptive(unittest.TestCase):
             f.write(secret_content)
             
         cover_img = Image.open(self.cover_path).convert("RGB")
-        stego_img = embed_file_adaptive(cover_img, secret_content, secret_file, self.password)
+        stego_img, token = embed_file_adaptive(cover_img, secret_content, secret_file, self.password)
         
-        filename, extracted_bytes, _ = extract_file_adaptive(stego_img, self.password)
+        filename, extracted_bytes, _ = extract_file_adaptive(stego_img, recovery_token=token)
         
         self.assertEqual(filename, secret_file)
         self.assertEqual(extracted_bytes, secret_content)

@@ -15,30 +15,29 @@ try:
 except ImportError:
     HAVE_CRYPTO = False
 
+_KEY_CACHE = {}
+
 def derive_key(key_input: str) -> bytes:
     """
     Generates a secure encryption key from the user's password.
-    
-    We use PBKDF2 (Password-Based Key Derivation Function 2) with HMAC-SHA256.
-    This process stretches the password, making it much harder for attackers to 
-    guess via brute-force.
+    Includes caching to optimize batch operations.
     """
+    if key_input in _KEY_CACHE:
+        return _KEY_CACHE[key_input]
+        
     password = key_input.encode()
-    
-    # Ideally, the salt should be random and stored with the data. 
-    # For this project, we use a constant salt to keep the implementation simple
-    # and avoiding the need to manage a separate salt file.
     salt = b'deepsteg_ai_key_salt' 
     
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
-        length=32, # 32 bytes = 256 bits (standard for AES)
+        length=32,
         salt=salt,
-        iterations=480000, # High iteration count increases security
+        iterations=480000,
     )
     
-    # Fernet requires a URL-safe base64 encoded key
-    return urlsafe_b64encode(kdf.derive(password))
+    key = urlsafe_b64encode(kdf.derive(password))
+    _KEY_CACHE[key_input] = key
+    return key
 
 def xor_encrypt_decrypt(data: bytes, key: str) -> bytes:
     """

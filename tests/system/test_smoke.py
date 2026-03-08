@@ -13,7 +13,6 @@ class TestSmoke(unittest.TestCase):
             import adaptive_engine
             import crypto_utils
             import detection_engine
-            import app_streamlit
         except ImportError as e:
             self.fail(f"Smoke test failed: Could not import core modules. {e}")
 

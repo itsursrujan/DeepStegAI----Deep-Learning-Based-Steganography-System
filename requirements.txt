@@ -17,3 +17,5 @@ flask>=3.0
 filetype>=1.2
 markdown>=3.5
 flask-cors>=4.0
+cryptography>=42.0
+bcrypt>=4.1

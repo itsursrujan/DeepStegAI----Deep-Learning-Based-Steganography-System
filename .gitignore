@@ -30,3 +30,6 @@ Thumbs.db
 temp_*/
 debug_*.txt
 test_output.txt
+results.csv
+test_payload.txt
+psnr_plot.png

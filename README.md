@@ -1,48 +1,74 @@
-# DeepStegAI: Enhanced Steganography & Detection Ecosystem
+# DeepStegAI: Technical Synopsis & User Guide
 
-DeepStegAI is a dual-layered steganography platform that combines traditional adaptive embedding techniques with deep learning-based steganalysis. It offers a secure way to hide information within images while providing a robust verification system to detect hidden data.
+DeepStegAI is a state-of-the-art steganography platform designed for secure information hiding and AI-driven detection. It bridges the gap between traditional bit-level embedding and modern deep learning steganalysis.
 
-## 🔥 Key Features
-
-- **Adaptive Edge Steganography**: Dynamic bit-rate embedding that prioritizes high-variance (edge) regions for maximum stealth.
-- **AES-256 Encryption**: All hidden payloads are encrypted with industry-standard AES-256 using user passwords and recovery tokens.
-- **Deep Learning Steganalysis**: A built-in AI engine trained to detect LSB and Adaptive embedding with high accuracy.
-- **Dual User Interface**:
-  - **Flask Web App**: Professional dashboard with batch processing and admin controls.
-  - **Streamlit App**: Research-focused interface with granular AI probability analysis.
-- **Comprehensive Verification**: A modular testing suite covering 14 critical modules including security fuzzing and load testing.
-
-## 🚀 Quick Start
-
-### 1. Installation
-```powershell
-# Create virtual environment
-python -m venv .venv
-.venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-### 2. Running the Apps
-- **Flask (Main UI)**: `python web_app/app.py` -> Open http://localhost:5000
-- **Streamlit (Research)**: `streamlit run app_streamlit.py`
-
-### 3. Running Tests
-```powershell
-# Run the full automated suite
-python run_tests.py --suite all
-```
-
-## 📂 Project Structure
-- `/tests`: Modular test suite (Unit, Integration, Security, Performance).
-- `/web_app`: Flask backend and frontend assets.
-- `adaptive_engine.py`: Core logic for edge-based embedding.
-- `steganalysis_model.py`: Architecture for the deep learning detector.
-- `crypto_utils.py`: Secure AES and signature logic.
-
-## 🛡️ Security
-Pay attention to the **Recovery Token** provided during the "Hide" process. If you lose your password, this token is the only way to recover your data.
+## 🛠️ Technology Stack
+- **Core Engine**: Python 3.10+
+- **Deep Learning**: PyTorch (SRM-CNN Architecture)
+- **Web Interface**: Flask with Vanilla JS/CSS
+- **Security**: AES-256 (GCM Mode) & SHA-256
 
 ---
-*Developed for Major Project Phase-I: Deep Learning for Steganography Detection.*
+
+## 🚀 Embedding Techniques
+
+### 1. Standard LSB (Least Significant Bit)
+Our LSB implementation uses a vectorized approach to hide data in the lowest bits of the RGB channels.
+- **Capacity**: High (Up to 12.5% of the cover image size)
+- **Speed**: Extremely Fast
+- **Stealth**: Moderate (Susceptible to statistical analysis)
+
+### 2. Adaptive Edge Embedding (Priority)
+This method uses a Canny Edge Detection filter to identify high-variance regions (textures and edges). Data is only hidden in these complex areas where human vision and statistical scanners struggle to find anomalies.
+- **Capacity**: Variable (Depends on image complexity)
+- **Security**: High
+- **Resilience**: Excellent against traditional Chi-square attacks.
+
+---
+
+## 🛡️ Security Features
+
+### AES-256 Encryption
+Every payload is encrypted using **AES-256** before embedding. Even if the steganography is detected, the data remains inaccessible without the correct password.
+
+### Emergency Recovery Token
+When you hide data with a password, the system generates a unique **Recovery Token**. 
+- **Purpose**: Allows data extraction if the original password is forgotten.
+- **Security**: Derived from the encryption salt and master key.
+
+---
+
+## 🤖 Steganalysis (AI Detection)
+DeepStegAI features a built-in **SRM-CNN (Spatial Rich Model Convolutional Neural Network)**. 
+
+### How it Works:
+1. **High-Pass Filtering**: The model uses SRM filters to extract "noise" from the image.
+2. **Feature Learning**: The CNN learns the statistical distribution of this noise.
+3. **Probability Scoring**: Returns a confidence score (0-100%) indicating the likelihood of hidden content.
+
+---
+
+## 📖 User Instructions
+
+### Hiding Data
+1. Navigate to the **Hide Data** tab.
+2. Upload a **Cover Image** (PNG recommended for lossless quality).
+3. Upload the **Secret File** you wish to hide.
+4. (Optional) Enter a password for double-layer protection.
+5. Click **Encrypt & Embed**.
+
+### Extracting Data
+1. Navigate to the **Extract Data** tab.
+2. Upload the **Stego Image**.
+3. Enter the password used during embedding.
+4. Click **Extract File**.
+
+---
+
+## ⚖️ Limitations & Best Practices
+- **File Format**: Always use **PNG** for the final stego image. JPG compression will destroy the hidden bits.
+- **Image Size**: Larger, textured images (e.g., landscapes) provide better security than small or solid-colored images.
+- **Ethics**: This tool is designed for educational and secure communication purposes. Please use responsibly.
+
+---
+*Powered by DeepStegAI Research Group*
