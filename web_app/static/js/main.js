@@ -362,6 +362,15 @@ const DeepStegAI = (() => {
 
                     this.triggerDownload(blob, data.filename || 'stego.png');
                     ui.showToast('Carrier secured successfully', 'success');
+
+                    // --- SHOW RECOVERY TOKEN ---
+                    const panel = $('#embed-result-panel');
+                    const tokenText = $('#display-recovery-token');
+                    if (panel && tokenText && data.recovery_token) {
+                        tokenText.innerText = data.recovery_token;
+                        panel.classList.remove('hidden');
+                        panel.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    }
                 }
             } catch (err) {
                 ui.showToast(err.message, 'error');
@@ -380,12 +389,17 @@ const DeepStegAI = (() => {
             try {
                 const formData = new FormData();
                 formData.append('stego', stego);
-                formData.append('password', $('#inp-pass-extract').value);
+
+                const passVal = $('#inp-pass-extract')?.value;
+                const tokenVal = $('#inp-token-extract')?.value;
+
+                if (passVal) formData.append('password', passVal);
+                if (tokenVal) formData.append('recovery_token', tokenVal);
 
                 const res = await api.post('/api/extract', formData);
                 const blob = await res.blob();
 
-                let filename = "extracted_data.bin";
+                let filename = "recovered_secure_payload.bin";
                 const disposition = res.headers.get('content-disposition');
                 if (disposition?.includes('filename')) {
                     const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
@@ -393,8 +407,10 @@ const DeepStegAI = (() => {
                 }
 
                 this.triggerDownload(blob, filename);
-                ui.showToast('Hidden payload recovered', 'success');
+                ui.showToast('Signal successfully decrypted', 'success');
             } catch (err) {
+                // POPUP ALERT for extraction failure as requested by user
+                alert("DECRYPTION FAILURE\nCritical Security Error: " + err.message + "\n\nPlease ensure your signature exists and your key is valid.");
                 ui.showToast(err.message, 'error');
             } finally {
                 ui.setLoading(btn, false);
@@ -576,6 +592,17 @@ const DeepStegAI = (() => {
                 URL.revokeObjectURL(url);
                 a.remove();
             }, 100);
+        },
+
+        copyToken() {
+            const token = $('#display-recovery-token')?.innerText;
+            if (token) {
+                navigator.clipboard.writeText(token).then(() => {
+                    ui.showToast('Token copied to clipboard', 'success');
+                }).catch(() => {
+                    ui.showToast('Failed to copy token', 'error');
+                });
+            }
         }
     };
 
@@ -619,7 +646,25 @@ const DeepStegAI = (() => {
         switchTab: navigation.switchTab,
         setBatchMode: navigation.setBatchMode,
         setScanMode: navigation.setScanMode,
-        clearFile: files.clear
+        clearFile: files.clear,
+        copyToken: () => handlers.copyToken(),
+        toggleExtractMode: (mode, e) => {
+            if (e) e.preventDefault();
+            const passGrp = $('#group-extract-pass');
+            const tokenGrp = $('#group-extract-token');
+            const passInp = $('#inp-pass-extract');
+            const tokenInp = $('#inp-token-extract');
+
+            if (mode === 'token') {
+                passGrp.classList.add('hidden');
+                tokenGrp.classList.remove('hidden');
+                if (passInp) passInp.value = '';
+            } else {
+                tokenGrp.classList.add('hidden');
+                passGrp.classList.remove('hidden');
+                if (tokenInp) tokenInp.value = '';
+            }
+        }
     };
 })();
 

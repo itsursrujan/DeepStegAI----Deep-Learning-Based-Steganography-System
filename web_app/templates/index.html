@@ -44,8 +44,8 @@
     <section id="landing-section" class="active-section">
         <div class="hero-content">
             <h1>NEURAL DEFENSE <br> STEGANOGRAPHY</h1>
-            <p class="hero-subtitle">Secure cover communication powered by AI-driven adaptive embedding.
-                Detect hidden threats with military-grade SRM-CNN analysis.</p>
+            <p class="hero-subtitle">Secure cover communication powered by AI-driven adaptive embedding.Detect hidden
+                threats with military-grade SRM-CNN analysis.</p>
 
             <div class="hero-actions">
                 <button class="btn btn-primary" onclick="DeepStegAI.enterApp()">Initialize System <i
@@ -141,6 +141,27 @@
                             <button type="submit" class="btn btn-primary btn-block" id="btn-embed">Execute Embedding
                                 Sequence</button>
                         </form>
+
+                        <!-- Recovery Module Display Area -->
+                        <div id="embed-result-panel" class="hidden"
+                            style="margin-top: 25px; animation: slideInUp 0.4s ease-out;">
+                            <div class="result-box glass"
+                                style="min-height: auto; padding: 25px; border-color: var(--success-glow);">
+                                <div class="verdict-badge SUCCESS" style="margin-bottom: 15px;">EMBEDDING COMPLETE</div>
+                                <h3 style="color: var(--success);">Recovery Module Generated</h3>
+                                <p style="font-size: 0.85rem; color: var(--text-muted); margin: 10px 0 20px;">
+                                    This token allows you to recover data if the primary password is lost.
+                                    <strong>Save it securely.</strong>
+                                </p>
+
+                                <div class="token-display">
+                                    <code id="display-recovery-token">TOKEN_DATA_HERE</code>
+                                    <button class="btn-copy" onclick="DeepStegAI.copyToken()" title="Copy to Clipboard">
+                                        <i class="fa-regular fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -160,9 +181,27 @@
                                     <div class="preview-area" id="preview-stego"></div>
                                 </div>
                             </div>
-                            <div class="input-group">
-                                <label>Decryption Key</label>
+                            <div class="input-group" id="group-extract-pass">
+                                <div
+                                    style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <label style="margin-bottom:0;">Decryption Key</label>
+                                    <a href="#" onclick="DeepStegAI.toggleExtractMode('token', event)"
+                                        style="font-size:0.7rem; color:var(--secondary); text-decoration:none;">Use
+                                        Recovery Token?</a>
+                                </div>
                                 <input type="password" id="inp-pass-extract" placeholder="Verification key..."
+                                    class="styled-input">
+                            </div>
+
+                            <div class="input-group hidden" id="group-extract-token">
+                                <div
+                                    style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <label style="margin-bottom:0;">Recovery Token</label>
+                                    <a href="#" onclick="DeepStegAI.toggleExtractMode('pass', event)"
+                                        style="font-size:0.7rem; color:var(--primary); text-decoration:none;">Use
+                                        Password?</a>
+                                </div>
+                                <input type="text" id="inp-token-extract" placeholder="Enter recovery token..."
                                     class="styled-input">
                             </div>
                             <button type="submit" class="btn btn-primary btn-block" id="btn-extract">Decrypt Hidden

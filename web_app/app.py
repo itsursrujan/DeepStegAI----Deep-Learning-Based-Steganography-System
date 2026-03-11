@@ -473,7 +473,7 @@ def api_extract():
                     else:
                         return jsonify({'error': 'Password OR Recovery Token required'}), 401
                 except Exception as e:
-                     return jsonify({'error': f'Decryption failed: {str(e)}'}), 403
+                     return jsonify({'error': f'Decryption failed. Details: {str(e)}'}), 403
             
             # Attempt to guess extension
             kind = filetype.guess(content)
