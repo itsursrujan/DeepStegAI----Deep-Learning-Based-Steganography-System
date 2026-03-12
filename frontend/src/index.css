@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #00f2ff;
+  --primary-glow: rgba(0, 242, 255, 0.4);
+  --accent: #ff00ea;
+  --bg: #050505;
+  --silver: #c0c0c0;
+}
+
+/* ─── Force hide native cursor everywhere ─── */
+*, *::before, *::after,
+button, a, input, select, textarea,
+[role='button'], .cursor-pointer {
+  cursor: none !important;
+}
+
+/* ─── Font smoothing ─── */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background-color: #050505;
+  color: #ffffff;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ─── Text selection ─── */
+::selection {
+  background: rgba(0, 242, 255, 0.4);
+  color: white;
+}
+
+/* ─── Input text always white while typing ─── */
+input, textarea, select {
+  color: white;
+  caret-color: var(--primary);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ─── Placeholder: white, high visibility ─── */
+::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+/* ─── Noise overlay ─── */
+.noise-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.04;
+  mix-blend-mode: overlay;
+}
+
+/* ─── Glass panel ─── */
+.glass-panel {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background-color: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ─── Glow text ─── */
+.glow-text {
+  text-shadow: 0 0 25px var(--primary-glow);
+}
+
+/* ─── Removed Glitch to prevent 'rippling' ─── */
+.glitch-hover {
+  transition: all 0.3s ease;
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar       { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,242,255,0.3); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,242,255,0.6); }
+
+/* ─── White label utility ─── */
+.label-silver {
+  color: #ffffff;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}

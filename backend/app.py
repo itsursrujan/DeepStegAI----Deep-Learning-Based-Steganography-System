@@ -16,8 +16,7 @@ from PIL import Image
 from flask import Flask, request, jsonify, send_file, render_template, redirect, session, url_for
 from flask_cors import CORS
 
-# --- Add Parent Directory to Path (to import existing modules) ---
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# --- Modular Imports ---
 
 # --- Modular Imports from Parent ---
 from crypto_utils import aes_encrypt, aes_decrypt, xor_encrypt_decrypt
@@ -91,7 +90,7 @@ def get_calibrated_ai_score(image_pil, initial_ai_score, signature_detected):
 
 def load_ai_model():
     global MODEL
-    model_path = os.path.join(os.path.dirname(__file__), '..', 'stego_model.pth')
+    model_path = os.path.join(os.path.dirname(__file__), 'models', 'stego_model.pth')
     try:
         if os.path.exists(model_path):
             logger.info(f"Loading AI Model from {model_path} on {DEVICE}...")
@@ -108,38 +107,6 @@ def load_ai_model():
 load_ai_model()
 
 # --- Routes ---
-
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-@app.route('/docs')
-def docs():
-    # Priority: UPDATED_SYNOPSIS.md > README.md > Fallback
-    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-    paths_to_check = [
-        os.path.join(root_dir, 'UPDATED_SYNOPSIS.md'),
-        os.path.join(root_dir, 'README.md')
-    ]
-    
-    content = "# Documentation\n\nNo documentation file was found. Please check the project root."
-    
-    for path in paths_to_check:
-        if os.path.exists(path):
-            try:
-                with open(path, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                break
-            except Exception as e:
-                logger.error(f"Error reading documentation file {path}: {e}")
-
-    # Render Markdown
-    try:
-        html_content = markdown.markdown(content, extensions=['tables', 'fenced_code', 'toc'])
-    except:
-        html_content = markdown.markdown(content)
-        
-    return render_template('docs.html', content=html_content)
 
 @app.route('/api/batch', methods=['POST', 'OPTIONS'])
 def api_batch():
@@ -334,34 +301,6 @@ def api_contact():
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-@app.route('/admin', methods=['GET', 'POST'])
-def admin():
-    if request.method == 'POST':
-        pin = request.form.get('pin', '')
-        # Secure PIN verification using bcrypt
-        if bcrypt.checkpw(pin.encode(), ADMIN_PIN_HASH.encode()):
-            session['admin_logged_in'] = True
-            return redirect(url_for('admin'))
-        else:
-            logger.warning("Failed admin login attempt.")
-            return render_template('admin.html', error="Invalid PIN")
-    
-    if not session.get('admin_logged_in'):
-        return render_template('admin.html', login_required=True)
-        
-    # Load messages
-    messages = []
-    if os.path.exists(MESSAGES_FILE):
-        with open(MESSAGES_FILE, 'r') as f:
-            messages = list(reversed(json.load(f))) # Newest first
-            
-    return render_template('admin.html', messages=messages)
-
-@app.route('/admin/logout')
-def admin_logout():
-    session.pop('admin_logged_in', None)
-    return redirect(url_for('admin'))
 
 # --- Core API ---
 
@@ -604,10 +543,4 @@ def api_batch_analyze():
     return jsonify({'results': results})
 
 if __name__ == '__main__':
-    # Ensure templates and static exist
-    os.makedirs(os.path.join(os.path.dirname(__file__), 'templates'), exist_ok=True)
-    os.makedirs(os.path.join(os.path.dirname(__file__), 'static', 'css'), exist_ok=True)
-    os.makedirs(os.path.join(os.path.dirname(__file__), 'static', 'js'), exist_ok=True)
-    os.makedirs(os.path.join(os.path.dirname(__file__), 'static', 'images'), exist_ok=True)
-    
     app.run(debug=True, host='127.0.0.1', port=5000, use_reloader=False)

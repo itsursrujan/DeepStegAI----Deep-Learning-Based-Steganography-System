@@ -1,0 +1,178 @@
+
+import { useDropzone } from 'react-dropzone'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Download, Upload, Shield, Key, CheckCircle, FileDown, Loader2, AlertTriangle } from 'lucide-react'
+import { stegoApi } from '@/services/api'
+import { useStore } from '@/store/useStore'
+
+export function Extract() {
+  const [stego, setStego] = useState<File | null>(null)
+  const [password, setPassword] = useState('')
+  const [token, setToken] = useState('')
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const setStatus = useStore(state => state.setStatus)
+
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    setStego(acceptedFiles[0])
+    setError(null)
+  }, [])
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
+    onDrop,
+    accept: { 'image/*': [] },
+    multiple: false
+  })
+
+  const handleExtract = async () => {
+    if (!stego) return
+    
+    setIsProcessing(true)
+    setStatus('ANALYZING')
+    setError(null)
+    
+    const formData = new FormData()
+    formData.append('stego', stego)
+    formData.append('password', password)
+    formData.append('recovery_token', token)
+
+    try {
+      const res = await stegoApi.extract(formData)
+      
+      // Handle file download from blob
+      const url = window.URL.createObjectURL(new Blob([res.data]))
+      const link = document.createElement('a')
+      link.href = url
+      const contentDisposition = res.headers['content-disposition']
+      let filename = 'extracted_payload.bin'
+      if (contentDisposition) {
+          const fileNameMatch = contentDisposition.match(/filename=(.+)/)
+          if (fileNameMatch) filename = fileNameMatch[1].replace(/["']/g, '')
+      }
+      link.setAttribute('download', filename)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      
+      setStatus('SECURE')
+    } catch (err: any) {
+      console.error(err)
+      setError(err.response?.data?.error || 'Extraction failed. Invalid key or corrupted container.')
+      setStatus('IDLE')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-8">
+      <div className="text-center space-y-2">
+        <h2 className="text-3xl font-black tracking-tight italic">PAYLOAD RECOVERY</h2>
+        <p className="text-white/40">Decrypt and extract hidden assets from stego-containers.</p>
+      </div>
+
+      <div className="glass-panel rounded-3xl p-8 space-y-8">
+        {/* Stego File Uploader */}
+        <div 
+          {...getRootProps()} 
+          className={`relative h-64 border-2 border-dashed rounded-3xl flex flex-col items-center justify-center transition-all cursor-pointer ${
+            isDragActive ? 'border-primary bg-primary/5' : 'border-white/10 hover:border-white/20'
+          }`}
+        >
+          <input {...getInputProps()} />
+          {stego ? (
+            <motion.div 
+              initial={{ scale: 0.9 }} 
+              animate={{ scale: 1 }}
+              className="text-center"
+            >
+              <div className="relative mx-auto mb-4">
+                <Shield className="h-16 w-16 text-primary" />
+                <motion.div 
+                  animate={{ opacity: [0.2, 0.5, 0.2] }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                  className="absolute inset-0 bg-primary/20 blur-2xl rounded-full"
+                />
+              </div>
+              <p className="text-lg font-bold italic">{stego.name}</p>
+              <p className="text-xs text-white/40 uppercase tracking-widest mt-1">READY FOR SCAN</p>
+            </motion.div>
+          ) : (
+            <div className="text-center opacity-40">
+              <Upload className="h-12 w-12 mx-auto mb-4" />
+              <p className="text-lg font-bold italic">CLICK OR DROP STEGO IMAGE</p>
+              <p className="text-xs uppercase tracking-widest mt-1">PNG / BMP SUPPORTED</p>
+            </div>
+          )}
+        </div>
+
+        {/* Credentials */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold tracking-[0.2em] text-white/40 uppercase pl-4">Decryption Password</label>
+            <div className="relative">
+              <Key className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
+              <input 
+                type="password"
+                placeholder="Required if encrypted"
+                className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:border-primary/40 transition-all font-mono"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold tracking-[0.2em] text-white/40 uppercase pl-4">Recovery Token</label>
+            <div className="relative">
+              <Shield className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
+              <input 
+                type="text"
+                placeholder="Fallback Token"
+                className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:border-accent/40 transition-all font-mono"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+
+        {error && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex items-center gap-3 text-red-500 text-sm"
+          >
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            {error}
+          </motion.div>
+        )}
+
+        <button 
+          disabled={!stego || isProcessing}
+          onClick={handleExtract}
+          className="w-full bg-white text-black hover:bg-white/90 disabled:opacity-30 rounded-2xl py-5 text-sm font-black tracking-[0.3em] flex items-center justify-center gap-3 transition-all uppercase"
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" />
+              RUNNING EXTRACTION PROTOCOLS...
+            </>
+          ) : (
+            <>
+              <FileDown className="h-5 w-5" />
+              INITIALIZE EXTRACTION
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Security Note */}
+      <div className="p-8 border border-white/5 rounded-3xl bg-white/[0.02] text-center">
+        <p className="text-xs text-white/30 leading-relaxed italic">
+          Encryption is handled client-side before transmission for adaptive methods. Standard LSB uses AES-256-CBC.
+          Extraction keys are NEVER stored on DeepStegAI servers.
+        </p>
+      </div>
+    </div>
+  )
+}

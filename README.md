@@ -1,74 +1,52 @@
-# DeepStegAI: Technical Synopsis & User Guide
+# DeepStegAI: Cinematic Intelligence Suite
 
-DeepStegAI is a state-of-the-art steganography platform designed for secure information hiding and AI-driven detection. It bridges the gap between traditional bit-level embedding and modern deep learning steganalysis.
+DeepStegAI is a secure information hiding (steganography) and AI-driven detection (steganalysis) platform.
+It uses an advanced PyTorch Spatial Rich Model CNN for detecting anomalies and an adaptive edge algorithm for hiding data securely.
+
+This repository contains the split modern architecture: a React built frontend and a Python Flask backend API.
+
+## 📁 Repository Structure
+
+* `backend/`: Core AI logic, steganography engines, and the API-only Flask server.
+* `frontend/`: Modern React (Vite+TS) UI using TailwindCSS and Three.js.
+
+---
+
+## 🚀 Getting Started
+
+To run the DeepStegAI suite locally, you need two terminals—one for the backend API and one for the frontend UI.
+
+### 1. Running the API Backend
+
+The backend provides the AI detection models and embedding algorithms on port 5000.
+
+```bash
+# Terminal 1
+cd backend
+python app.py
+```
+
+*The backend now acts purely as a JSON API layer.*
+
+### 2. Running the React Frontend
+
+The frontend provides the main "Obsidian Industrial" interface.
+
+```bash
+# Terminal 2
+cd frontend
+npm install   # Only needed the first time
+npm run dev
+```
+
+The frontend will start at `http://localhost:5173`. Opening this URL in your browser will automatically route API calls to the backend running on port 5000.
+
+---
 
 ## 🛠️ Technology Stack
-- **Core Engine**: Python 3.10+
+- **Frontend UI**: React 18, Vite, TypeScript, TailwindCSS, Zustand, React-Three-Fiber
+- **Backend API**: Python 3.10+, Flask
 - **Deep Learning**: PyTorch (SRM-CNN Architecture)
-- **Web Interface**: Flask with Vanilla JS/CSS
 - **Security**: AES-256 (GCM Mode) & SHA-256
 
----
-
-## 🚀 Embedding Techniques
-
-### 1. Standard LSB (Least Significant Bit)
-Our LSB implementation uses a vectorized approach to hide data in the lowest bits of the RGB channels.
-- **Capacity**: High (Up to 12.5% of the cover image size)
-- **Speed**: Extremely Fast
-- **Stealth**: Moderate (Susceptible to statistical analysis)
-
-### 2. Adaptive Edge Embedding (Priority)
-This method uses a Canny Edge Detection filter to identify high-variance regions (textures and edges). Data is only hidden in these complex areas where human vision and statistical scanners struggle to find anomalies.
-- **Capacity**: Variable (Depends on image complexity)
-- **Security**: High
-- **Resilience**: Excellent against traditional Chi-square attacks.
-
----
-
-## 🛡️ Security Features
-
-### AES-256 Encryption
-Every payload is encrypted using **AES-256** before embedding. Even if the steganography is detected, the data remains inaccessible without the correct password.
-
-### Emergency Recovery Token
-When you hide data with a password, the system generates a unique **Recovery Token**. 
-- **Purpose**: Allows data extraction if the original password is forgotten.
-- **Security**: Derived from the encryption salt and master key.
-
----
-
-## 🤖 Steganalysis (AI Detection)
-DeepStegAI features a built-in **SRM-CNN (Spatial Rich Model Convolutional Neural Network)**. 
-
-### How it Works:
-1. **High-Pass Filtering**: The model uses SRM filters to extract "noise" from the image.
-2. **Feature Learning**: The CNN learns the statistical distribution of this noise.
-3. **Probability Scoring**: Returns a confidence score (0-100%) indicating the likelihood of hidden content.
-
----
-
-## 📖 User Instructions
-
-### Hiding Data
-1. Navigate to the **Hide Data** tab.
-2. Upload a **Cover Image** (PNG recommended for lossless quality).
-3. Upload the **Secret File** you wish to hide.
-4. (Optional) Enter a password for double-layer protection.
-5. Click **Encrypt & Embed**.
-
-### Extracting Data
-1. Navigate to the **Extract Data** tab.
-2. Upload the **Stego Image**.
-3. Enter the password used during embedding.
-4. Click **Extract File**.
-
----
-
-## ⚖️ Limitations & Best Practices
-- **File Format**: Always use **PNG** for the final stego image. JPG compression will destroy the hidden bits.
-- **Image Size**: Larger, textured images (e.g., landscapes) provide better security than small or solid-colored images.
-- **Ethics**: This tool is designed for educational and secure communication purposes. Please use responsibly.
-
----
 *Powered by DeepStegAI Research Group*

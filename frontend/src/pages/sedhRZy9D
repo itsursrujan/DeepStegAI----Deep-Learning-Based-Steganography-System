@@ -1,0 +1,182 @@
+
+import { useDropzone } from 'react-dropzone'
+import { motion } from 'framer-motion'
+import { Layers, Upload, Download, CheckCircle, FileText, Loader2, Play } from 'lucide-react'
+import { stegoApi } from '@/services/api'
+import { useStore } from '@/store/useStore'
+
+export function Batch() {
+  const [files, setFiles] = useState<File[]>([])
+  const [secret, setSecret] = useState<File | null>(null)
+  const [mode, setMode] = useState<'hide' | 'extract'>('hide')
+  const [password, setPassword] = useState('')
+  const [isProcessing, setIsProcessing] = useState(false)
+  const setStatus = useStore(state => state.setStatus)
+
+  const onDropFiles = useCallback((acceptedFiles: File[]) => {
+    setFiles(prev => [...prev, ...acceptedFiles])
+  }, [])
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
+    onDrop: onDropFiles,
+    accept: { 'image/*': [] }
+  })
+
+  const { getRootProps: getSecretProps, getInputProps: getSecretInputProps, isDragActive: isSecretActive } = useDropzone({ 
+    onDrop: (accepted) => setSecret(accepted[0]),
+    multiple: false
+  })
+
+  const handleBatch = async () => {
+    if (files.length === 0) return
+    if (mode === 'hide' && !secret) return
+
+    setIsProcessing(true)
+    setStatus('UPLOADING')
+    
+    const formData = new FormData()
+    formData.append('mode', mode)
+    formData.append('password', password)
+    
+    if (mode === 'hide') {
+        files.forEach(f => formData.append('covers', f))
+        formData.append('secret', secret!)
+    } else {
+        files.forEach(f => formData.append('stegos', f))
+    }
+
+    try {
+      const res = await stegoApi.batch(formData)
+      const url = window.URL.createObjectURL(new Blob([res.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `deepsteg_batch_${mode}.zip`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      setStatus('SECURE')
+    } catch (err) {
+      console.error(err)
+      setStatus('IDLE')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+           <h2 className="text-3xl font-black italic tracking-tighter">BATCH OPERATIONS</h2>
+           <p className="text-white/40">Scale your intelligence workflows with multi-file processing.</p>
+        </div>
+        <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
+            <button 
+                onClick={() => setMode('hide')}
+                className={`px-6 py-2 rounded-lg text-xs font-bold transition-all ${mode === 'hide' ? 'bg-primary text-black' : 'text-white/40 hover:text-white'}`}
+            >
+                MASS EMBED
+            </button>
+            <button 
+                onClick={() => setMode('extract')}
+                className={`px-6 py-2 rounded-lg text-xs font-bold transition-all ${mode === 'extract' ? 'bg-primary text-black' : 'text-white/40 hover:text-white'}`}
+            >
+                MASS EXTRACT
+            </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main Dropzone */}
+        <div className="lg:col-span-2 space-y-6">
+            <div 
+                {...getRootProps()} 
+                className={`h-96 border-2 border-dashed rounded-3xl flex flex-col items-center justify-center transition-all cursor-pointer ${
+                    isDragActive ? 'border-primary bg-primary/5' : 'border-white/10 hover:border-white/20'
+                }`}
+            >
+                <input {...getInputProps()} />
+                <Layers className="h-16 w-16 mb-4 text-white/10" />
+                <p className="text-xl font-bold italic tracking-tighter text-white/40">DROP MULTIPLE IMAGES</p>
+                <p className="text-xs text-white/20 uppercase tracking-[0.2em] mt-2">Maximum 50 files per batch</p>
+            </div>
+
+            {/* File List */}
+            {files.length > 0 && (
+                <div className="glass-panel rounded-3xl p-6 space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold tracking-widest text-white/40 uppercase">Staged Assets ({files.length})</h4>
+                        <button onClick={() => setFiles([])} className="text-xs text-red-500/60 hover:text-red-500 font-bold uppercase transition-colors">Clear All</button>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-h-48 overflow-y-auto pr-2">
+                        {files.map((file, i) => (
+                            <div key={i} className="bg-white/5 rounded-xl p-3 border border-white/5 flex items-center gap-3">
+                                <FileText className="h-4 w-4 shrink-0 text-white/20" />
+                                <span className="text-[10px] font-medium truncate">{file.name}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+
+        {/* Configuration */}
+        <div className="space-y-6">
+            <div className="glass-panel rounded-3xl p-8 space-y-6">
+                 {mode === 'hide' && (
+                    <div className="space-y-4">
+                        <label className="text-[10px] font-bold tracking-[0.2em] text-white/40 uppercase">Secret Payload</label>
+                        <div 
+                            {...getSecretProps()} 
+                            className={`h-24 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer ${
+                                isSecretActive ? 'border-accent bg-accent/5' : 'border-white/10 hover:border-white/20'
+                            }`}
+                        >
+                            <input {...getSecretInputProps()} />
+                            {secret ? (
+                                <div className="text-center">
+                                    <CheckCircle className="h-5 w-5 text-accent mx-auto mb-1" />
+                                    <p className="text-[10px] font-bold truncate px-4">{secret.name}</p>
+                                </div>
+                            ) : (
+                                <p className="text-[10px] font-bold text-white/20">DROP PAYLOAD</p>
+                            )}
+                        </div>
+                    </div>
+                 )}
+
+                <div className="space-y-4">
+                    <label className="text-[10px] font-bold tracking-[0.2em] text-white/40 uppercase">Master Access Key</label>
+                    <input 
+                        type="password"
+                        placeholder="Key for all files"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-sm focus:outline-none focus:border-primary/50 transition-all"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                    />
+                </div>
+
+                <button 
+                  disabled={files.length === 0 || (mode === 'hide' && !secret) || isProcessing}
+                  onClick={handleBatch}
+                  className="w-full bg-primary hover:bg-primary/80 disabled:opacity-30 rounded-xl py-5 text-black font-black tracking-widest flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(0,255,255,0.2)]"
+                >
+                  {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+                    <>
+                        <Play className="h-4 w-4 fill-current" />
+                        RUN BATCH PROTOCOL
+                    </>
+                  )}
+                </button>
+            </div>
+
+            <div className="glass-panel rounded-3xl p-6 bg-white/[0.02] border-white/5 italic">
+                <p className="text-[10px] text-white/30 leading-relaxed">
+                    Batch extraction will attempt a "smart brute-force" using the provided key against every file in the set.
+                </p>
+            </div>
+        </div>
+      </div>
+    </div>
+  )
+}
