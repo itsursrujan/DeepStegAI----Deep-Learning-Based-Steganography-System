@@ -14,6 +14,7 @@ function HyperButton({ onClick }: { onClick: () => void }) {
   const [progress, setProgress] = useState(0)
   const [filling, setFilling] = useState(false)
   const [complete, setComplete] = useState(false)
+  const [clickRipples, setClickRipples] = useState<{ id: number; x: number; y: number }[]>([])
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
 
@@ -25,7 +26,6 @@ function HyperButton({ onClick }: { onClick: () => void }) {
         if (p >= 100) {
           clearInterval(intervalRef.current!)
           setComplete(true)
-          // Fire the ripple from init button centre
           if (btnRef.current) {
             const r = btnRef.current.getBoundingClientRect()
             fireInitRipple(r.left + r.width / 2, r.top + r.height / 2)
@@ -33,7 +33,7 @@ function HyperButton({ onClick }: { onClick: () => void }) {
           setTimeout(onClick, 500)
           return 100
         }
-        return p + 5.0   // Fast fill (~0.4s) for high-performance feel
+        return p + 5.0
       })
     }, 20)
   }
@@ -45,33 +45,65 @@ function HyperButton({ onClick }: { onClick: () => void }) {
     setProgress(0)
   }
 
+  const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (complete) return
+    const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect()
+    const id = Date.now()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    setClickRipples(prev => [...prev, { id, x, y }])
+    setTimeout(() => setClickRipples(prev => prev.filter(r => r.id !== id)), 700)
+  }
+
   return (
-    <motion.button
-      ref={btnRef}
+    // Wrapper: relative + inline-block so ripple rings can escape the button's overflow-hidden
+    <motion.div
+      className="relative inline-block"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ ...TRANSITION, delay: 0.8 }}
-      onMouseEnter={startFill}
-      onMouseLeave={stopFill}
-      className="group relative overflow-hidden rounded-2xl border border-primary/30 px-14 py-5 text-sm font-bold tracking-[0.4em] uppercase text-white hover-reactive"
-      style={{
-        boxShadow: complete
-          ? '0 0 60px rgba(0,242,255,0.5)'
-          : filling ? '0 0 24px rgba(0,242,255,0.25)' : '0 0 8px rgba(0,242,255,0.1)',
-      }}
+      whileHover={!complete ? {
+        x: [0, -1.5, 1.5, -0.5, 0.5, 0],
+        transition: { duration: 0.6, ease: 'easeInOut' }
+      } : {}}
     >
-      {/* Fill bar */}
-      <motion.div
-        className="absolute inset-0 bg-primary/20"
-        style={{ scaleX: progress / 100, originX: 0 }}
-      />
-      {complete && <div className="absolute inset-0 bg-primary/30 animate-pulse" />}
+      <button
+        ref={btnRef}
+        onMouseEnter={startFill}
+        onMouseLeave={stopFill}
+        onMouseDown={handleMouseDown}
+        className="group relative overflow-hidden rounded-2xl border border-primary/30 px-14 py-5 text-sm font-bold tracking-[0.4em] uppercase text-white hover-reactive"
+        style={{
+          boxShadow: complete
+            ? '0 0 60px rgba(0,242,255,0.5)'
+            : filling ? '0 0 24px rgba(0,242,255,0.25)' : '0 0 8px rgba(0,242,255,0.1)',
+        }}
+      >
+        {/* Click ripples — inside the button, clipped naturally */}
+        {clickRipples.map(r => (
+          <motion.span
+            key={r.id}
+            initial={{ opacity: 0.6, scale: 0 }}
+            animate={{ opacity: 0, scale: 4 }}
+            transition={{ duration: 0.65, ease: 'easeOut' }}
+            className="absolute rounded-full bg-primary/30 pointer-events-none"
+            style={{ left: r.x, top: r.y, width: 40, height: 40, translateX: '-50%', translateY: '-50%' }}
+          />
+        ))}
 
-      <span className="relative z-10 flex items-center gap-4">
-        INITIALIZE SYSTEM
-        <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-2" />
-      </span>
-    </motion.button>
+        {/* Fill bar */}
+        <motion.div
+          className="absolute inset-0 bg-primary/20"
+          style={{ scaleX: progress / 100, originX: 0 }}
+        />
+        {complete && <div className="absolute inset-0 bg-primary/30 animate-pulse" />}
+
+        <span className="relative z-10 flex items-center gap-4">
+          INITIALIZE SYSTEM
+          <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-2" />
+        </span>
+      </button>
+    </motion.div>
   )
 }
 

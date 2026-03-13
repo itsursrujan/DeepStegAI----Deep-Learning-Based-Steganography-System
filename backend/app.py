@@ -120,6 +120,9 @@ def api_batch():
             
             method = request.form.get('method', 'lsb')
             covers = request.files.getlist('covers')
+            if len(covers) > 50:
+                return jsonify({'error': 'Batch limit exceeded: maximum 50 covers.'}), 400
+            
             secret = request.files['secret']
             secret_bytes = secret.read()
             
@@ -166,7 +169,10 @@ def api_batch():
                  return jsonify({'error': 'Missing stego files'}), 400
              
              stegos = request.files.getlist('stegos')
-             raw_keys = request.form.get('batch_keys', '')
+             if len(stegos) > 50:
+                 return jsonify({'error': 'Batch limit exceeded: maximum 50 stego images.'}), 400
+                 
+             raw_keys = request.form.get('batch_keys', '')[:10000]  # Limit string size to prevent memory issues
              # Clean and split keys (passwords or tokens)
              candidate_keys = [k.strip() for k in raw_keys.split('\n') if k.strip()]
              if not candidate_keys:
@@ -274,6 +280,9 @@ def api_batch():
 
 # --- Contact & Admin Routes ---
 
+import threading
+messages_lock = threading.Lock()
+
 @app.route('/api/contact', methods=['POST'])
 def api_contact():
     """Endpoint for the Support page to submit queries."""
@@ -288,27 +297,32 @@ def api_contact():
             'timestamp': str(now),
             'date': now.strftime("%Y-%m-%d"),
             'time': now.strftime("%H:%M:%S"),
-            'name': data.get('name', 'Anonymous'),
-            'email': data.get('email', 'No Email'),
-            'message': data['message']
+            'name': data.get('name', 'Anonymous')[:100],  # Minimal sanitization
+            'email': data.get('email', 'No Email')[:100],
+            'message': data['message'][:2000]
         }
         
-        messages = []
-        if os.path.exists(MESSAGES_FILE):
-            try:
-                with open(MESSAGES_FILE, 'r') as f:
-                    messages = json.load(f)
-            except:
-                messages = []
-        
-        messages.append(entry)
-        
-        with open(MESSAGES_FILE, 'w') as f:
-            json.dump(messages, f, indent=4)
+        with messages_lock:
+            messages = []
+            if os.path.exists(MESSAGES_FILE):
+                try:
+                    with open(MESSAGES_FILE, 'r') as f:
+                        messages = json.load(f)
+                except:
+                    messages = []
+            
+            messages.append(entry)
+            
+            # Keep only the last 500 messages to prevent infinite file growth
+            messages = messages[-500:]
+            
+            with open(MESSAGES_FILE, 'w') as f:
+                json.dump(messages, f, indent=4)
             
         return jsonify({'success': True})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Contact API Error: {e}", exc_info=True)
+        return jsonify({'error': "Processing Failed"}), 500
 
 @app.route('/api/messages', methods=['GET'])
 def get_messages():
@@ -527,6 +541,9 @@ def api_batch_analyze():
         return jsonify({'error': 'No images provided'}), 400
     
     files = request.files.getlist('images')
+    if len(files) > 50:
+        return jsonify({'error': 'Batch limit exceeded: maximum 50 images.'}), 400
+        
     results = []
     
     for f in files:

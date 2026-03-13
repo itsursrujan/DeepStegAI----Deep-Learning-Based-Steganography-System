@@ -133,11 +133,11 @@ DeepStegAI`
   }
 
   return (
-    <div className={`h-full flex flex-col gap-4 max-w-6xl mx-auto ${window.innerWidth > 768 ? 'cursor-none' : 'cursor-auto'}`}>
+    <div className={`h-full flex flex-col gap-2 max-w-6xl mx-auto ${window.innerWidth > 768 ? 'cursor-none' : 'cursor-auto'}`}>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 px-2 sm:px-0">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-black italic tracking-tighter uppercase text-white glow-text leading-none">Synthesis Hub</h2>
-          <p className="text-[9px] sm:text-[10px] font-bold tracking-[0.2em] sm:tracking-[0.3em] uppercase mt-2 text-white">Steganographic Injection Node</p>
+          <h2 className="text-xl sm:text-2xl font-black italic tracking-tighter uppercase text-white glow-text leading-none">Synthesis Hub</h2>
+          <p className="text-[9px] font-bold tracking-[0.2em] uppercase mt-1 text-white">Steganographic Injection Node</p>
         </div>
         <div className="flex items-center gap-3">
             <span className="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase text-white/40">Security Clearance:</span>
@@ -145,11 +145,11 @@ DeepStegAI`
         </div>
       </div>
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0 overflow-y-auto lg:overflow-hidden pb-8 lg:pb-0">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-3 min-h-0 overflow-y-auto lg:overflow-hidden pb-4 lg:pb-0">
         {/* Input Card */}
-        <div className="glass-panel rounded-3xl p-6 space-y-5 flex flex-col min-h-0 overflow-y-auto">
+        <div className="glass-panel rounded-3xl p-4 space-y-3 flex flex-col min-h-0 overflow-y-auto">
           {/* Cover dropzone */}
-          <div {...getCoverProps()} className={`relative h-28 sm:h-32 border border-dashed rounded-2xl flex items-center justify-center transition-all lg:cursor-none ${isCoverActive ? 'border-primary bg-primary/10' : 'border-white/10 bg-black/40 hover:border-primary/40'}`}>
+          <div {...getCoverProps()} className={`relative h-24 sm:h-28 border border-dashed rounded-2xl flex items-center justify-center transition-all lg:cursor-none ${isCoverActive ? 'border-primary bg-primary/10' : 'border-white/10 bg-black/40 hover:border-primary/40'}`}>
             <input {...getCoverInputProps()} />
             {cover ? (
                 <div className="text-center group w-full h-full flex flex-col items-center justify-center relative">
@@ -171,7 +171,7 @@ DeepStegAI`
           </div>
 
           {/* Secret dropzone */}
-          <div {...getSecretProps()} className={`relative h-14 sm:h-16 border border-dashed rounded-xl flex items-center justify-center transition-all lg:cursor-none ${isSecretActive ? 'border-white/40 bg-white/5' : 'border-white/10 bg-black/40 hover:border-white/20'}`}>
+          <div {...getSecretProps()} className={`relative h-12 border border-dashed rounded-xl flex items-center justify-center transition-all lg:cursor-none ${isSecretActive ? 'border-white/40 bg-white/5' : 'border-white/10 bg-black/40 hover:border-white/20'}`}>
             <input {...getSecretInputProps()} />
             {secret ? (
                 <div className="flex items-center gap-3 px-6 w-full h-full relative">
@@ -194,7 +194,7 @@ DeepStegAI`
           <div className="grid grid-cols-2 gap-3">
             {(['LSB', 'Adaptive'] as const).map(m => (
               <button key={m} onClick={() => setMethod(m)}
-                className={`py-3.5 rounded-xl text-[10px] font-black tracking-[0.3em] uppercase transition-all border ${method === m ? 'bg-primary/20 border-primary/50 text-primary glow-text' : 'bg-black/40 border-white/5 text-white/20 hover:text-white/40'}`}
+                className={`py-2.5 rounded-xl text-[10px] font-black tracking-[0.3em] uppercase transition-all border ${method === m ? 'bg-primary/20 border-primary/50 text-primary glow-text' : 'bg-black/40 border-white/5 text-white/20 hover:text-white/40'}`}
               >
                 {m} PROTOCOL
               </button>
@@ -204,7 +204,7 @@ DeepStegAI`
           <div className="relative group">
             <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/60 group-focus-within:text-primary transition-colors" />
             <input type="password" placeholder="AES_256_KEY"
-              className="w-full bg-black/60 border border-white/20 rounded-2xl py-4 pl-14 pr-6 text-xs font-bold tracking-[0.3em] focus:outline-none focus:border-primary/40 transition-all font-mono text-white placeholder:text-white/40"
+              className="w-full bg-black/60 border border-white/20 rounded-2xl py-3 pl-14 pr-6 text-xs font-bold tracking-[0.3em] focus:outline-none focus:border-primary/40 transition-all font-mono text-white placeholder:text-white/40"
               value={password} onChange={e => setPassword(e.target.value)}
             />
           </div>
@@ -219,7 +219,7 @@ DeepStegAI`
           </AnimatePresence>
 
           <button disabled={!cover || !secret || isProcessing} onClick={handleEmbed}
-            className="w-full bg-primary text-black font-bold tracking-[0.2em] sm:tracking-[0.4em] text-[10px] uppercase rounded-2xl py-4 sm:py-5 shadow-[0_0_30px_rgba(0,242,255,0.3)] hover:bg-primary/90 hover:shadow-[0_0_50px_rgba(0,242,255,0.5)] transition-all active:scale-[0.98] disabled:opacity-30 lg:cursor-none"
+            className="w-full bg-primary text-black font-bold tracking-[0.2em] sm:tracking-[0.4em] text-[10px] uppercase rounded-2xl py-3 shadow-[0_0_30px_rgba(0,242,255,0.3)] hover:bg-primary/90 hover:shadow-[0_0_50px_rgba(0,242,255,0.5)] transition-all active:scale-[0.98] disabled:opacity-30 lg:cursor-none"
           >
             {isProcessing ? 'SYNTHESIZING...' : 'EXECUTE INJECTION'}
           </button>
@@ -229,7 +229,7 @@ DeepStegAI`
         <div className="flex flex-col min-h-0">
           <AnimatePresence mode="wait">
             {!result ? (
-              <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 glass-panel rounded-3xl flex flex-col items-center justify-center p-12 text-center border-dashed border-white/10">
+              <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 glass-panel rounded-3xl flex flex-col items-center justify-center p-6 text-center border-dashed border-white/10">
                 <PowerBar progress={progress} active={isProcessing} />
                 {!isProcessing && (
                     <div className="mt-10">

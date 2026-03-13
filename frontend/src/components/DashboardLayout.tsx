@@ -8,7 +8,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useStore } from '@/store/useStore'
 import { DigitalRain } from '@/components/DigitalRain'
 
-const TRANSITION = { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }
+
 
 const navItems = [
   { path: '/', label: 'Overview', icon: Activity },
@@ -32,8 +32,8 @@ export function fireInitRipple(x: number, y: number) {
 function GlobalCursor() {
   const mouseX = useMotionValue(-100)
   const mouseY = useMotionValue(-100)
-  const ringX = useSpring(mouseX, { stiffness: 500, damping: 30 })
-  const ringY = useSpring(mouseY, { stiffness: 500, damping: 30 })
+  const ringX = useSpring(mouseX, { stiffness: 1200, damping: 50 })
+  const ringY = useSpring(mouseY, { stiffness: 1200, damping: 50 })
   
   const [hovered, setHovered] = useState(false)
   const [isClicked, setIsClicked] = useState(false)
@@ -101,7 +101,7 @@ function GlobalCursor() {
           opacity: hovered ? 0.8 : 0.4,
           boxShadow: hovered ? '0 0 15px rgba(0,242,255,0.4)' : 'none',
         }}
-        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+        transition={{ type: 'spring', stiffness: 800, damping: 40 }}
       />
 
       {/* Inner Dot — Direct Linked (Zero Lag) */}
@@ -228,13 +228,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               opacity: 1
             }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className={`fixed inset-y-0 left-0 lg:relative flex flex-col shrink-0 border-r border-white/5 bg-black/80 backdrop-blur-3xl z-[50] lg:z-[20]`}
+            className={`fixed inset-y-0 left-0 lg:relative flex flex-col shrink-0 border-r border-white/5 bg-black/80 backdrop-blur-3xl z-[50] lg:z-[20] text-sm`}
           >
             {/* Logo — always navigates to / */}
-            <div className="flex h-16 items-center px-5 border-b border-white/5">
+            <div className="flex h-12 items-center px-4 border-b border-white/5">
               <Link to="/" className="flex items-center gap-4 group lg:cursor-none">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/30 shadow-[0_0_15px_rgba(0,242,255,0.15)] group-hover:shadow-[0_0_25px_rgba(0,242,255,0.4)] transition-all">
-                  <Cpu className="h-5 w-5 text-primary" />
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/30 shadow-[0_0_15px_rgba(0,242,255,0.15)] group-hover:shadow-[0_0_25px_rgba(0,242,255,0.4)] transition-all">
+                  <Cpu className="h-4 w-4 text-primary" />
                 </div>
                 <AnimatePresence>
                   {(isSidebarOpen || isMobileMenuOpen) && (
@@ -268,13 +268,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`flex items-center gap-4 rounded-2xl px-4 py-3 transition-all duration-200 group lg:cursor-none ${
+                    className={`flex items-center gap-3 rounded-2xl px-3 py-2 transition-all duration-200 group lg:cursor-none ${
                       isActive
                         ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,242,255,0.1)]'
                         : 'text-white/40 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    <item.icon className={`h-5 w-5 shrink-0 ${isActive ? 'text-primary' : 'group-hover:text-white'}`} />
+                    <item.icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-primary' : 'group-hover:text-white'}`} />
                     <AnimatePresence>
                       {(isSidebarOpen || isMobileMenuOpen) && (
                         <motion.span
@@ -307,7 +307,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <main className="relative flex flex-col flex-1 min-w-0 overflow-hidden" style={{ zIndex: 10 }}>
             {/* Tool header */}
             {(isToolPage || window.innerWidth < 1024) && (
-              <header className="flex h-14 shrink-0 items-center justify-between px-4 lg:px-8 bg-black/50 backdrop-blur-2xl border-b border-white/5">
+              <header className="flex h-10 shrink-0 items-center justify-between px-3 lg:px-5 bg-black/50 backdrop-blur-2xl border-b border-white/5">
                 <div className="flex items-center gap-4">
                   {/* Mobile Menu Toggle */}
                   <button 
@@ -338,18 +338,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             )}
 
             <div className="flex-1 overflow-y-auto">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={location.pathname}
-                  initial={{ opacity: 0, x: 16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -16 }}
-                  transition={TRANSITION}
-                  className={`h-full ${isToolPage ? 'p-6' : ''}`}
-                >
-                  {children}
-                </motion.div>
-              </AnimatePresence>
+              {children}
             </div>
           </main>
         </>

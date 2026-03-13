@@ -15,16 +15,10 @@ try:
 except ImportError:
     HAVE_CRYPTO = False
 
-_KEY_CACHE = {}
-
 def derive_key(key_input: str) -> bytes:
     """
     Generates a secure encryption key from the user's password.
-    Includes caching to optimize batch operations.
     """
-    if key_input in _KEY_CACHE:
-        return _KEY_CACHE[key_input]
-        
     password = key_input.encode()
     salt = b'deepsteg_ai_key_salt' 
     
@@ -35,9 +29,7 @@ def derive_key(key_input: str) -> bytes:
         iterations=480000,
     )
     
-    key = urlsafe_b64encode(kdf.derive(password))
-    _KEY_CACHE[key_input] = key
-    return key
+    return urlsafe_b64encode(kdf.derive(password))
 
 def xor_encrypt_decrypt(data: bytes, key: str) -> bytes:
     """

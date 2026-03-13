@@ -78,15 +78,15 @@ export function Extract() {
   }
 
   return (
-    <div className={`h-full flex flex-col gap-6 max-w-3xl mx-auto ${window.innerWidth > 768 ? 'cursor-none' : 'cursor-auto'}`}>
+    <div className={`h-full flex flex-col gap-3 max-w-3xl mx-auto ${window.innerWidth > 768 ? 'cursor-none' : 'cursor-auto'}`}>
       <div className="text-center px-2">
-        <h2 className="text-2xl sm:text-3xl font-black italic tracking-tighter uppercase text-white glow-text leading-none">Payload Decryption</h2>
-        <p className="text-[9px] sm:text-[10px] font-bold tracking-[0.2em] sm:tracking-[0.3em] uppercase mt-2 text-white/90">Steganographic Forensic Node</p>
+        <h2 className="text-xl sm:text-2xl font-black italic tracking-tighter uppercase text-white glow-text leading-none">Payload Decryption</h2>
+        <p className="text-[9px] font-bold tracking-[0.2em] uppercase mt-1 text-white/90">Steganographic Forensic Node</p>
       </div>
 
-      <div className="flex-1 glass-panel rounded-3xl p-8 space-y-6 flex flex-col min-h-0 overflow-y-auto">
+      <div className="flex-1 glass-panel rounded-3xl p-4 space-y-3 flex flex-col min-h-0 overflow-y-auto">
         {/* Drop zone */}
-        <div {...getRootProps()} className={`relative h-36 sm:h-44 border border-dashed rounded-3xl flex flex-col items-center justify-center transition-all lg:cursor-none ${isDragActive ? 'border-primary bg-primary/10' : 'border-white/10 bg-black/40 hover:border-primary/40'}`}>
+        <div {...getRootProps()} className={`relative h-28 sm:h-32 border border-dashed rounded-3xl flex flex-col items-center justify-center transition-all lg:cursor-none ${isDragActive ? 'border-primary bg-primary/10' : 'border-white/10 bg-black/40 hover:border-primary/40'}`}>
           <input {...getInputProps()} />
           <AnimatePresence mode="wait">
             {stego ? (
@@ -114,18 +114,18 @@ export function Extract() {
         </div>
 
         {/* Credentials */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
              <div className="relative group">
                 <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40 group-focus-within:text-primary transition-colors" />
                 <input type="password" placeholder="MASTER_KEY"
-                    className="w-full bg-black/60 border border-white/20 rounded-2xl py-4 pl-14 pr-6 text-xs font-bold tracking-[0.3em] focus:outline-none focus:border-primary/40 transition-all font-mono text-white placeholder:text-white/40"
+                    className="w-full bg-black/60 border border-white/20 rounded-2xl py-3 pl-14 pr-6 text-xs font-bold tracking-[0.3em] focus:outline-none focus:border-primary/40 transition-all font-mono text-white placeholder:text-white/40"
                     value={password} onChange={e => setPassword(e.target.value)}
                 />
             </div>
             <div className="relative group">
                 <Shield className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40 group-focus-within:text-primary transition-colors" />
                 <input type="text" placeholder="RECOVERY_TOKEN"
-                    className="w-full bg-black/60 border border-white/20 rounded-2xl py-4 pl-14 pr-6 text-xs font-bold tracking-[0.3em] focus:outline-none focus:border-primary/40 transition-all font-mono text-white placeholder:text-white/40"
+                    className="w-full bg-black/60 border border-white/20 rounded-2xl py-3 pl-14 pr-6 text-xs font-bold tracking-[0.3em] focus:outline-none focus:border-primary/40 transition-all font-mono text-white placeholder:text-white/40"
                     value={token} onChange={e => setToken(e.target.value)}
                 />
             </div>
@@ -164,7 +164,7 @@ export function Extract() {
         </div>
 
         <button disabled={!stego || isProcessing} onClick={handleExtract}
-          className="w-full bg-primary text-black font-bold tracking-[0.2em] sm:tracking-[0.4em] text-[10px] uppercase rounded-2xl py-4 sm:py-5 shadow-[0_0_30px_rgba(0,242,255,0.2)] hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-30 lg:cursor-none"
+          className="w-full bg-primary text-black font-bold tracking-[0.2em] sm:tracking-[0.4em] text-[10px] uppercase rounded-2xl py-3 shadow-[0_0_30px_rgba(0,242,255,0.2)] hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-30 lg:cursor-none"
         >
           {isProcessing ? 'DECRYPTING...' : 'INITIALIZE RECOVERY'}
         </button>

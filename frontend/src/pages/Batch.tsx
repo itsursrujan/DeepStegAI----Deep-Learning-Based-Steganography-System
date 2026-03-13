@@ -94,11 +94,11 @@ export function Batch() {
   }
 
   return (
-    <div className="h-full flex flex-col gap-4 max-w-7xl mx-auto overflow-hidden cursor-none">
+    <div className="h-full flex flex-col gap-2 max-w-7xl mx-auto overflow-hidden cursor-none">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-black italic tracking-tighter uppercase text-white glow-text leading-none">Industrial Mass-Engine</h2>
-          <p className="text-white/80 text-[10px] font-bold tracking-[0.4em] uppercase mt-2 italic">Bulk Synthesis & Extraction Node</p>
+          <h2 className="text-xl font-black italic tracking-tighter uppercase text-white glow-text leading-none">Industrial Mass-Engine</h2>
+          <p className="text-white/80 text-[9px] font-bold tracking-[0.3em] uppercase mt-1 italic">Bulk Synthesis & Extraction Node</p>
         </div>
         <div className="flex bg-black/60 p-1.5 rounded-2xl border border-white/5 gap-1">
           {(['hide', 'extract', 'scan'] as const).map(m => (
@@ -111,12 +111,12 @@ export function Batch() {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-3 gap-4">
+      <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-3 gap-3">
         {/* Dropzone Area */}
-        <div className="xl:col-span-2 flex flex-col gap-4 min-h-0">
-          <div {...getRootProps()} className={`relative h-44 border border-dashed rounded-3xl flex flex-col items-center justify-center transition-all ${isDragActive ? 'border-primary bg-primary/10' : 'border-white/5 bg-black/60 hover:border-white/20 group'}`}>
+        <div className="xl:col-span-2 flex flex-col gap-3 min-h-0">
+          <div {...getRootProps()} className={`relative h-28 border border-dashed rounded-3xl flex flex-col items-center justify-center transition-all ${isDragActive ? 'border-primary bg-primary/10' : 'border-white/5 bg-black/60 hover:border-white/20 group'}`}>
             <input {...getInputProps()} />
-            <Layers className={`h-12 w-12 mb-4 transition-all ${isDragActive ? 'text-primary scale-110' : 'text-white/10 group-hover:text-white/20'}`} />
+            <Layers className={`h-8 w-8 mb-2 transition-all ${isDragActive ? 'text-primary scale-110' : 'text-white/10 group-hover:text-white/20'}`} />
             <p className="text-base font-bold italic tracking-tighter uppercase text-white transition-colors">
               Stage Batch Containers
             </p>
@@ -125,7 +125,7 @@ export function Batch() {
 
           <AnimatePresence>
             {files.length > 0 && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-panel rounded-3xl p-6 bg-black/60 flex-1 min-h-0 flex flex-col gap-4">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-panel rounded-3xl p-4 bg-black/60 flex-1 min-h-0 flex flex-col gap-3">
                 <div className="flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-2"><Zap className="h-4 w-4 text-primary" /><span className="text-[10px] font-black tracking-[0.4em] text-white uppercase italic">Synchronization Locked ({files.length})</span></div>
                   <button onClick={() => setFiles([])} className="text-[9px] text-red-500/40 hover:text-red-500 font-black uppercase tracking-widest transition-colors">Abort All</button>
@@ -147,7 +147,7 @@ export function Batch() {
         </div>
 
         {/* Configuration */}
-        <div className="glass-panel rounded-3xl p-6 bg-black/60 flex flex-col gap-5 min-h-0">
+        <div className="glass-panel rounded-3xl p-4 bg-black/60 flex flex-col gap-3 min-h-0">
           {mode === 'hide' && (
             <div className="space-y-4">
               <div className="space-y-2 px-2">
@@ -193,13 +193,13 @@ export function Batch() {
                 <div className="relative group">
                     <Key className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30 group-focus-within:text-primary transition-colors" />
                     <input type="password" placeholder="GLOBAL_SESSION_KEY"
-                    className="w-full bg-black/60 border border-white/20 rounded-2xl py-4 pl-14 pr-6 text-xs font-black tracking-[0.3em] focus:outline-none focus:border-primary/40 transition-all font-mono text-white placeholder:text-white/20"
+                    className="w-full bg-black/60 border border-white/20 rounded-2xl py-3 pl-14 pr-6 text-xs font-black tracking-[0.3em] focus:outline-none focus:border-primary/40 transition-all font-mono text-white placeholder:text-white/20"
                     value={password} onChange={e => setPassword(e.target.value)}
                     />
                 </div>
                 ) : (
                 <textarea placeholder={'S_KEY_01\nS_KEY_02\nS_KEY_03...'}
-                    className="w-full bg-black/60 border border-white/20 rounded-2xl py-4 px-5 text-xs font-black focus:outline-none focus:border-primary/40 transition-all font-mono text-white placeholder:text-white/20 resize-none h-28 tracking-widest"
+                    className="w-full bg-black/60 border border-white/20 rounded-2xl py-3 px-5 text-xs font-black focus:outline-none focus:border-primary/40 transition-all font-mono text-white placeholder:text-white/20 resize-none h-20 tracking-widest"
                     value={password} onChange={e => setPassword(e.target.value)}
                 />
                 )}
@@ -250,7 +250,7 @@ export function Batch() {
           </div>
 
           <button disabled={files.length === 0 || (mode === 'hide' && !secret) || isProcessing} onClick={handleBatch}
-            className="w-full bg-primary text-black font-bold tracking-[0.4em] text-[10px] uppercase rounded-2xl py-5 shadow-[0_0_30px_rgba(0,242,255,0.3)] hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-30"
+            className="w-full bg-primary text-black font-bold tracking-[0.4em] text-[10px] uppercase rounded-2xl py-3 shadow-[0_0_30px_rgba(0,242,255,0.3)] hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-30"
           >
             {isProcessing ? 'SYNCHRONIZING...' : 'INITIALIZE PROTOCOL'}
           </button>

@@ -111,11 +111,11 @@ export const Analyze = memo(function Analyze() {
   }
 
   return (
-    <div className={`h-full flex flex-col gap-4 max-w-7xl mx-auto ${isDesktop ? 'overflow-hidden cursor-none' : 'overflow-y-auto cursor-auto'}`}>
+    <div className={`h-full flex flex-col gap-2 max-w-7xl mx-auto ${isDesktop ? 'overflow-hidden cursor-none' : 'overflow-y-auto cursor-auto'}  `}>
         <div className="flex flex-col sm:flex-row sm:items-end justify-between w-full">
             <div>
-              <h2 className="text-2xl sm:text-3xl font-black italic tracking-tighter uppercase text-white glow-text leading-none">Forensic Scanner</h2>
-              <p className="text-[9px] sm:text-[10px] font-bold tracking-[0.2em] sm:tracking-[0.4em] uppercase mt-2 text-white/90">AI Neural Inspection Node</p>
+              <h2 className="text-xl sm:text-2xl font-black italic tracking-tighter uppercase text-white glow-text leading-none">Forensic Scanner</h2>
+              <p className="text-[9px] font-bold tracking-[0.2em] uppercase mt-1 text-white/90">AI Neural Inspection Node</p>
             </div>
             {preview && (
               <motion.button
@@ -129,7 +129,7 @@ export const Analyze = memo(function Analyze() {
             )}
         </div>
 
-      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-5 gap-8 overflow-y-auto md:overflow-hidden pb-8 md:pb-0 pt-4">
+      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-5 gap-3 overflow-y-auto md:overflow-hidden pb-4 md:pb-0 pt-2">
         {/* LEFT PANEL (60%) */}
         <div className="md:col-span-3 flex flex-col gap-6 min-h-0 order-2 md:order-1">
           {!preview && (
@@ -138,7 +138,7 @@ export const Analyze = memo(function Analyze() {
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass-panel border-dashed border-white/20 rounded-3xl p-12 flex flex-col items-center justify-center transition-all hover:bg-white/[0.04] group min-h-[200px]"
+                className="glass-panel border-dashed border-white/20 rounded-3xl p-6 flex flex-col items-center justify-center transition-all hover:bg-white/[0.04] group min-h-[120px]"
               >
                 <Search className="h-10 w-10 mb-4 text-white/30" />
                 <p className="text-sm font-bold tracking-widest uppercase text-white/60">Stage Carrier for Scan</p>
@@ -146,7 +146,7 @@ export const Analyze = memo(function Analyze() {
             </div>
           )}
 
-          <div className="glass-panel rounded-3xl overflow-hidden min-h-[400px] md:min-h-0 flex-1 relative bg-black/60">
+          <div className="glass-panel rounded-3xl overflow-hidden min-h-[180px] md:min-h-0 flex-1 relative bg-black/60">
             {preview && (
               <button 
                 onClick={handleClear}
@@ -192,7 +192,7 @@ export const Analyze = memo(function Analyze() {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="glass-panel rounded-3xl p-6 bg-black/60 space-y-6"
+                className="glass-panel rounded-3xl p-4 bg-black/60 space-y-4"
               >
                 <div>
                   <h4 className="text-[9px] font-black tracking-[0.3em] uppercase mb-4 text-white/50">Forensic Verdict</h4>
@@ -233,7 +233,7 @@ export const Analyze = memo(function Analyze() {
               </motion.div>
             ) : (
                 <div className="space-y-4">
-                  <div className="glass-panel rounded-3xl p-6 bg-black/60">
+                  <div className="glass-panel rounded-3xl p-4 bg-black/60">
                     <h4 className="text-[10px] font-black tracking-[0.4em] text-white/30 uppercase mb-6 flex items-center gap-2 italic">
                       <Activity className="h-4 w-4 text-primary" /> System Node
                     </h4>
@@ -251,7 +251,7 @@ export const Analyze = memo(function Analyze() {
                     </div>
                   </div>
 
-                  <div className="glass-panel rounded-3xl p-6 bg-black/60">
+                  <div className="glass-panel rounded-3xl p-4 bg-black/60">
                     <h4 className="text-[10px] font-black tracking-[0.4em] text-white/30 uppercase mb-6 flex items-center gap-2 italic">
                       <BarChart className="h-4 w-4 text-accent" /> Monitoring
                     </h4>
