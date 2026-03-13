@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Upload, File, Shield, Key, CheckCircle, Copy, AlertTriangle, Lock, X } from 'lucide-react'
+import { Upload, File, Shield, Key, CheckCircle, Copy, AlertTriangle, Lock, X, Mail } from 'lucide-react'
+
 import { stegoApi } from '@/services/api'
 import { useStore } from '@/store/useStore'
 
@@ -55,6 +56,7 @@ export function Embed() {
   const [progress, setProgress] = useState(0)
   const [result, setResult] = useState<{ image: string; token?: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [showSharePanel, setShowSharePanel] = useState(false)
 
   const setStatus = useStore(s => s.setStatus)
 
@@ -98,6 +100,36 @@ export function Embed() {
       setError(e?.response?.data?.error || e?.message || 'Synthesis aborted.')
       setStatus('READY')
     } finally { setIsProcessing(false) }
+  }
+
+  const handleGmailShare = () => {
+    if (!result) return
+    // Trigger file download first so the user can attach it
+    const link = document.createElement('a')
+    link.href = result.image
+    link.download = 'deep_container.png'
+    link.click()
+    // Build the email body including the encryption key (if set)
+    const keyLine = password
+      ? `Encryption Key (AES-256 Key): ${password}`
+      : 'Encryption Key (AES-256 Key): (No password was set for this container)'
+    const subject = encodeURIComponent('DeepStegAI — Stego Container')
+    const body = encodeURIComponent(
+      `Hello,
+
+I am sharing a steganography container generated using DeepStegAI.
+
+⚠️ Important Notice:
+This PNG file contains embedded hidden data. To preserve the hidden payload, please download and save the file exactly as received. Avoid sharing it in applications that may automatically recompress or modify the image.
+
+Before sending this email, please attach the downloaded file (deep_container.png) to ensure the container is delivered correctly.
+
+${keyLine}
+
+Best regards,
+DeepStegAI`
+    )
+    window.open(`https://mail.google.com/mail/?view=cm&su=${subject}&body=${body}`, '_blank')
   }
 
   return (
@@ -228,9 +260,69 @@ export function Embed() {
                   </div>
                 )}
 
-                <a href={result.image} download="deep_container.png" className="w-full bg-white text-black font-black tracking-[0.4em] text-[10px] uppercase rounded-2xl py-5 text-center transition-all hover:bg-white/90 active:scale-[0.98] shadow-2xl glitch-hover">
-                  Download Container
-                </a>
+                {/* Action Buttons */}
+                <div className="flex flex-col gap-3">
+                  {/* Primary row: Download + Share toggle */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <a
+                      href={result.image}
+                      download="deep_container.png"
+                      className="bg-white text-black font-black tracking-[0.2em] text-[10px] uppercase rounded-2xl py-4 text-center transition-all hover:bg-white/90 active:scale-[0.98] shadow-2xl glitch-hover"
+                    >
+                      Download
+                    </a>
+
+                    <button
+                      onClick={() => setShowSharePanel(p => !p)}
+                      className={`flex items-center justify-center gap-2 font-black tracking-[0.2em] text-[10px] uppercase rounded-2xl py-4 transition-all active:scale-[0.98] border ${
+                        showSharePanel
+                          ? 'bg-primary/30 border-primary/60 text-primary'
+                          : 'bg-primary/20 border-primary/40 text-primary hover:bg-primary/30'
+                      }`}
+                    >
+                      <Mail className="h-3.5 w-3.5" />
+                      Share via Gmail
+                    </button>
+                  </div>
+
+                  {/* Expandable share panel */}
+                  <AnimatePresence>
+                    {showSharePanel && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="flex flex-col gap-3 pt-1">
+                          {/* Compression Warning — only visible when panel is open */}
+                          <div className="flex items-start gap-3 bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-3">
+                            <AlertTriangle className="h-3.5 w-3.5 text-yellow-400 shrink-0 mt-0.5" />
+                            <p className="text-[9px] font-bold text-yellow-400/90 tracking-wider leading-relaxed">
+                              <span className="font-black text-yellow-300">WhatsApp</span> compresses images and destroys hidden data.
+                              Always share as a <span className="text-yellow-300 font-black">Document</span>, or use{' '}
+                              <span className="text-yellow-300 font-black">Email</span> for full integrity.
+                            </p>
+                          </div>
+
+                          {/* Gmail — only option */}
+                          <button
+                            onClick={handleGmailShare}
+                            className="w-full flex items-center justify-center gap-2 font-black tracking-[0.15em] text-[10px] uppercase rounded-2xl py-3.5 transition-all active:scale-[0.98] border bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 hover:border-red-500/50"
+                          >
+                            <Mail className="h-3.5 w-3.5" />
+                            Open Gmail &amp; Download File
+                          </button>
+
+                          <p className="text-[8px] text-white/20 font-bold uppercase tracking-widest text-center">
+                            File auto-downloads — attach it in the Gmail compose window
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
