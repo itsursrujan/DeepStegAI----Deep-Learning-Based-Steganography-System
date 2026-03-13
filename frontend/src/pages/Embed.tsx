@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Upload, File, Shield, Key, CheckCircle, Copy, AlertTriangle, Lock } from 'lucide-react'
+import { Upload, File, Shield, Key, CheckCircle, Copy, AlertTriangle, Lock, X } from 'lucide-react'
 import { stegoApi } from '@/services/api'
 import { useStore } from '@/store/useStore'
 
@@ -101,48 +101,60 @@ export function Embed() {
   }
 
   return (
-    <div className="h-full flex flex-col gap-4 max-w-6xl mx-auto cursor-none">
-      <div className="flex justify-between items-end">
+    <div className={`h-full flex flex-col gap-4 max-w-6xl mx-auto ${window.innerWidth > 768 ? 'cursor-none' : 'cursor-auto'}`}>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 px-2 sm:px-0">
         <div>
-          <h2 className="text-3xl font-black italic tracking-tighter uppercase text-white glow-text leading-none">Synthesis Hub</h2>
-          <p className="text-[10px] font-bold tracking-[0.3em] uppercase mt-2 text-white">Steganographic Injection Node</p>
+          <h2 className="text-2xl sm:text-3xl font-black italic tracking-tighter uppercase text-white glow-text leading-none">Synthesis Hub</h2>
+          <p className="text-[9px] sm:text-[10px] font-bold tracking-[0.2em] sm:tracking-[0.3em] uppercase mt-2 text-white">Steganographic Injection Node</p>
         </div>
         <div className="flex items-center gap-3">
-            <span className="text-[10px] font-bold tracking-widest uppercase text-white">Security Clearance:</span>
-            <span className="px-3 py-1 bg-primary/20 border border-primary/40 text-primary text-[9px] font-bold uppercase tracking-widest rounded-full shadow-[0_0_10px_rgba(0,242,255,0.2)]">Level-04</span>
+            <span className="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase text-white/40">Security Clearance:</span>
+            <span className="px-3 py-1 bg-primary/20 border border-primary/40 text-primary text-[8px] sm:text-[9px] font-bold uppercase tracking-widest rounded-full shadow-[0_0_10px_rgba(0,242,255,0.2)]">Level-04</span>
         </div>
       </div>
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0 overflow-y-auto lg:overflow-hidden pb-8 lg:pb-0">
         {/* Input Card */}
         <div className="glass-panel rounded-3xl p-6 space-y-5 flex flex-col min-h-0 overflow-y-auto">
           {/* Cover dropzone */}
-          <div {...getCoverProps()} className={`relative h-32 border border-dashed rounded-2xl flex items-center justify-center transition-all ${isCoverActive ? 'border-primary bg-primary/10' : 'border-white/10 bg-black/40 hover:border-primary/40'}`}>
+          <div {...getCoverProps()} className={`relative h-28 sm:h-32 border border-dashed rounded-2xl flex items-center justify-center transition-all lg:cursor-none ${isCoverActive ? 'border-primary bg-primary/10' : 'border-white/10 bg-black/40 hover:border-primary/40'}`}>
             <input {...getCoverInputProps()} />
             {cover ? (
-                <div className="text-center group">
-                    <CheckCircle className="h-8 w-8 mx-auto text-primary mb-2" />
-                    <p className="text-[10px] font-black text-white italic truncate max-w-[200px] px-4 uppercase">{cover.name}</p>
+                <div className="text-center group w-full h-full flex flex-col items-center justify-center relative">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setCover(null); }}
+                      className="absolute top-3 right-3 p-1.5 rounded-full bg-red-500/20 border border-red-500/40 text-red-500 hover:text-white hover:bg-red-500 transition-all shadow-[0_0_10px_rgba(239,68,68,0.2)] z-10"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                    <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 mx-auto text-primary mb-2" />
+                    <p className="text-[9px] sm:text-[10px] font-black text-white italic truncate max-w-[150px] sm:max-w-[200px] px-4 uppercase">{cover.name}</p>
                 </div>
             ) : (
                 <div className="text-center">
-                    <Upload className="h-8 w-8 mx-auto mb-2 text-white" />
-                    <p className="text-xs font-bold tracking-widest uppercase italic text-white">Drop Cover Image</p>
+                    <Upload className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-white/40" />
+                    <p className="text-[10px] sm:text-xs font-bold tracking-widest uppercase italic text-white/60">Drop Cover Image</p>
                 </div>
             )}
           </div>
 
           {/* Secret dropzone */}
-          <div {...getSecretProps()} className={`h-16 border border-dashed rounded-xl flex items-center justify-center transition-all ${isSecretActive ? 'border-white/40 bg-white/5' : 'border-white/10 bg-black/40 hover:border-white/20'}`}>
+          <div {...getSecretProps()} className={`relative h-14 sm:h-16 border border-dashed rounded-xl flex items-center justify-center transition-all lg:cursor-none ${isSecretActive ? 'border-white/40 bg-white/5' : 'border-white/10 bg-black/40 hover:border-white/20'}`}>
             <input {...getSecretInputProps()} />
             {secret ? (
-                <div className="flex items-center gap-3 px-6">
-                    <File className="h-5 w-5 text-primary shrink-0" />
-                    <span className="text-[10px] font-black text-white truncate max-w-[200px] uppercase italic">{secret.name}</span>
-                    <CheckCircle className="h-4 w-4 text-primary shrink-0" />
+                <div className="flex items-center gap-3 px-6 w-full h-full relative">
+                    <File className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
+                    <span className="text-[9px] sm:text-[10px] font-black text-white truncate max-w-[150px] sm:max-w-[180px] uppercase italic">{secret.name}</span>
+                    <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-primary shrink-0" />
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setSecret(null); }}
+                      className="ml-auto p-1 rounded-full text-red-500/60 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
                 </div>
             ) : (
-                <div className="flex items-center gap-3"><Key className="h-4 w-4 text-white" /><p className="text-[10px] font-bold uppercase tracking-widest italic text-white">Stage Payload</p></div>
+                <div className="flex items-center gap-2 sm:gap-3"><Key className="h-4 w-4 text-white/40" /><p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest italic text-white/60">Stage Payload</p></div>
             )}
           </div>
 
@@ -175,7 +187,7 @@ export function Embed() {
           </AnimatePresence>
 
           <button disabled={!cover || !secret || isProcessing} onClick={handleEmbed}
-            className="w-full bg-primary text-black font-bold tracking-[0.4em] text-[10px] uppercase rounded-2xl py-5 shadow-[0_0_30px_rgba(0,242,255,0.3)] hover:bg-primary/90 hover:shadow-[0_0_50px_rgba(0,242,255,0.5)] transition-all active:scale-[0.98] disabled:opacity-30"
+            className="w-full bg-primary text-black font-bold tracking-[0.2em] sm:tracking-[0.4em] text-[10px] uppercase rounded-2xl py-4 sm:py-5 shadow-[0_0_30px_rgba(0,242,255,0.3)] hover:bg-primary/90 hover:shadow-[0_0_50px_rgba(0,242,255,0.5)] transition-all active:scale-[0.98] disabled:opacity-30 lg:cursor-none"
           >
             {isProcessing ? 'SYNTHESIZING...' : 'EXECUTE INJECTION'}
           </button>

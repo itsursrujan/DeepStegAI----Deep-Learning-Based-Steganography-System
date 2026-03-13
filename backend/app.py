@@ -276,13 +276,18 @@ def api_batch():
 
 @app.route('/api/contact', methods=['POST'])
 def api_contact():
+    """Endpoint for the Support page to submit queries."""
     try:
         data = request.json
         if not data or 'message' not in data:
             return jsonify({'error': 'Message required'}), 400
             
+        now = datetime.datetime.now()
         entry = {
-            'timestamp': str(datetime.datetime.now()),
+            'id': random.randint(1000, 9999),
+            'timestamp': str(now),
+            'date': now.strftime("%Y-%m-%d"),
+            'time': now.strftime("%H:%M:%S"),
             'name': data.get('name', 'Anonymous'),
             'email': data.get('email', 'No Email'),
             'message': data['message']
@@ -290,8 +295,11 @@ def api_contact():
         
         messages = []
         if os.path.exists(MESSAGES_FILE):
-            with open(MESSAGES_FILE, 'r') as f:
-                messages = json.load(f)
+            try:
+                with open(MESSAGES_FILE, 'r') as f:
+                    messages = json.load(f)
+            except:
+                messages = []
         
         messages.append(entry)
         
@@ -299,6 +307,18 @@ def api_contact():
             json.dump(messages, f, indent=4)
             
         return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/messages', methods=['GET'])
+def get_messages():
+    """Admin endpoint to retrieve support queries."""
+    try:
+        if os.path.exists(MESSAGES_FILE):
+            with open(MESSAGES_FILE, 'r') as f:
+                messages = json.load(f)
+            return jsonify(messages)
+        return jsonify([])
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

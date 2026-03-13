@@ -135,7 +135,9 @@ export function Batch() {
                     <div key={i} className="flex items-center gap-3 bg-white/[0.02] rounded-xl p-3 border border-white/5 group">
                       <FileText className="h-4 w-4 text-white/10 shrink-0 group-hover:text-primary transition-colors" />
                       <span className="text-[10px] font-black italic text-white/50 truncate uppercase tracking-tighter">{file.name}</span>
-                      <button onClick={() => setFiles(p => p.filter((_, j) => j !== i))} className="ml-auto text-white/10 hover:text-red-500 transition-colors"><X className="h-4 w-4" /></button>
+                      <button onClick={() => setFiles(p => p.filter((_, j) => j !== i))} className="ml-auto text-white/10 hover:text-red-500 hover:bg-red-500/10 p-0.5 rounded-full transition-all">
+                        <X className="h-4 w-4" />
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -163,10 +165,16 @@ export function Batch() {
 
               <div className="space-y-3">
                 <label className="text-[9px] font-bold tracking-[0.4em] text-white uppercase italic px-2">Master Payload</label>
-                <div {...getSecretProps()} className="h-24 border border-dashed rounded-2xl flex items-center justify-center border-white/10 bg-black/40 hover:border-accent/40 transition-all cursor-pointer">
+                <div {...getSecretProps()} className="relative h-24 border border-dashed rounded-2xl flex items-center justify-center border-white/10 bg-black/40 hover:border-accent/40 transition-all cursor-pointer">
                   <input {...getSecretInputProps()} />
                   {secret ? (
-                    <div className="text-center group">
+                    <div className="text-center group w-full h-full flex flex-col items-center justify-center relative">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setSecret(null); }}
+                        className="absolute top-2 right-2 p-1 rounded-full bg-red-500/20 border border-red-500/40 text-red-500 hover:text-white hover:bg-red-500 transition-all z-10"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
                       <CheckCircle className="h-6 w-6 text-accent mx-auto mb-2" />
                       <p className="text-[10px] font-black text-white italic truncate max-w-[150px] px-2 uppercase tracking-tighter">{secret.name}</p>
                     </div>

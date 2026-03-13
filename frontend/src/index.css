@@ -31,6 +31,8 @@ body {
   color: #ffffff;
   overflow: hidden;
   font-family: 'Inter', sans-serif;
+  /* GPU acceleration hint for the whole layer */
+  transform: translateZ(0);
 }
 
 /* ─── Text selection ─── */
@@ -65,10 +67,12 @@ input, textarea, select {
 
 /* ─── Glass panel ─── */
 .glass-panel {
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(12px); /* Slightly reduced from 20px for performance */
+  -webkit-backdrop-filter: blur(12px);
   background-color: rgba(0, 0, 0, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  transform: translateZ(0); /* Force GPU layer */
+  will-change: transform, opacity;
 }
 
 /* ─── Glow text ─── */

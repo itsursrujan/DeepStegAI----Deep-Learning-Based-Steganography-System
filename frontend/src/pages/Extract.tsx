@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Upload, Shield, FileDown, AlertTriangle, CheckCircle, Lock } from 'lucide-react'
+import { Upload, Shield, FileDown, AlertTriangle, CheckCircle, Lock, X } from 'lucide-react'
 import { stegoApi } from '@/services/api'
 import { useStore } from '@/store/useStore'
 
@@ -78,30 +78,36 @@ export function Extract() {
   }
 
   return (
-    <div className="h-full flex flex-col gap-6 max-w-3xl mx-auto cursor-none">
-      <div className="text-center">
-        <h2 className="text-3xl font-black italic tracking-tighter uppercase text-white glow-text leading-none">Payload Decryption</h2>
-        <p className="text-[10px] font-bold tracking-[0.3em] uppercase mt-2 text-white/90">Steganographic Forensic Node</p>
+    <div className={`h-full flex flex-col gap-6 max-w-3xl mx-auto ${window.innerWidth > 768 ? 'cursor-none' : 'cursor-auto'}`}>
+      <div className="text-center px-2">
+        <h2 className="text-2xl sm:text-3xl font-black italic tracking-tighter uppercase text-white glow-text leading-none">Payload Decryption</h2>
+        <p className="text-[9px] sm:text-[10px] font-bold tracking-[0.2em] sm:tracking-[0.3em] uppercase mt-2 text-white/90">Steganographic Forensic Node</p>
       </div>
 
       <div className="flex-1 glass-panel rounded-3xl p-8 space-y-6 flex flex-col min-h-0 overflow-y-auto">
         {/* Drop zone */}
-        <div {...getRootProps()} className={`relative h-44 border border-dashed rounded-3xl flex flex-col items-center justify-center transition-all ${isDragActive ? 'border-primary bg-primary/10' : 'border-white/10 bg-black/40 hover:border-primary/40'}`}>
+        <div {...getRootProps()} className={`relative h-36 sm:h-44 border border-dashed rounded-3xl flex flex-col items-center justify-center transition-all lg:cursor-none ${isDragActive ? 'border-primary bg-primary/10' : 'border-white/10 bg-black/40 hover:border-primary/40'}`}>
           <input {...getInputProps()} />
           <AnimatePresence mode="wait">
             {stego ? (
-                <motion.div key="file" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
-                    <div className="h-16 w-16 bg-primary/10 border border-primary/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Shield className="h-8 w-8 text-primary" />
+                <motion.div key="file" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center px-4 relative w-full h-full flex flex-col items-center justify-center">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setStego(null); }}
+                      className="absolute top-3 right-3 p-1.5 rounded-full bg-red-500/20 border border-red-500/40 text-red-500 hover:text-white hover:bg-red-500 transition-all shadow-[0_0_10px_rgba(239,68,68,0.2)] z-10"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                    <div className="h-12 w-12 sm:h-16 sm:w-16 bg-primary/10 border border-primary/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Shield className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
                     </div>
-                    <p className="text-sm font-black italic text-white uppercase tracking-tighter">{stego.name}</p>
-                    <p className="text-[9px] text-primary font-black uppercase tracking-[0.3em] mt-2">Container Validated ✓</p>
+                    <p className="text-xs sm:text-sm font-black italic text-white uppercase tracking-tighter truncate max-w-[250px]">{stego.name}</p>
+                    <p className="text-[8px] sm:text-[9px] text-primary font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] mt-2">Container Validated ✓</p>
                 </motion.div>
             ) : (
-                <motion.div key="empty" className="text-center">
-                    <Upload className="h-10 w-10 mx-auto mb-4 text-white" />
-                    <p className="text-base font-bold italic uppercase tracking-tighter text-white">Load Stego Image</p>
-                    <p className="text-[10px] uppercase tracking-[0.2em] mt-2 font-bold text-white/50">Industrial Carrier Recognition Active</p>
+                <motion.div key="empty" className="text-center px-4">
+                    <Upload className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-4 text-white/40" />
+                    <p className="text-sm sm:text-base font-bold italic uppercase tracking-tighter text-white/60">Load Stego Image</p>
+                    <p className="text-[8px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.2em] mt-2 font-bold text-white/30 text-center">Industrial Carrier Recognition Active</p>
                 </motion.div>
             )}
           </AnimatePresence>
@@ -158,7 +164,7 @@ export function Extract() {
         </div>
 
         <button disabled={!stego || isProcessing} onClick={handleExtract}
-          className="w-full bg-primary text-black font-bold tracking-[0.4em] text-[10px] uppercase rounded-2xl py-5 shadow-[0_0_30px_rgba(0,242,255,0.2)] hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-30"
+          className="w-full bg-primary text-black font-bold tracking-[0.2em] sm:tracking-[0.4em] text-[10px] uppercase rounded-2xl py-4 sm:py-5 shadow-[0_0_30px_rgba(0,242,255,0.2)] hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-30 lg:cursor-none"
         >
           {isProcessing ? 'DECRYPTING...' : 'INITIALIZE RECOVERY'}
         </button>

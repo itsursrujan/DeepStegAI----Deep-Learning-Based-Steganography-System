@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Lock, Mail, Clock, LogOut, ChevronRight, Cpu } from 'lucide-react'
+import { Lock as LockIcon, Mail, Clock, LogOut, ChevronRight, Cpu, Calendar } from 'lucide-react'
+import { stegoApi } from '@/services/api'
 
 const TRANSITION = { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
 
@@ -18,13 +19,17 @@ export function Admin() {
 
   useEffect(() => {
     if (isLoggedIn) {
-        setMessages([
-            { id: 1, name: 'Agent X', email: 'x@intel.net', message: 'System integrity scan complete. 0 threats found.', timestamp: '2 mins ago' },
-            { id: 2, name: 'Command', email: 'hq@deepsteg.ai', message: 'New adaptive algorithm deployed to node-4.', timestamp: '1 hour ago' },
-            { id: 3, name: 'Anonymous', email: 'hidden@dark.net', message: 'Extraction failed on payload-882. Requesting review.', timestamp: '3 hours ago' },
-            { id: 4, name: 'System', email: 'root@kernel', message: 'Entropy levels reaching critical mass in sector-G.', timestamp: '5 hours ago' },
-            { id: 5, name: 'Monitor', email: 'security@node', message: 'Unauthorized entry attempt detected in vault V-7.', timestamp: '8 hours ago' },
-        ])
+        const fetchData = async () => {
+            try {
+                const res = await stegoApi.getMessages()
+                setMessages(res.data.reverse())
+            } catch (err) {
+                console.error("Data fetch failed:", err)
+            }
+        }
+        fetchData()
+        const interval = setInterval(fetchData, 10000)
+        return () => clearInterval(interval)
     }
   }, [isLoggedIn])
 
@@ -41,7 +46,7 @@ export function Admin() {
             
             <div className="relative group mx-auto w-24 h-24">
                 <div className="h-24 w-24 bg-primary/10 border border-primary/20 rounded-full flex items-center justify-center transition-all group-hover:shadow-[0_0_80px_rgba(0,242,255,0.3)]">
-                    <Lock className="h-10 w-10 text-primary" />
+                    <LockIcon className="h-10 w-10 text-primary" />
                 </div>
                 <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 10, ease: "linear" }} className="absolute inset-0 border border-dashed border-primary/20 rounded-full" />
             </div>
@@ -82,7 +87,7 @@ export function Admin() {
                 <Cpu className="h-7 w-7 text-primary" />
             </div>
             <div>
-                <h2 className="text-3xl font-black italic tracking-tighter uppercase text-white glow-text leading-none glitch-hover">Intelligence Console</h2>
+                <h2 className="text-3xl font-black italic tracking-tighter uppercase text-white glow-text leading-none glitch-hover">Admin Control Console</h2>
                 <div className="flex items-center gap-3 text-[10px] font-black tracking-[0.3em] text-primary/60 uppercase mt-2">
                     <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
                     Secure Operator: Root_Admin
@@ -121,24 +126,28 @@ export function Admin() {
               ))}
           </div>
 
-          {/* Messages Dashboard */}
-          <div className="xl:col-span-3 flex flex-col min-h-0">
-              <div className="glass-panel rounded-[2rem] overflow-hidden border border-white/5 bg-black/60 flex flex-col flex-1 min-h-0">
+          {/* Main Dashboard Area */}
+          <div className="xl:col-span-3">
+              {/* Messages Hub */}
+              <div className="glass-panel rounded-[2rem] overflow-hidden border border-white/5 bg-black/60 flex flex-col min-h-[600px]">
                   <div className="p-8 border-b border-white/5 flex items-center justify-between shrink-0 bg-white/[0.02]">
                       <div className="flex items-center gap-4">
                           <div className="p-3 bg-primary/10 rounded-xl border border-primary/20">
                             <Mail className="h-6 w-6 text-primary" />
                           </div>
-                          <h3 className="text-xl font-black italic tracking-tighter uppercase text-white tracking-[0.2em]">Intercepted Comms Hub</h3>
+                          <div>
+                            <h3 className="text-xl font-black italic tracking-tighter uppercase text-white tracking-[0.2em]">Intercepted Comms Hub</h3>
+                            <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest mt-1">Authorized Audit Log</p>
+                          </div>
                       </div>
-                       <div className="px-5 py-2 bg-black/40 rounded-full border border-white/20 text-[10px] font-black tracking-widest text-white uppercase italic">
+                      <div className="px-5 py-2 bg-black/40 rounded-full border border-white/20 text-[10px] font-black tracking-widest text-white uppercase italic">
                          Real-time Data Stream [Live]
                        </div>
                   </div>
                   
                   <div className="flex-1 overflow-y-auto divide-y divide-white/5">
                       <AnimatePresence>
-                          {messages.map((msg, i) => (
+                          {messages.length > 0 ? messages.map((msg, i) => (
                               <motion.div 
                                   initial={{ opacity: 0, x: -10 }}
                                   animate={{ opacity: 1, x: 0 }}
@@ -149,16 +158,20 @@ export function Admin() {
                                   <div className="flex justify-between items-start mb-4">
                                       <div className="flex items-center gap-5">
                                           <div className="h-14 w-14 rounded-2xl bg-black/60 border border-white/10 flex items-center justify-center text-sm font-black uppercase tracking-tighter group-hover:border-primary/40 group-hover:text-primary transition-all">
-                                              {msg.name.substring(0, 2)}
+                                              {(msg.name || '??').substring(0, 2)}
                                           </div>
                                           <div>
                                               <p className="text-lg font-black italic tracking-tight text-white/90 leading-tight group-hover:text-white transition-colors uppercase">{msg.name}</p>
                                               <p className="text-[10px] text-white/10 font-mono tracking-[0.2em] uppercase mt-1">{msg.email}</p>
                                           </div>
                                       </div>
-                                      <div className="flex items-center gap-2 text-[9px] text-white/20 font-black uppercase tracking-[0.3em] bg-black/40 px-5 py-2 rounded-full border border-white/5">
-                                          <Clock className="h-3.5 w-3.5" />
-                                          {msg.timestamp}
+                                      <div className="flex flex-col items-end gap-2 text-[10px] font-black uppercase tracking-[0.3em]">
+                                          <div className="flex items-center gap-2 text-primary bg-primary/5 px-4 py-1.5 rounded-full border border-primary/20">
+                                              <Calendar className="h-3.5 w-3.5" /> {msg.date}
+                                          </div>
+                                          <div className="flex items-center gap-2 text-white/20 bg-black/40 px-4 py-1.5 rounded-full border border-white/5">
+                                              <Clock className="h-4 w-4" /> {msg.time}
+                                          </div>
                                       </div>
                                   </div>
                                   <div className="pl-16 relative pr-12">
@@ -168,7 +181,12 @@ export function Admin() {
                                       </div>
                                   </div>
                               </motion.div>
-                          ))}
+                          )) : (
+                              <div className="h-full flex flex-col items-center justify-center p-20 text-white/10 italic">
+                                  <Mail className="h-16 w-16 mb-6 opacity-30" />
+                                  <p className="text-sm font-black tracking-widest uppercase">Encryption active. Awaiting fresh data pulses...</p>
+                              </div>
+                          )}
                       </AnimatePresence>
                   </div>
               </div>

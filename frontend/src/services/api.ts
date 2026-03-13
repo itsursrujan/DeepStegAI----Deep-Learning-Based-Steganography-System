@@ -62,6 +62,8 @@ export const stegoApi = {
     api.post('/contact', data, {
       headers: { 'Content-Type': 'application/json' },
     }),
+
+  getMessages: () => api.get('/messages'),
 }
 
 export default api

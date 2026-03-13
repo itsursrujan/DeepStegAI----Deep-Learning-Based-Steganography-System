@@ -1,4 +1,4 @@
-import { useRef, Suspense } from 'react'
+import { useRef, Suspense, memo } from 'react'
 import { useFrame, useLoader } from '@react-three/fiber'
 import { Plane } from '@react-three/drei'
 import * as THREE from 'three'
@@ -17,7 +17,7 @@ function ImagePlane({ url }: { url: string }) {
   )
 }
 
-export function Scanner3D({ image, scanning }: Scanner3DProps) {
+export const Scanner3D = memo(function Scanner3D({ image, scanning }: Scanner3DProps) {
   const scanLineRef  = useRef<THREE.Mesh>(null!)
   const glowLineRef  = useRef<THREE.Mesh>(null!)
   const cornerTLRef  = useRef<THREE.Mesh>(null!)
@@ -99,4 +99,4 @@ export function Scanner3D({ image, scanning }: Scanner3DProps) {
       )}
     </group>
   )
-}
+})

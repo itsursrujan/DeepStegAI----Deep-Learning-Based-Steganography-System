@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react'
 const HEX_CHARS = '0123456789ABCDEF01'
 const FONT_SIZE = 13
 const COLUMN_WIDTH = 18
+const FPS = 30 // Cap at 30 FPS to save CPU/GPU
 
 export function DigitalRain() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -10,10 +11,11 @@ export function DigitalRain() {
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const ctx = canvas.getContext('2d')!
+    const ctx = canvas.getContext('2d', { alpha: false })! // Optimize for opaque background if possible
 
     let columns: { y: number; speed: number; chars: string[] }[] = []
     let animId: number
+    let lastTime = 0
 
     const init = () => {
       const W = window.innerWidth
@@ -22,25 +24,32 @@ export function DigitalRain() {
       canvas.height = H
 
       const colCount = Math.floor(W / COLUMN_WIDTH)
-      // Rebuild columns but preserve existing ones at the same index if possible
       const prev = columns
       columns = Array.from({ length: colCount }, (_, i) => {
         if (prev[i]) return prev[i]
         return {
           y: Math.random() * -H,
           speed: 0.6 + Math.random() * 1.2,
-          chars: Array.from({ length: 30 }, () => HEX_CHARS[Math.floor(Math.random() * HEX_CHARS.length)]),
+          chars: Array.from({ length: 25 }, () => HEX_CHARS[Math.floor(Math.random() * HEX_CHARS.length)]), // Reduced length
         }
       })
     }
 
-    const draw = () => {
+    const draw = (time: number) => {
+      animId = requestAnimationFrame(draw)
+
+      // Throttle to 30 FPS
+      const delta = time - lastTime
+      if (delta < 1000 / FPS) return
+      lastTime = time
+
       const W = canvas.width
       const H = canvas.height
 
-      // Trail fade — draw a semi-transparent black rectangle each frame
-      ctx.fillStyle = 'rgba(5, 5, 5, 0.08)'
+      ctx.fillStyle = '#050505' // Match body bg
+      ctx.globalAlpha = 0.1
       ctx.fillRect(0, 0, W, H)
+      ctx.globalAlpha = 1.0
 
       ctx.font = `${FONT_SIZE}px "JetBrains Mono", monospace`
 
@@ -49,40 +58,33 @@ export function DigitalRain() {
 
         col.chars.forEach((ch, j) => {
           const charY = col.y - j * FONT_SIZE
-          if (charY < 0 || charY > H) return
+          if (charY < -FONT_SIZE || charY > H + FONT_SIZE) return
 
           const isHead = j === 0
-          // Head char is bright white, trail fades cyan → dark
-          const alpha = isHead ? 0.85 : Math.max(0, 0.1 - j * 0.006)
+          const alpha = isHead ? 0.8 : Math.max(0, 0.15 - j * 0.01)
           if (alpha <= 0) return
 
-          ctx.fillStyle = isHead
-            ? `rgba(255, 255, 255, ${alpha})`
-            : `rgba(0, 242, 255, ${alpha})`
+          ctx.fillStyle = isHead ? '#ffffff' : '#00f2ff'
+          ctx.globalAlpha = alpha
 
-          // Randomly mutate chars for flickering effect
-          if (Math.random() > 0.97) {
+          if (Math.random() > 0.98) {
             col.chars[j] = HEX_CHARS[Math.floor(Math.random() * HEX_CHARS.length)]
           }
 
           ctx.fillText(ch, x, charY)
         })
 
-        // Advance column
-        col.y += col.speed * FONT_SIZE * 0.25
-
-        // Reset when fully off screen
+        col.y += col.speed * FONT_SIZE * 0.3
         if (col.y - col.chars.length * FONT_SIZE > H) {
-          col.y = -Math.random() * H * 0.5
+          col.y = -20
           col.speed = 0.6 + Math.random() * 1.2
         }
       })
-
-      animId = requestAnimationFrame(draw)
+      ctx.globalAlpha = 1.0
     }
 
     init()
-    draw()
+    animId = requestAnimationFrame(draw)
 
     const onResize = () => init()
     window.addEventListener('resize', onResize)
@@ -96,8 +98,8 @@ export function DigitalRain() {
   return (
     <canvas
       ref={canvasRef}
-      className="pointer-events-none fixed inset-0 z-[1]"
-      style={{ filter: 'blur(1.5px)', opacity: 0.07 }}
+      className="pointer-events-none fixed inset-0 z-[1] will-change-transform"
+      style={{ opacity: 0.08 }}
     />
   )
 }

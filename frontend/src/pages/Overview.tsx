@@ -1,4 +1,4 @@
-import { Suspense, useState, useRef } from 'react'
+import { Suspense, useState, useRef, memo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Canvas } from '@react-three/fiber'
 import { NeuralSphere } from '@/three/NeuralSphere'
@@ -78,21 +78,21 @@ function HyperButton({ onClick }: { onClick: () => void }) {
 // ─────────────────────── Feature Cards ───────────────────────
 const highlights = [
   { icon: Shield, title: 'AI Forensic Engine', desc: 'Secure neural steganography auditing.' },
-  { icon: Lock,   title: 'Adaptive Edge',       desc: 'Noise-integrated data preservation.' },
-  { icon: Zap,    title: 'Kinetic Synthesis',   desc: 'Instant heavy-duty encryption cycles.' },
-  { icon: Globe,  title: 'Global Node',          desc: 'Unified industrial command shell.' },
+  { icon: Lock, title: 'Adaptive Edge', desc: 'Noise-integrated data preservation.' },
+  { icon: Zap, title: 'Kinetic Synthesis', desc: 'Instant heavy-duty encryption cycles.' },
+  { icon: Globe, title: 'Global Node', desc: 'Unified industrial command shell.' },
 ]
 
 // ─────────────────────── Page ───────────────────────
-export function Overview() {
-  const systemInitialized  = useStore(s => s.systemInitialized)
+export const Overview = memo(function Overview() {
+  const systemInitialized = useStore(s => s.systemInitialized)
   const setSystemInitialized = useStore(s => s.setSystemInitialized)
 
   return (
     /* z-3 so it sits above Digital Rain (z-1) and noise (z-2) */
-    <div className="relative min-h-screen w-full overflow-y-auto bg-transparent" style={{ zIndex: 3 }}>
+    <div className="relative min-h-screen w-full overflow-y-auto bg-transparent will-change-scroll" style={{ zIndex: 3 }}>
       {/* ── 3D Sphere — z-4, renders above rain/noise ── */}
-      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 4 }}>
+      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 4, transform: 'translateZ(0)' }}>
         <Suspense fallback={null}>
           <Canvas camera={{ position: [0, 0, 14], fov: 60 }}>
             <ambientLight intensity={0.4} />
@@ -118,7 +118,7 @@ export function Overview() {
         </motion.div>
 
         {/* Title */}
-        <div className="relative">
+        <div className="relative px-2">
           <motion.h1
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -130,14 +130,14 @@ export function Overview() {
               textShadow: '0 0 35px rgba(0,242,255,0.5)',
               color: '#ffffff'
             }}
-            className="text-7xl sm:text-9xl select-none"
+            className="text-5xl sm:text-7xl md:text-9xl select-none"
           >
             DEEP<span style={{ color: '#00f2ff', fontStyle: 'italic' }}>STEG</span>AI
           </motion.h1>
           {/* depth ghost */}
           <h1
             aria-hidden
-            className="absolute inset-0 -z-10 text-7xl sm:text-9xl text-primary/5 translate-x-[2px] translate-y-[2px] select-none pointer-events-none"
+            className="absolute inset-0 -z-10 text-5xl sm:text-7xl md:text-9xl text-primary/5 translate-x-[2px] translate-y-[2px] select-none pointer-events-none"
             style={{ fontFamily: '"Geist", "Inter", sans-serif', fontWeight: 700, letterSpacing: '-0.02em' }}
           >
             DEEPSTEGAI
@@ -163,22 +163,22 @@ export function Overview() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={TRANSITION}
-              className="flex flex-wrap justify-center gap-6"
+              className="flex flex-wrap justify-center gap-4 sm:gap-6 px-4"
             >
-              <Link to="/embed" className="cursor-none">
+              <Link to="/embed" className="w-full sm:w-auto lg:cursor-none">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="rounded-2xl bg-primary px-10 py-5 text-xs font-black tracking-[0.4em] text-black shadow-[0_0_20px_rgba(0,242,255,0.3)] uppercase"
+                  className="w-full sm:w-auto rounded-2xl bg-primary px-8 sm:px-10 py-4 sm:py-5 text-[10px] sm:text-xs font-black tracking-[0.2em] sm:tracking-[0.4em] text-black shadow-[0_0_20px_rgba(0,242,255,0.3)] uppercase"
                 >
                   Enter Embed Node
                 </motion.button>
               </Link>
-              <Link to="/analyze" className="cursor-none">
+              <Link to="/analyze" className="w-full sm:w-auto lg:cursor-none">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="rounded-2xl border border-white/20 bg-white/5 px-10 py-5 text-xs font-black tracking-[0.4em] text-white uppercase"
+                  className="w-full sm:w-auto rounded-2xl border border-white/20 bg-white/5 px-8 sm:px-10 py-4 sm:py-5 text-[10px] sm:text-xs font-black tracking-[0.2em] sm:tracking-[0.4em] text-white uppercase"
                 >
                   Scanner Access
                 </motion.button>
@@ -197,22 +197,22 @@ export function Overview() {
               className="mt-20 space-y-12"
             >
               {/* Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 px-4">
                 {[
                   { label: 'THREATS NEUTRALIZED', val: '14,204' },
-                  { label: 'BANDWIDTH FLOW',      val: '89.4 PB' },
-                  { label: 'NEURAL ACCURACY',     val: '99.8%' },
-                  { label: 'STATION STATUS',      val: 'ACTIVE' },
+                  { label: 'BANDWIDTH FLOW', val: '89.4 PB' },
+                  { label: 'NEURAL ACCURACY', val: '99.8%' },
+                  { label: 'STATION STATUS', val: 'ACTIVE' },
                 ].map((s, i) => (
                   <motion.div
                     key={i}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ ...TRANSITION, delay: 0.4 + i * 0.07 }}
-                    className="glass-panel rounded-2xl px-8 py-6 text-center"
+                    className="glass-panel rounded-2xl px-4 sm:px-8 py-4 sm:py-6 text-center"
                   >
-                    <div className="text-2xl font-black italic tracking-tighter text-primary glow-text">{s.val}</div>
-                    <div className="text-[9px] font-bold tracking-[0.3em] text-white/30 uppercase mt-2">{s.label}</div>
+                    <div className="text-xl sm:text-2xl font-black italic tracking-tighter text-primary glow-text">{s.val}</div>
+                    <div className="text-[8px] sm:text-[9px] font-bold tracking-[0.2em] sm:tracking-[0.3em] text-white/30 uppercase mt-2">{s.label}</div>
                   </motion.div>
                 ))}
               </div>
@@ -225,11 +225,14 @@ export function Overview() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ ...TRANSITION, delay: 0.55 + i * 0.07 }}
-                    whileHover={{ y: -5 }}
-                    className="group flex gap-6 rounded-3xl border border-white/5 bg-black/40 p-8 text-left backdrop-blur-xl hover:bg-white/5 transition-all"
+                    whileHover={{
+                      y: -5,
+                      transition: { duration: 0, ease: "easeOut" }
+                    }}
+                    className="group flex gap-6 rounded-3xl border border-white/5 bg-black/40 p-8 text-left backdrop-blur-xl hover:bg-white/5 transition-all duration-[400ms]"
                   >
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 group-hover:border-primary/50 group-hover:bg-primary/10 transition-all">
-                      <h.icon className="h-7 w-7 text-white/30 group-hover:text-primary transition-colors" />
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 group-hover:border-primary/50 group-hover:bg-primary/10 transition-all duration-[400ms]">
+                      <h.icon className="h-7 w-7 text-white/30 group-hover:text-primary transition-colors duration-[400ms]" />
                     </div>
                     <div>
                       <h3 className="text-sm font-black italic tracking-tight text-white">{h.title}</h3>
@@ -244,4 +247,4 @@ export function Overview() {
       </div>
     </div>
   )
-}
+})
