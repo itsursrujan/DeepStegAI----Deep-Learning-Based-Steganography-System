@@ -15,7 +15,7 @@ function PowerBar({ progress, active }: { progress: number; active: boolean }) {
           return (
             <motion.div
               key={i}
-              className={`w-1 rounded-sm transition-all duration-300 ${isActive ? 'bg-primary shadow-[0_0_8px_#00f2ff]' : 'bg-white/5'}`}
+              className={`w-1 rounded-sm transition-all duration-300 ${isActive ? 'bg-primary shadow-[0_0_8px_#00f2ff]' : 'bg-[var(--border)]'}`}
               animate={{ height: isActive ? '100%' : '30%', opacity: isActive ? [0.7, 1, 0.8] : 0.2 }}
               transition={isActive ? { repeat: Infinity, duration: 0.25 } : {}}
             />
@@ -97,13 +97,13 @@ export function Batch() {
     <div className="h-full flex flex-col gap-2 max-w-7xl mx-auto overflow-hidden cursor-none">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-black italic tracking-tighter uppercase text-white glow-text leading-none">Industrial Mass-Engine</h2>
-          <p className="text-white/80 text-[9px] font-bold tracking-[0.3em] uppercase mt-1 italic">Bulk Synthesis & Extraction Node</p>
+          <h2 className="text-xl font-black italic tracking-tighter uppercase text-[var(--fg)] glow-text leading-none">Industrial Mass-Engine</h2>
+          <p className="text-[var(--fg-dim)]/80 text-[9px] font-bold tracking-[0.3em] uppercase mt-1 italic">Bulk Synthesis & Extraction Node</p>
         </div>
-        <div className="flex bg-black/60 p-1.5 rounded-2xl border border-white/5 gap-1">
+        <div className="flex bg-[var(--bg-sidebar)] p-1.5 rounded-2xl border border-[var(--border)] gap-1">
           {(['hide', 'extract', 'scan'] as const).map(m => (
             <button key={m} onClick={() => { setMode(m); setError(null); setIsSuccess(false); setBatchResults(null) }}
-              className={`px-5 py-3 rounded-xl text-[10px] font-black tracking-[0.3em] uppercase transition-all ${mode === m ? 'bg-primary text-black shadow-[0_0_20px_rgba(0,255,255,0.2)]' : 'text-white/30 hover:text-white/60'}`}
+              className={`px-5 py-3 rounded-xl text-[10px] font-black tracking-[0.3em] uppercase transition-all ${mode === m ? 'bg-primary text-black shadow-[0_0_20px_rgba(0,255,255,0.2)]' : 'text-[var(--fg-dim)]/30 hover:text-[var(--fg-dim)]/60'}`}
             >
               {m === 'hide' ? 'Embed' : m === 'extract' ? 'Extract' : 'Deep_Scan'}
             </button>
@@ -114,28 +114,28 @@ export function Batch() {
       <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-3 gap-3">
         {/* Dropzone Area */}
         <div className="xl:col-span-2 flex flex-col gap-3 min-h-0">
-          <div {...getRootProps()} className={`relative h-28 border border-dashed rounded-3xl flex flex-col items-center justify-center transition-all ${isDragActive ? 'border-primary bg-primary/10' : 'border-white/5 bg-black/60 hover:border-white/20 group'}`}>
+          <div {...getRootProps()} className={`relative h-28 border border-dashed rounded-3xl flex flex-col items-center justify-center transition-all ${isDragActive ? 'border-primary bg-primary/10' : 'border-[var(--border)] bg-[var(--bg-sidebar)] hover:border-primary/40 group'}`}>
             <input {...getInputProps()} />
-            <Layers className={`h-8 w-8 mb-2 transition-all ${isDragActive ? 'text-primary scale-110' : 'text-white/10 group-hover:text-white/20'}`} />
-            <p className="text-base font-bold italic tracking-tighter uppercase text-white transition-colors">
+            <Layers className={`h-8 w-8 mb-2 transition-all ${isDragActive ? 'text-primary scale-110' : 'text-[var(--fg-dim)]/20 group-hover:text-[var(--fg-dim)]/40'}`} />
+            <p className="text-base font-bold italic tracking-tighter uppercase text-[var(--fg)] transition-colors">
               Stage Batch Containers
             </p>
-            <p className="text-[9px] text-white/50 uppercase tracking-[0.4em] mt-2 font-bold italic">Capacity: 50 Units Concurrent</p>
+            <p className="text-[9px] text-[var(--fg-dim)]/50 uppercase tracking-[0.4em] mt-2 font-bold italic">Capacity: 50 Units Concurrent</p>
           </div>
 
           <AnimatePresence>
             {files.length > 0 && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-panel rounded-3xl p-4 bg-black/60 flex-1 min-h-0 flex flex-col gap-3">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-panel rounded-3xl p-4 bg-[var(--bg-sidebar)] flex-1 min-h-0 flex flex-col gap-3">
                 <div className="flex items-center justify-between shrink-0">
-                  <div className="flex items-center gap-2"><Zap className="h-4 w-4 text-primary" /><span className="text-[10px] font-black tracking-[0.4em] text-white uppercase italic">Synchronization Locked ({files.length})</span></div>
+                  <div className="flex items-center gap-2"><Zap className="h-4 w-4 text-primary" /><span className="text-[10px] font-black tracking-[0.4em] text-[var(--fg)] uppercase italic">Synchronization Locked ({files.length})</span></div>
                   <button onClick={() => setFiles([])} className="text-[9px] text-red-500/40 hover:text-red-500 font-black uppercase tracking-widest transition-colors">Abort All</button>
                 </div>
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 overflow-y-auto flex-1 pr-2">
                   {files.map((file, i) => (
-                    <div key={i} className="flex items-center gap-3 bg-white/[0.02] rounded-xl p-3 border border-white/5 group">
-                      <FileText className="h-4 w-4 text-white/10 shrink-0 group-hover:text-primary transition-colors" />
-                      <span className="text-[10px] font-black italic text-white/50 truncate uppercase tracking-tighter">{file.name}</span>
-                      <button onClick={() => setFiles(p => p.filter((_, j) => j !== i))} className="ml-auto text-white/10 hover:text-red-500 hover:bg-red-500/10 p-0.5 rounded-full transition-all">
+                    <div key={i} className="flex items-center gap-3 bg-[var(--fg)]/[0.02] rounded-xl p-3 border border-[var(--border)] group">
+                      <FileText className="h-4 w-4 text-[var(--fg-dim)]/20 shrink-0 group-hover:text-primary transition-colors" />
+                      <span className="text-[10px] font-black italic text-[var(--fg-dim)]/50 truncate uppercase tracking-tighter">{file.name}</span>
+                      <button onClick={() => setFiles(p => p.filter((_, j) => j !== i))} className="ml-auto text-[var(--fg-dim)]/20 hover:text-red-500 hover:bg-red-500/10 p-0.5 rounded-full transition-all">
                         <X className="h-4 w-4" />
                       </button>
                     </div>
@@ -147,15 +147,15 @@ export function Batch() {
         </div>
 
         {/* Configuration */}
-        <div className="glass-panel rounded-3xl p-4 bg-black/60 flex flex-col gap-3 min-h-0">
+        <div className="glass-panel rounded-3xl p-4 bg-[var(--bg-sidebar)] flex flex-col gap-3 min-h-0">
           {mode === 'hide' && (
             <div className="space-y-4">
               <div className="space-y-2 px-2">
-                <label className="text-[9px] font-bold tracking-[0.4em] text-white/40 uppercase italic">Protocol Matrix</label>
+                <label className="text-[9px] font-bold tracking-[0.4em] text-[var(--fg-dim)]/40 uppercase italic">Protocol Matrix</label>
                 <div className="grid grid-cols-2 gap-2">
                   {(['lsb', 'adaptive'] as const).map(m => (
                     <button key={m} onClick={() => setMethod(m)}
-                      className={`py-2.5 rounded-xl text-[9px] font-black tracking-widest uppercase transition-all border ${method === m ? 'bg-primary/20 border-primary/40 text-primary shadow-[0_0_15px_rgba(0,242,255,0.1)]' : 'bg-black/40 border-white/5 text-white/30 hover:text-white'}`}
+                      className={`py-2.5 rounded-xl text-[9px] font-black tracking-widest uppercase transition-all border ${method === m ? 'bg-primary/20 border-primary/40 text-primary shadow-[0_0_15px_rgba(0,242,255,0.1)]' : 'bg-[var(--bg-sidebar)] border-[var(--border)] text-[var(--fg-dim)] hover:text-[var(--fg)]'}`}
                     >
                       {m}
                     </button>
@@ -164,8 +164,8 @@ export function Batch() {
               </div>
 
               <div className="space-y-3">
-                <label className="text-[9px] font-bold tracking-[0.4em] text-white uppercase italic px-2">Master Payload</label>
-                <div {...getSecretProps()} className="relative h-24 border border-dashed rounded-2xl flex items-center justify-center border-white/10 bg-black/40 hover:border-accent/40 transition-all cursor-pointer">
+                <label className="text-[9px] font-bold tracking-[0.4em] text-[var(--fg)] uppercase italic px-2">Master Payload</label>
+                <div {...getSecretProps()} className="relative h-24 border border-dashed rounded-2xl flex items-center justify-center border-[var(--border)] bg-[var(--bg-sidebar)] hover:border-accent/40 transition-all cursor-pointer">
                   <input {...getSecretInputProps()} />
                   {secret ? (
                     <div className="text-center group w-full h-full flex flex-col items-center justify-center relative">
@@ -176,10 +176,10 @@ export function Batch() {
                         <X className="h-3 w-3" />
                       </button>
                       <CheckCircle className="h-6 w-6 text-accent mx-auto mb-2" />
-                      <p className="text-[10px] font-black text-white italic truncate max-w-[150px] px-2 uppercase tracking-tighter">{secret.name}</p>
+                      <p className="text-[10px] font-black text-[var(--fg)] italic truncate max-w-[150px] px-2 uppercase tracking-tighter">{secret.name}</p>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-3 opacity-30 text-white"><Upload className="h-5 w-5" /><p className="text-[10px] font-black uppercase tracking-widest italic">Stage Source</p></div>
+                    <div className="flex items-center gap-3 opacity-30 text-[var(--fg)]"><Upload className="h-5 w-5" /><p className="text-[10px] font-black uppercase tracking-widest italic">Stage Source</p></div>
                   )}
                 </div>
               </div>
@@ -188,18 +188,18 @@ export function Batch() {
 
           {mode !== 'scan' && (
             <div className="space-y-3">
-                <label className="text-[9px] font-bold tracking-[0.4em] text-white uppercase italic px-2">Encryption Matrix</label>
+                <label className="text-[9px] font-bold tracking-[0.4em] text-[var(--fg)] uppercase italic px-2">Encryption Matrix</label>
                 {mode === 'hide' ? (
                 <div className="relative group">
-                    <Key className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30 group-focus-within:text-primary transition-colors" />
+                    <Key className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--fg-dim)]/30 group-focus-within:text-primary transition-colors" />
                     <input type="password" placeholder="GLOBAL_SESSION_KEY"
-                    className="w-full bg-black/60 border border-white/20 rounded-2xl py-3 pl-14 pr-6 text-xs font-black tracking-[0.3em] focus:outline-none focus:border-primary/40 transition-all font-mono text-white placeholder:text-white/20"
+                    className="w-full bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-2xl py-3 pl-14 pr-6 text-xs font-black tracking-[0.3em] focus:outline-none focus:border-primary/40 transition-all font-mono text-[var(--fg)] placeholder:text-[var(--fg-dim)]/20"
                     value={password} onChange={e => setPassword(e.target.value)}
                     />
                 </div>
                 ) : (
                 <textarea placeholder={'S_KEY_01\nS_KEY_02\nS_KEY_03...'}
-                    className="w-full bg-black/60 border border-white/20 rounded-2xl py-3 px-5 text-xs font-black focus:outline-none focus:border-primary/40 transition-all font-mono text-white placeholder:text-white/20 resize-none h-20 tracking-widest"
+                    className="w-full bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-2xl py-3 px-5 text-xs font-black focus:outline-none focus:border-primary/40 transition-all font-mono text-[var(--fg)] placeholder:text-[var(--fg-dim)]/20 resize-none h-20 tracking-widest"
                     value={password} onChange={e => setPassword(e.target.value)}
                 />
                 )}
@@ -219,12 +219,12 @@ export function Batch() {
                             <span className="text-[10px] font-black uppercase text-primary/60 tracking-widest italic">Neural Scan Results</span>
                             <CheckCircle className="h-4 w-4 text-primary" />
                         </div>
-                        <div className="flex-1 overflow-y-auto rounded-2xl bg-black/40 border border-white/10 p-2 space-y-1">
+                        <div className="flex-1 overflow-y-auto rounded-2xl bg-[var(--bg-sidebar)] border border-[var(--border)] p-2 space-y-1">
                             {batchResults.map((r, i) => (
-                                <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/5 group hover:bg-white/5 transition-colors">
+                                <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-[var(--fg)]/[0.03] border border-[var(--border)] group hover:bg-[var(--fg)]/5 transition-colors">
                                     <div className="flex flex-col items-start truncate pr-4">
-                                        <span className="text-[10px] font-black italic text-white/90 truncate w-full uppercase">{r.filename}</span>
-                                        <span className="text-[8px] text-white/30 uppercase font-bold tracking-tighter">{r.heuristic}</span>
+                                        <span className="text-[10px] font-black italic text-[var(--fg)] truncate w-full uppercase">{r.filename}</span>
+                                        <span className="text-[8px] text-[var(--fg-dim)]/30 uppercase font-bold tracking-tighter">{r.heuristic}</span>
                                     </div>
                                     <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter ${r.verdict === 'CLEAN' ? 'text-green-500 bg-green-500/10 border border-green-500/20' : 'text-red-500 bg-red-500/10 border border-red-500/20 shadow-[0_0_10px_rgba(239,68,68,0.1)]'}`}>
                                         {r.verdict}

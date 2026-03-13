@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useStore } from '@/store/useStore'
 
 const HEX_CHARS = '0123456789ABCDEF01'
 const FONT_SIZE = 13
@@ -7,6 +8,7 @@ const FPS = 30 // Cap at 30 FPS to save CPU/GPU
 
 export function DigitalRain() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const theme = useStore(s => s.theme)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -46,8 +48,13 @@ export function DigitalRain() {
       const W = canvas.width
       const H = canvas.height
 
-      ctx.fillStyle = '#050505' // Match body bg
-      ctx.globalAlpha = 0.1
+      // Use theme-aware background
+      const isDark = document.documentElement.classList.contains('dark') || 
+                     (!document.documentElement.classList.contains('light') && 
+                      window.matchMedia('(prefers-color-scheme: dark)').matches)
+      
+      ctx.fillStyle = isDark ? '#050505' : '#fdfbf7'
+      ctx.globalAlpha = isDark ? 0.1 : 0.15
       ctx.fillRect(0, 0, W, H)
       ctx.globalAlpha = 1.0
 
@@ -61,11 +68,12 @@ export function DigitalRain() {
           if (charY < -FONT_SIZE || charY > H + FONT_SIZE) return
 
           const isHead = j === 0
-          const alpha = isHead ? 0.8 : Math.max(0, 0.15 - j * 0.01)
+          let alpha = isHead ? 0.8 : Math.max(0, 0.15 - j * 0.01)
+          if (!isDark) alpha *= 0.6 // Lighten the rain (reduce alpha) in light mode
           if (alpha <= 0) return
 
-          ctx.fillStyle = isHead ? '#ffffff' : '#00f2ff'
-          ctx.globalAlpha = alpha
+          ctx.fillStyle = isHead ? (isDark ? '#ffffff' : '#0f172a') : (isDark ? '#00f2ff' : '#00b8c4')
+          ctx.globalAlpha = Math.min(1, alpha)
 
           if (Math.random() > 0.98) {
             col.chars[j] = HEX_CHARS[Math.floor(Math.random() * HEX_CHARS.length)]
@@ -99,7 +107,7 @@ export function DigitalRain() {
     <canvas
       ref={canvasRef}
       className="pointer-events-none fixed inset-0 z-[1] will-change-transform"
-      style={{ opacity: 0.08 }}
+      style={{ opacity: theme === 'light' ? 0.15 : 0.08 }} // Reduced opacity for light mode
     />
   )
 }

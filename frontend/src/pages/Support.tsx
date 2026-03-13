@@ -33,26 +33,26 @@ export const Support = memo(function Support() {
     return (
         <div className="h-full flex flex-col gap-4 max-w-4xl mx-auto overflow-y-auto pb-4">
             <div className="space-y-2">
-                <h2 className="text-xl font-black italic tracking-tighter uppercase text-white glow-text leading-none">Intelligence Support</h2>
+                <h2 className="text-xl font-black italic tracking-tighter uppercase text-[var(--fg)] glow-text leading-none">Intelligence Support</h2>
                 <p className="text-[9px] font-black tracking-[0.3em] text-primary/60 uppercase mt-1">Encrypted Communication Channel</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Left Side: Info */}
                 <div className="space-y-4">
-                    <div className="glass-panel p-5 rounded-[2rem] bg-black/40 border border-white/5 space-y-4">
+                    <div className="glass-panel p-5 rounded-[2rem] bg-[var(--bg-sidebar)] border border-[var(--border)] space-y-4">
                         <div className="p-4 bg-primary/10 rounded-2xl border border-primary/20 w-fit">
                             <ShieldCheck className="h-8 w-8 text-primary" />
                         </div>
                         <div className="space-y-2">
-                            <h3 className="text-xl font-black italic tracking-tight text-white uppercase tracking-wider">Direct Operator Link</h3>
-                            <p className="text-white/40 text-[10px] font-bold tracking-widest leading-relaxed uppercase">
+                            <h3 className="text-xl font-black italic tracking-tight text-[var(--fg)] uppercase tracking-wider">Direct Operator Link</h3>
+                            <p className="text-[var(--fg-dim)]/40 text-[10px] font-bold tracking-widest leading-relaxed uppercase">
                                 Your message will be routed through our secure proxy network. 
                                 Standard encryption protocols are active for all outgoing signals.
                             </p>
                         </div>
                         
-                        <div className="h-px bg-white/5" />
+                        <div className="h-px bg-[var(--border)]" />
                         
                         <div className="space-y-4">
                             {[
@@ -60,20 +60,20 @@ export const Support = memo(function Support() {
                                 { label: 'Priority Level', val: 'ALPHA-9', icon: ShieldCheck },
                             ].map((item, i) => (
                                 <div key={i} className="flex items-center gap-4">
-                                    <div className="p-2 bg-white/5 rounded-lg border border-white/5">
-                                        <item.icon className="h-4 w-4 text-white/40" />
+                                    <div className="p-2 bg-[var(--bg)] rounded-lg border border-[var(--border)]">
+                                        <item.icon className="h-4 w-4 text-[var(--fg-dim)]/40" />
                                     </div>
                                     <div>
-                                        <p className="text-[8px] font-black text-white/20 uppercase tracking-widest leading-none mb-1">{item.label}</p>
-                                        <p className="text-xs font-mono font-black text-white/80 tracking-tighter">{item.val}</p>
+                                        <p className="text-[8px] font-black text-[var(--fg-dim)]/20 uppercase tracking-widest leading-none mb-1">{item.label}</p>
+                                        <p className="text-xs font-mono font-black text-[var(--fg)]/80 tracking-tighter">{item.val}</p>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    <div className="glass-panel p-4 rounded-3xl bg-black/40 border border-white/5 text-center">
-                        <p className="text-[10px] text-white/20 font-bold italic uppercase tracking-widest">
+                    <div className="glass-panel p-4 rounded-3xl bg-[var(--bg-sidebar)] border border-[var(--border)] text-center">
+                        <p className="text-[10px] text-[var(--fg-dim)]/20 font-bold italic uppercase tracking-widest">
                             Authorized personnel only. Logs are maintained for audit trails.
                         </p>
                     </div>
@@ -95,7 +95,7 @@ export const Support = memo(function Support() {
                                 </div>
                                 <div className="space-y-2">
                                     <h3 className="text-2xl font-black italic text-primary uppercase tracking-tighter">Signal Received</h3>
-                                    <p className="text-white/50 text-xs font-bold tracking-wide leading-relaxed">
+                                    <p className="text-[var(--fg-dim)]/50 text-xs font-bold tracking-wide leading-relaxed">
                                         Transmission successful. Our operators will decode and review your query shortly.
                                     </p>
                                 </div>
@@ -114,20 +114,20 @@ export const Support = memo(function Support() {
                                 exit={{ opacity: 0, x: -20 }}
                                 transition={TRANSITION}
                                 onSubmit={handleSubmit}
-                                className="glass-panel p-5 rounded-[2rem] bg-black/60 border border-white/5 space-y-4"
+                                className="glass-panel p-5 rounded-[2rem] bg-[var(--bg-sidebar)] border border-[var(--border)] space-y-4"
                             >
                                 <div className="space-y-3">
                                     <div className="space-y-2">
                                         <label className="text-[8px] font-black text-primary uppercase tracking-[0.4em] ml-2">Operator Name</label>
                                         <div className="relative group">
-                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-primary transition-colors">
+                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--fg-dim)]/30 group-focus-within:text-primary transition-colors">
                                                 <User className="h-4 w-4" />
                                             </div>
                                             <input 
                                                 required
                                                 type="text" 
                                                 placeholder="IDENTIFY YOURSELF"
-                                                className="w-full bg-black/40 border border-white/10 rounded-2xl py-3 pl-12 pr-6 text-sm font-bold tracking-wide focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-white placeholder:text-white/20 uppercase"
+                                                className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-2xl py-3 pl-12 pr-6 text-sm font-bold tracking-wide focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-[var(--fg)] placeholder:text-[var(--fg-dim)]/20 uppercase"
                                                 value={formData.name}
                                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                                             />
@@ -137,14 +137,14 @@ export const Support = memo(function Support() {
                                     <div className="space-y-2">
                                         <label className="text-[8px] font-black text-primary uppercase tracking-[0.4em] ml-2">Secure Email</label>
                                         <div className="relative group">
-                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-primary transition-colors">
+                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--fg-dim)]/30 group-focus-within:text-primary transition-colors">
                                                 <Mail className="h-4 w-4" />
                                             </div>
                                             <input 
                                                 required
                                                 type="email" 
                                                 placeholder="ENDPOINT ADDRESS"
-                                                className="w-full bg-black/40 border border-white/10 rounded-2xl py-3 pl-12 pr-6 text-sm font-bold tracking-wide focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-white placeholder:text-white/20 uppercase"
+                                                className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-2xl py-3 pl-12 pr-6 text-sm font-bold tracking-wide focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-[var(--fg)] placeholder:text-[var(--fg-dim)]/20 uppercase"
                                                 value={formData.email}
                                                 onChange={e => setFormData({ ...formData, email: e.target.value })}
                                             />
@@ -154,14 +154,14 @@ export const Support = memo(function Support() {
                                     <div className="space-y-2">
                                         <label className="text-[8px] font-black text-primary uppercase tracking-[0.4em] ml-2">Protocol Details</label>
                                         <div className="relative group">
-                                            <div className="absolute left-4 top-5 text-white/30 group-focus-within:text-primary transition-colors">
+                                            <div className="absolute left-4 top-5 text-[var(--fg-dim)]/30 group-focus-within:text-primary transition-colors">
                                                 <MessageSquare className="h-4 w-4" />
                                             </div>
                                             <textarea 
                                                 required
                                                 rows={4}
                                                 placeholder="DESCRIBE THE ISSUE OR QUERY"
-                                                className="w-full bg-black/40 border border-white/10 rounded-2xl py-3 pl-12 pr-6 text-sm font-bold tracking-wide focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-white placeholder:text-white/20 uppercase resize-none font-sans"
+                                                className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-2xl py-3 pl-12 pr-6 text-sm font-bold tracking-wide focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-[var(--fg)] placeholder:text-[var(--fg-dim)]/20 uppercase resize-none font-sans"
                                                 value={formData.message}
                                                 onChange={e => setFormData({ ...formData, message: e.target.value })}
                                             />

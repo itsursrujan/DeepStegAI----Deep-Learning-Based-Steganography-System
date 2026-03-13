@@ -7,6 +7,7 @@ import {
 import { Link, useLocation } from 'react-router-dom'
 import { useStore } from '@/store/useStore'
 import { DigitalRain } from '@/components/DigitalRain'
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 
 
@@ -92,26 +93,30 @@ function GlobalCursor() {
 
       {/* Outer Ring — Spring Smoothed */}
       <motion.div
-        className="pointer-events-none fixed top-0 left-0 z-[10000] rounded-full border-primary mix-blend-screen hidden md:block"
-        style={{ x: ringX, y: ringY, translateX: '-50%', translateY: '-50%', transform: 'translateZ(0)', willChange: 'transform' }}
+        className="pointer-events-none fixed top-0 left-0 z-[10000] rounded-full hidden md:block"
+        style={{ x: ringX, y: ringY, translateX: '-50%', translateY: '-50%', transform: 'translateZ(0)', willChange: 'transform', borderColor: 'var(--primary)' }}
         animate={{
           width:  hovered ? 40 : 22,
           height: hovered ? 40 : 22,
           borderWidth: hovered ? 2 : 1.5,
-          opacity: hovered ? 0.8 : 0.4,
-          boxShadow: hovered ? '0 0 15px rgba(0,242,255,0.4)' : 'none',
+          opacity: hovered ? 0.9 : 0.6,
+          backgroundColor: hovered ? 'var(--primary-glow)' : 'transparent',
+          boxShadow: hovered 
+            ? '0 0 15px var(--primary-glow)' 
+            : '0 2px 8px rgba(0,0,0,0.15)'
         }}
         transition={{ type: 'spring', stiffness: 800, damping: 40 }}
       />
 
       {/* Inner Dot — Direct Linked (Zero Lag) */}
       <motion.div
-        className="pointer-events-none fixed top-0 left-0 z-[10000] rounded-full bg-primary shadow-[0_0_8px_rgba(0,242,255,0.85)] hidden md:block"
-        style={{ x: mouseX, y: mouseY, translateX: '-50%', translateY: '-50%', transform: 'translateZ(0)', willChange: 'transform' }}
+        className="pointer-events-none fixed top-0 left-0 z-[10000] rounded-full hidden md:block"
+        style={{ x: mouseX, y: mouseY, translateX: '-50%', translateY: '-50%', transform: 'translateZ(0)', willChange: 'transform', backgroundColor: 'var(--primary)' }}
         animate={{ 
           scale: isClicked ? 0.6 : 1,
           width: hovered ? 2 : 4,
-          height: hovered ? 2 : 4 
+          height: hovered ? 2 : 4,
+          boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
         }}
       />
     </>
@@ -126,6 +131,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const status   = useStore(s => s.status)
   const systemInitialized = useStore(s => s.systemInitialized)
   const setSystemInitialized = useStore(s => s.setSystemInitialized)
+  const theme = useStore(s => s.theme)
   const [pulseColor, setPulseColor] = useState<string | null>(null)
 
   const isToolPage = TOOL_PATHS.includes(location.pathname)
@@ -175,7 +181,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   }, [status, getStatusStyle])
 
   return (
-    <div className={`flex h-screen overflow-hidden bg-[#050505] text-white relative select-none ${window.innerWidth > 768 ? 'cursor-none' : 'cursor-auto'}`}>
+    <div className={`flex h-screen overflow-hidden text-[var(--fg)] relative select-none ${theme} ${window.innerWidth > 768 ? 'cursor-none' : 'cursor-auto'}`} style={{ background: 'var(--bg)' }}>
       {/* ── Layer 1: Digital Rain (z-1) ── */}
       <DigitalRain />
 
@@ -228,7 +234,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               opacity: 1
             }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className={`fixed inset-y-0 left-0 lg:relative flex flex-col shrink-0 border-r border-white/5 bg-black/80 backdrop-blur-3xl z-[50] lg:z-[20] text-sm`}
+            className={`fixed inset-y-0 left-0 lg:relative flex flex-col shrink-0 border-r border-white/5 bg-[var(--bg-sidebar)] backdrop-blur-3xl z-[50] lg:z-[20] text-sm`}
           >
             {/* Logo — always navigates to / */}
             <div className="flex h-12 items-center px-4 border-b border-white/5">
@@ -243,7 +249,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -6 }}
                       transition={{ duration: 0.2 }}
-                      className="text-lg font-black tracking-tighter glow-text whitespace-nowrap"
+                      className="text-lg font-black tracking-tighter glow-text whitespace-nowrap text-[var(--fg)]"
                     >
                       DEEP<span className="text-primary italic">STEG</span>AI
                     </motion.span>
@@ -254,7 +260,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               {/* Mobile Close Button */}
               <button 
                 onClick={() => setMobileMenuOpen(false)}
-                className="ml-auto p-2 text-white/40 hover:text-white lg:hidden"
+                className="ml-auto p-2 text-[var(--fg-dim)] hover:text-[var(--fg)] lg:hidden"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -271,10 +277,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                     className={`flex items-center gap-3 rounded-2xl px-3 py-2 transition-all duration-200 group lg:cursor-none ${
                       isActive
                         ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,242,255,0.1)]'
-                        : 'text-white/40 hover:text-white hover:bg-white/5'
+                        : 'text-[var(--fg-dim)] hover:text-[var(--fg)] hover:bg-[var(--fg)]/5'
                     }`}
                   >
-                    <item.icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-primary' : 'group-hover:text-white'}`} />
+                    <item.icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-primary' : 'group-hover:text-[var(--fg)]'}`} />
                     <AnimatePresence>
                       {(isSidebarOpen || isMobileMenuOpen) && (
                         <motion.span
@@ -296,7 +302,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <div className="p-3 border-t border-white/5 hidden lg:block">
               <button
                 onClick={() => setSidebarOpen(!isSidebarOpen)}
-                className="flex w-full items-center justify-center rounded-2xl py-3 border border-white/5 bg-white/5 text-white/30 hover:text-white hover:border-white/20 transition-all lg:cursor-none"
+                className="flex w-full items-center justify-center rounded-2xl py-3 border border-[var(--border)] bg-[var(--fg)]/5 text-[var(--fg-dim)] hover:text-[var(--fg)] hover:border-[var(--fg)]/20 transition-all lg:cursor-none"
               >
                 {isSidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
               </button>
@@ -307,7 +313,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <main className="relative flex flex-col flex-1 min-w-0 overflow-hidden" style={{ zIndex: 10 }}>
             {/* Tool header */}
             {(isToolPage || window.innerWidth < 1024) && (
-              <header className="flex h-10 shrink-0 items-center justify-between px-3 lg:px-5 bg-black/50 backdrop-blur-2xl border-b border-white/5">
+              <header className="flex h-10 shrink-0 items-center justify-between px-3 lg:px-5 bg-[var(--bg-header)] backdrop-blur-2xl border-b border-white/5">
                 <div className="flex items-center gap-4">
                   {/* Mobile Menu Toggle */}
                   <button 
@@ -319,7 +325,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
                   <div className="flex items-center gap-3">
                     <div className={`h-1.5 w-1.5 rounded-full bg-current animate-pulse ${getStatusStyle().color}`} />
-                    <h2 className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] sm:tracking-[0.4em] uppercase italic text-white/90">
+                    <h2 className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] sm:tracking-[0.4em] uppercase italic text-[var(--fg)]">
                       {navItems.find(i => i.path === location.pathname)?.label}
                     </h2>
                   </div>
@@ -329,8 +335,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   <span className={`text-[10px] font-mono font-black tracking-widest hidden sm:inline-block ${getStatusStyle().color}`}>
                     SYS_{status}
                   </span>
-                  <div className="h-6 w-px bg-white/10 hidden sm:block" />
-                  <button className="text-white/25 hover:text-white transition-colors lg:cursor-none">
+                  <div className="h-6 w-px bg-[var(--border)] hidden sm:block" />
+                  <ThemeToggle />
+                  <button className="text-[var(--fg-dim)] hover:text-[var(--fg)] transition-colors lg:cursor-none">
                     <Settings className="h-4 w-4" />
                   </button>
                 </div>

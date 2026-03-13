@@ -1,8 +1,12 @@
 import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { useStore } from '@/store/useStore'
 
 export function NeuralSphere() {
+  const theme = useStore(s => s.theme)
+  const isLight = theme === 'light'
+
   const pointsRef = useRef<THREE.Points>(null!)
   const ring1Ref = useRef<THREE.Mesh>(null!)
   const ring2Ref = useRef<THREE.Mesh>(null!)
@@ -13,6 +17,7 @@ export function NeuralSphere() {
   const [positions, colors] = useMemo(() => {
     const pos = new Float32Array(count * 3)
     const col = new Float32Array(count * 3)
+    // Dark mode cyan base; for light mode we can use it but with normal blending and higher opacity.
     const color = new THREE.Color('#00f2ff')
     
     for (let i = 0; i < count; i++) {
@@ -66,29 +71,29 @@ export function NeuralSphere() {
           <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
           <bufferAttribute attach="attributes-color" count={count} array={colors} itemSize={3} />
         </bufferGeometry>
-        <pointsMaterial size={0.03} vertexColors transparent opacity={0.6} blending={THREE.AdditiveBlending} depthWrite={false} sizeAttenuation={true} />
+        <pointsMaterial size={0.03} color={isLight ? "#00bcd4" : "#ffffff"} vertexColors={!isLight} transparent opacity={isLight ? 1.0 : 0.6} blending={isLight ? THREE.NormalBlending : THREE.AdditiveBlending} depthWrite={false} sizeAttenuation={true} />
       </points>
       
       {/* Industrial Outer Rings */}
       <mesh ref={ring1Ref}>
         <torusGeometry args={[5.2, 0.01, 8, 64]} />
-        <meshBasicMaterial color="#00f2ff" transparent opacity={0.15} />
+        <meshBasicMaterial color={isLight ? "#00bcd4" : "#00f2ff"} transparent opacity={isLight ? 0.5 : 0.15} />
       </mesh>
       
       <mesh ref={ring2Ref} rotation={[Math.PI / 2, 0, 0]}>
         <torusGeometry args={[5.5, 0.005, 8, 64]} />
-        <meshBasicMaterial color="#00f2ff" transparent opacity={0.1} />
+        <meshBasicMaterial color={isLight ? "#00bcd4" : "#00f2ff"} transparent opacity={isLight ? 0.4 : 0.1} />
       </mesh>
       
       <mesh ref={ring3Ref} rotation={[0, Math.PI / 4, 0]}>
         <sphereGeometry args={[4.8, 16, 16]} />
-        <meshBasicMaterial color="#00f2ff" wireframe transparent opacity={0.03} />
+        <meshBasicMaterial color={isLight ? "#00bcd4" : "#00f2ff"} wireframe transparent opacity={isLight ? 0.15 : 0.03} />
       </mesh>
       
       {/* Internal core glow */}
       <mesh>
         <sphereGeometry args={[3.2, 32, 32]} />
-        <meshBasicMaterial color="#00f2ff" transparent opacity={0.015} />
+        <meshBasicMaterial color={isLight ? "#00bcd4" : "#00f2ff"} transparent opacity={isLight ? 0.08 : 0.015} />
       </mesh>
     </group>
   )

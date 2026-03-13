@@ -6,6 +6,7 @@ import { Shield, Zap, Lock, Globe, ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useStore } from '@/store/useStore'
 import { fireInitRipple } from '@/components/DashboardLayout'
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 const TRANSITION = { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }
 
@@ -72,7 +73,7 @@ function HyperButton({ onClick }: { onClick: () => void }) {
         onMouseEnter={startFill}
         onMouseLeave={stopFill}
         onMouseDown={handleMouseDown}
-        className="group relative overflow-hidden rounded-2xl border border-primary/30 px-14 py-5 text-sm font-bold tracking-[0.4em] uppercase text-white hover-reactive"
+        className="group relative overflow-hidden rounded-2xl border border-primary/30 px-14 py-5 text-sm font-bold tracking-[0.4em] uppercase text-[var(--fg)] hover-reactive"
         style={{
           boxShadow: complete
             ? '0 0 60px rgba(0,242,255,0.5)'
@@ -119,12 +120,14 @@ const highlights = [
 export const Overview = memo(function Overview() {
   const systemInitialized = useStore(s => s.systemInitialized)
   const setSystemInitialized = useStore(s => s.setSystemInitialized)
+  const theme = useStore(s => s.theme)
+  const isLight = theme === 'light'
 
   return (
     /* z-3 so it sits above Digital Rain (z-1) and noise (z-2) */
     <div className="relative min-h-screen w-full overflow-y-auto bg-transparent will-change-scroll" style={{ zIndex: 3 }}>
       {/* ── 3D Sphere — z-4, renders above rain/noise ── */}
-      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 4, transform: 'translateZ(0)' }}>
+      <div className={`absolute inset-0 pointer-events-none transition-all duration-700 ${isLight ? 'drop-shadow-[0_0_40px_rgba(0,184,196,0.3)]' : ''}`} style={{ zIndex: 4, transform: 'translateZ(0)' }}>
         <Suspense fallback={null}>
           <Canvas camera={{ position: [0, 0, 14], fov: 60 }}>
             <ambientLight intensity={0.4} />
@@ -136,6 +139,12 @@ export const Overview = memo(function Overview() {
 
       {/* ── UI cards / content — z-5 ── */}
       <div className="relative flex min-h-screen flex-col items-center justify-center px-4 text-center" style={{ zIndex: 5 }}>
+        
+        {/* Toggle Top Right */}
+        <div className="absolute top-6 right-6 z-50">
+          <ThemeToggle />
+        </div>
+
         {/* Badge */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -144,7 +153,7 @@ export const Overview = memo(function Overview() {
           className="mb-10 inline-flex items-center gap-3 rounded-full border border-primary/20 bg-primary/10 px-6 py-2.5 backdrop-blur-xl"
         >
           <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-          <span className="text-[10px] font-bold tracking-[0.4em] uppercase" style={{ color: '#00f2ff' }}>
+          <span className="text-[10px] font-bold tracking-[0.4em] uppercase text-primary">
             Kernel Link Staged // v3.1 Obsidian
           </span>
         </motion.div>
@@ -159,8 +168,8 @@ export const Overview = memo(function Overview() {
               fontFamily: 'Inter, sans-serif',
               fontWeight: 900,
               letterSpacing: '-0.04em',
-              textShadow: '0 0 35px rgba(0,242,255,0.5)',
-              color: '#ffffff'
+              textShadow: '0 0 35px var(--primary-glow)',
+              color: 'var(--fg)'
             }}
             className="text-5xl sm:text-7xl md:text-9xl select-none"
           >
@@ -181,7 +190,7 @@ export const Overview = memo(function Overview() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ ...TRANSITION, delay: 0.45 }}
-          className="mt-8 max-w-xl text-base font-bold leading-relaxed uppercase tracking-widest text-white text-shadow-lg"
+          className="mt-8 max-w-xl text-base font-bold leading-relaxed uppercase tracking-widest text-[var(--fg)] text-shadow-lg"
         >
           Advanced steganography intelligence suite powered by AI forensic analysis.
         </motion.p>
@@ -210,7 +219,7 @@ export const Overview = memo(function Overview() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="w-full sm:w-auto rounded-2xl border border-white/20 bg-white/5 px-8 sm:px-10 py-4 sm:py-5 text-[10px] sm:text-xs font-black tracking-[0.2em] sm:tracking-[0.4em] text-white uppercase"
+                  className="w-full sm:w-auto rounded-2xl border border-[var(--border)] bg-[var(--bg-sidebar)] px-8 sm:px-10 py-4 sm:py-5 text-[10px] sm:text-xs font-black tracking-[0.2em] sm:tracking-[0.4em] text-[var(--fg)] uppercase"
                 >
                   Scanner Access
                 </motion.button>
@@ -244,7 +253,7 @@ export const Overview = memo(function Overview() {
                     className="glass-panel rounded-2xl px-4 sm:px-8 py-4 sm:py-6 text-center"
                   >
                     <div className="text-xl sm:text-2xl font-black italic tracking-tighter text-primary glow-text">{s.val}</div>
-                    <div className="text-[8px] sm:text-[9px] font-bold tracking-[0.2em] sm:tracking-[0.3em] text-white/30 uppercase mt-2">{s.label}</div>
+                    <div className="text-[8px] sm:text-[9px] font-bold tracking-[0.2em] sm:tracking-[0.3em] text-[var(--fg-dim)] uppercase mt-2">{s.label}</div>
                   </motion.div>
                 ))}
               </div>
@@ -261,14 +270,14 @@ export const Overview = memo(function Overview() {
                       y: -5,
                       transition: { duration: 0, ease: "easeOut" }
                     }}
-                    className="group flex gap-6 rounded-3xl border border-white/5 bg-black/40 p-8 text-left backdrop-blur-xl hover:bg-white/5 transition-all duration-[400ms]"
+                    className="group flex gap-6 rounded-3xl border border-[var(--border)] bg-[var(--bg-sidebar)] p-8 text-left backdrop-blur-xl hover:bg-[var(--fg)]/5 transition-all duration-[400ms]"
                   >
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 group-hover:border-primary/50 group-hover:bg-primary/10 transition-all duration-[400ms]">
-                      <h.icon className="h-7 w-7 text-white/30 group-hover:text-primary transition-colors duration-[400ms]" />
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--bg)] group-hover:border-primary/50 group-hover:bg-primary/10 transition-all duration-[400ms]">
+                      <h.icon className="h-7 w-7 text-[var(--fg-dim)] group-hover:text-primary transition-colors duration-[400ms]" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-black italic tracking-tight text-white">{h.title}</h3>
-                      <p className="mt-2 text-xs font-bold uppercase tracking-[0.15em] leading-relaxed text-white/90">{h.desc}</p>
+                      <h3 className="text-sm font-black italic tracking-tight text-[var(--fg)]">{h.title}</h3>
+                      <p className="mt-2 text-xs font-bold uppercase tracking-[0.15em] leading-relaxed text-[var(--fg-dim)]">{h.desc}</p>
                     </div>
                   </motion.div>
                 ))}

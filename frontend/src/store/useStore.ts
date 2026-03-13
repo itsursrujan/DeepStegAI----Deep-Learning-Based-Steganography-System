@@ -7,10 +7,13 @@ interface SystemState {
   logs: string[]
   stats: { analyses: number; embedded: number; threats: number }
   systemInitialized: boolean
+  theme: 'dark' | 'light'
   setStatus: (status: SystemStatus) => void
   addLog: (msg: string) => void
   incrementStat: (key: keyof SystemState['stats']) => void
   setSystemInitialized: (val: boolean) => void
+  setTheme: (theme: 'dark' | 'light') => void
+  toggleTheme: () => void
 }
 
 export const useStore = create<SystemState>((set) => ({
@@ -18,6 +21,7 @@ export const useStore = create<SystemState>((set) => ({
   logs: [`[${new Date().toLocaleTimeString()}] KERNEL_READY: DeepSteg AI Suite v1.0.4 initialized.`],
   stats: { analyses: 4, embedded: 2, threats: 1 },
   systemInitialized: false,
+  theme: (localStorage.getItem('theme') as 'dark' | 'light') || 'dark',
 
   setStatus: (status) => set((state) => ({
     status,
@@ -33,4 +37,15 @@ export const useStore = create<SystemState>((set) => ({
   })),
 
   setSystemInitialized: (val) => set({ systemInitialized: val }),
+
+  setTheme: (theme) => {
+    localStorage.setItem('theme', theme)
+    set({ theme })
+  },
+
+  toggleTheme: () => set((state) => {
+    const newTheme = state.theme === 'dark' ? 'light' : 'dark'
+    localStorage.setItem('theme', newTheme)
+    return { theme: newTheme }
+  }),
 }))

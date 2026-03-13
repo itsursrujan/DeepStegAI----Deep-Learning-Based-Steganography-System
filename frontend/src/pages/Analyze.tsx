@@ -23,7 +23,7 @@ function PowerBar({ progress, active }: { progress: number; active: boolean }) {
           return (
             <motion.div
               key={i}
-              className={`w-1.5 rounded-sm ${isActive ? 'bg-primary' : 'bg-white/5'}`}
+              className={`w-1.5 rounded-sm ${isActive ? 'bg-primary' : 'bg-[var(--border)]'}`}
               animate={{
                 height: isActive ? '100%' : '18%',
                 boxShadow: isActive ? '0 0 10px #00f2ff' : 'none',
@@ -39,7 +39,7 @@ function PowerBar({ progress, active }: { progress: number; active: boolean }) {
           {active ? flickerPct : '—'}
         </span>
         {active && <span className="font-mono text-xs font-bold text-primary/60">%</span>}
-        <span className="font-mono text-[9px] font-black text-white/20 tracking-widest ml-1">
+        <span className="font-mono text-[9px] font-black text-[var(--fg-dim)] tracking-widest ml-1">
           {active ? 'SCANNING' : 'STANDBY'}
         </span>
       </div>
@@ -114,8 +114,8 @@ export const Analyze = memo(function Analyze() {
     <div className={`h-full flex flex-col gap-2 max-w-7xl mx-auto ${isDesktop ? 'overflow-hidden cursor-none' : 'overflow-y-auto cursor-auto'}  `}>
         <div className="flex flex-col sm:flex-row sm:items-end justify-between w-full">
             <div>
-              <h2 className="text-xl sm:text-2xl font-black italic tracking-tighter uppercase text-white glow-text leading-none">Forensic Scanner</h2>
-              <p className="text-[9px] font-bold tracking-[0.2em] uppercase mt-1 text-white/90">AI Neural Inspection Node</p>
+              <h2 className="text-xl sm:text-2xl font-black italic tracking-tighter uppercase text-[var(--fg)] glow-text leading-none">Forensic Scanner</h2>
+              <p className="text-[9px] font-bold tracking-[0.2em] uppercase mt-1 text-[var(--fg-dim)]">AI Neural Inspection Node</p>
             </div>
             {preview && (
               <motion.button
@@ -138,15 +138,15 @@ export const Analyze = memo(function Analyze() {
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass-panel border-dashed border-white/20 rounded-3xl p-6 flex flex-col items-center justify-center transition-all hover:bg-white/[0.04] group min-h-[120px]"
+                className="glass-panel border-dashed border-[var(--border)] rounded-3xl p-6 flex flex-col items-center justify-center transition-all hover:bg-[var(--fg)]/[0.04] group min-h-[120px]"
               >
-                <Search className="h-10 w-10 mb-4 text-white/30" />
-                <p className="text-sm font-bold tracking-widest uppercase text-white/60">Stage Carrier for Scan</p>
+                <Search className="h-10 w-10 mb-4 text-[var(--fg-dim)]" />
+                <p className="text-sm font-bold tracking-widest uppercase text-[var(--fg-dim)]">Stage Carrier for Scan</p>
               </motion.div>
             </div>
           )}
 
-          <div className="glass-panel rounded-3xl overflow-hidden min-h-[180px] md:min-h-0 flex-1 relative bg-black/60">
+          <div className="glass-panel rounded-3xl overflow-hidden min-h-[180px] md:min-h-0 flex-1 relative bg-[var(--bg-sidebar)]">
             {preview && (
               <button 
                 onClick={handleClear}
@@ -192,10 +192,10 @@ export const Analyze = memo(function Analyze() {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="glass-panel rounded-3xl p-4 bg-black/60 space-y-4"
+                className="glass-panel rounded-3xl p-4 bg-[var(--bg-sidebar)] space-y-4"
               >
                 <div>
-                  <h4 className="text-[9px] font-black tracking-[0.3em] uppercase mb-4 text-white/50">Forensic Verdict</h4>
+                  <h4 className="text-[9px] font-black tracking-[0.3em] uppercase mb-4 text-[var(--fg-dim)]/50">Forensic Verdict</h4>
                   <div className={`px-6 py-3 rounded-2xl border text-xs font-black tracking-[0.2em] italic uppercase text-center transition-all duration-500 ${
                     !result.detected
                     ? 'bg-[#00FF9C]/10 border-[#00FF9C]/30 text-[#00FF9C] shadow-[0_0_20px_rgba(0,255,156,0.1)]'
@@ -205,16 +205,16 @@ export const Analyze = memo(function Analyze() {
                   </div>
                 </div>
 
-                <div className="h-px bg-white/5" />
+                <div className="h-px bg-[var(--border)]" />
 
                 <div>
                   <div className="flex justify-between items-end mb-3">
-                    <span className="text-[9px] font-black tracking-[0.2em] uppercase text-white/70">Neural Confidence</span>
+                    <span className="text-[9px] font-black tracking-[0.2em] uppercase text-[var(--fg-dim)]/70">Neural Confidence</span>
                     <span className={`text-sm font-mono font-black ${result.detected ? 'text-[#FF3B3B]' : 'text-[#00FF9C]'}`}>
                       {(result.ai_analysis.score * 100).toFixed(2)}%
                     </span>
                   </div>
-                  <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-1.5 w-full bg-[var(--border)] rounded-full overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${result.ai_analysis.score * 100}%` }}
@@ -224,17 +224,17 @@ export const Analyze = memo(function Analyze() {
                   </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5">
-                  <p className="text-[8px] font-black text-white/20 uppercase mb-2 tracking-widest">Heuristic Analysis</p>
-                  <p className={`text-[10px] font-bold italic leading-relaxed ${result.detected ? 'text-[#FF3B3B]' : 'text-white/60'}`}>
+                <div className="p-4 rounded-2xl bg-[var(--fg)]/[0.03] border border-[var(--border)]">
+                  <p className="text-[8px] font-black text-[var(--fg-dim)]/20 uppercase mb-2 tracking-widest">Heuristic Analysis</p>
+                  <p className={`text-[10px] font-bold italic leading-relaxed ${result.detected ? 'text-[#FF3B3B]' : 'text-[var(--fg-dim)]'}`}>
                     {result.detected ? "High-entropy signature detected in high-frequency spectral regions. Evidence of LSB-Adaptive manipulation." : "No significant pixel-variance detected. Statistics align with natural image distribution."}
                   </p>
                 </div>
               </motion.div>
             ) : (
                 <div className="space-y-4">
-                  <div className="glass-panel rounded-3xl p-4 bg-black/60">
-                    <h4 className="text-[10px] font-black tracking-[0.4em] text-white/30 uppercase mb-6 flex items-center gap-2 italic">
+                  <div className="glass-panel rounded-3xl p-4 bg-[var(--bg-sidebar)]">
+                    <h4 className="text-[10px] font-black tracking-[0.4em] text-[var(--fg-dim)]/30 uppercase mb-6 flex items-center gap-2 italic">
                       <Activity className="h-4 w-4 text-primary" /> System Node
                     </h4>
                     <div className="space-y-4">
@@ -243,19 +243,19 @@ export const Analyze = memo(function Analyze() {
                         { label: 'CALIBRATION', val: 'OPTIMAL', color: 'text-[#00FF9C]' },
                         { label: 'THREAT DB', val: 'SYNCED', color: 'text-primary' },
                       ].map((item, idx) => (
-                        <div key={idx} className="flex justify-between items-center text-[10px] pb-3 border-b border-white/10 last:border-0 last:pb-0">
-                           <span className="font-bold uppercase tracking-widest text-white/70">{item.label}</span>
+                        <div key={idx} className="flex justify-between items-center text-[10px] pb-3 border-b border-[var(--border)] last:border-0 last:pb-0">
+                           <span className="font-bold uppercase tracking-widest text-[var(--fg-dim)]/70">{item.label}</span>
                           <span className={`${item.color} font-mono font-black`}>{item.val}</span>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <div className="glass-panel rounded-3xl p-4 bg-black/60">
-                    <h4 className="text-[10px] font-black tracking-[0.4em] text-white/30 uppercase mb-6 flex items-center gap-2 italic">
+                  <div className="glass-panel rounded-3xl p-4 bg-[var(--bg-sidebar)]">
+                    <h4 className="text-[10px] font-black tracking-[0.4em] text-[var(--fg-dim)]/30 uppercase mb-6 flex items-center gap-2 italic">
                       <BarChart className="h-4 w-4 text-accent" /> Monitoring
                     </h4>
-                    <p className="text-[10px] text-white/20 font-bold italic leading-relaxed uppercase tracking-widest leading-relaxed">
+                    <p className="text-[10px] text-[var(--fg-dim)]/20 font-bold italic leading-relaxed uppercase tracking-widest leading-relaxed">
                         Awaiting carrier analysis. Forensic node operating at full spectral capacity.
                     </p>
                   </div>

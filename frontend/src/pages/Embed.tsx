@@ -23,7 +23,7 @@ function PowerBar({ progress, active }: { progress: number; active: boolean }) {
           return (
             <motion.div
               key={i}
-              className={`w-2 rounded-sm ${isActive ? 'bg-primary' : 'bg-white/5'}`}
+              className={`w-2 rounded-sm ${isActive ? 'bg-primary' : 'bg-[var(--border)]'}`}
               animate={{
                 height: isActive ? '100%' : '15%',
                 boxShadow: isActive ? '0 0 14px #00f2ff' : 'none',
@@ -39,7 +39,7 @@ function PowerBar({ progress, active }: { progress: number; active: boolean }) {
           {active ? flickerPct : '—'}
         </span>
         {active && <span className="font-mono text-sm font-bold text-primary/60">%</span>}
-        <span className="font-mono text-[10px] font-black text-white/20 tracking-widest ml-2">
+        <span className="font-mono text-[10px] font-black text-[var(--fg-dim)] tracking-widest ml-2">
           {active ? 'PROCESSING' : 'READY'}
         </span>
       </div>
@@ -136,11 +136,11 @@ DeepStegAI`
     <div className={`h-full flex flex-col gap-2 max-w-6xl mx-auto ${window.innerWidth > 768 ? 'cursor-none' : 'cursor-auto'}`}>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 px-2 sm:px-0">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black italic tracking-tighter uppercase text-white glow-text leading-none">Synthesis Hub</h2>
-          <p className="text-[9px] font-bold tracking-[0.2em] uppercase mt-1 text-white">Steganographic Injection Node</p>
+          <h2 className="text-xl sm:text-2xl font-black italic tracking-tighter uppercase text-[var(--fg)] glow-text leading-none">Synthesis Hub</h2>
+          <p className="text-[9px] font-bold tracking-[0.2em] uppercase mt-1 text-[var(--fg-dim)]">Steganographic Injection Node</p>
         </div>
         <div className="flex items-center gap-3">
-            <span className="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase text-white/40">Security Clearance:</span>
+            <span className="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase text-[var(--fg-dim)]">Security Clearance:</span>
             <span className="px-3 py-1 bg-primary/20 border border-primary/40 text-primary text-[8px] sm:text-[9px] font-bold uppercase tracking-widest rounded-full shadow-[0_0_10px_rgba(0,242,255,0.2)]">Level-04</span>
         </div>
       </div>
@@ -149,7 +149,7 @@ DeepStegAI`
         {/* Input Card */}
         <div className="glass-panel rounded-3xl p-4 space-y-3 flex flex-col min-h-0 overflow-y-auto">
           {/* Cover dropzone */}
-          <div {...getCoverProps()} className={`relative h-24 sm:h-28 border border-dashed rounded-2xl flex items-center justify-center transition-all lg:cursor-none ${isCoverActive ? 'border-primary bg-primary/10' : 'border-white/10 bg-black/40 hover:border-primary/40'}`}>
+          <div {...getCoverProps()} className={`relative h-24 sm:h-28 border border-dashed rounded-2xl flex items-center justify-center transition-all lg:cursor-none ${isCoverActive ? 'border-primary bg-primary/10' : 'border-[var(--border)] bg-[var(--bg-sidebar)] hover:border-primary/40'}`}>
             <input {...getCoverInputProps()} />
             {cover ? (
                 <div className="text-center group w-full h-full flex flex-col items-center justify-center relative">
@@ -160,23 +160,23 @@ DeepStegAI`
                       <X className="h-3.5 w-3.5" />
                     </button>
                     <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 mx-auto text-primary mb-2" />
-                    <p className="text-[9px] sm:text-[10px] font-black text-white italic truncate max-w-[150px] sm:max-w-[200px] px-4 uppercase">{cover.name}</p>
+                    <p className="text-[9px] sm:text-[10px] font-black text-[var(--fg)] italic truncate max-w-[150px] sm:max-w-[200px] px-4 uppercase">{cover.name}</p>
                 </div>
             ) : (
                 <div className="text-center">
-                    <Upload className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-white/40" />
-                    <p className="text-[10px] sm:text-xs font-bold tracking-widest uppercase italic text-white/60">Drop Cover Image</p>
+                    <Upload className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-[var(--fg-dim)]" />
+                    <p className="text-[10px] sm:text-xs font-bold tracking-widest uppercase italic text-[var(--fg-dim)]">Drop Cover Image</p>
                 </div>
             )}
           </div>
 
           {/* Secret dropzone */}
-          <div {...getSecretProps()} className={`relative h-12 border border-dashed rounded-xl flex items-center justify-center transition-all lg:cursor-none ${isSecretActive ? 'border-white/40 bg-white/5' : 'border-white/10 bg-black/40 hover:border-white/20'}`}>
+          <div {...getSecretProps()} className={`relative h-12 border border-dashed rounded-xl flex items-center justify-center transition-all lg:cursor-none ${isSecretActive ? 'border-[var(--fg-dim)] bg-[var(--glass-bg)]' : 'border-[var(--border)] bg-[var(--bg-sidebar)] hover:border-[var(--fg-dim)]'}`}>
             <input {...getSecretInputProps()} />
             {secret ? (
                 <div className="flex items-center gap-3 px-6 w-full h-full relative">
                     <File className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
-                    <span className="text-[9px] sm:text-[10px] font-black text-white truncate max-w-[150px] sm:max-w-[180px] uppercase italic">{secret.name}</span>
+                    <span className="text-[9px] sm:text-[10px] font-black text-[var(--fg)] truncate max-w-[150px] sm:max-w-[180px] uppercase italic">{secret.name}</span>
                     <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-primary shrink-0" />
                     <button 
                       onClick={(e) => { e.stopPropagation(); setSecret(null); }}
@@ -186,7 +186,7 @@ DeepStegAI`
                     </button>
                 </div>
             ) : (
-                <div className="flex items-center gap-2 sm:gap-3"><Key className="h-4 w-4 text-white/40" /><p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest italic text-white/60">Stage Payload</p></div>
+                <div className="flex items-center gap-2 sm:gap-3"><Key className="h-4 w-4 text-[var(--fg-dim)]" /><p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest italic text-[var(--fg-dim)]">Stage Payload</p></div>
             )}
           </div>
 
@@ -194,7 +194,7 @@ DeepStegAI`
           <div className="grid grid-cols-2 gap-3">
             {(['LSB', 'Adaptive'] as const).map(m => (
               <button key={m} onClick={() => setMethod(m)}
-                className={`py-2.5 rounded-xl text-[10px] font-black tracking-[0.3em] uppercase transition-all border ${method === m ? 'bg-primary/20 border-primary/50 text-primary glow-text' : 'bg-black/40 border-white/5 text-white/20 hover:text-white/40'}`}
+                className={`py-2.5 rounded-xl text-[10px] font-black tracking-[0.3em] uppercase transition-all border ${method === m ? 'bg-primary/20 border-primary/50 text-primary glow-text' : 'bg-[var(--bg-sidebar)] border-[var(--border)] text-[var(--fg-dim)] hover:text-[var(--fg)]'}`}
               >
                 {m} PROTOCOL
               </button>
@@ -202,9 +202,9 @@ DeepStegAI`
           </div>
 
           <div className="relative group">
-            <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/60 group-focus-within:text-primary transition-colors" />
+            <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--fg-dim)] group-focus-within:text-primary transition-colors" />
             <input type="password" placeholder="AES_256_KEY"
-              className="w-full bg-black/60 border border-white/20 rounded-2xl py-3 pl-14 pr-6 text-xs font-bold tracking-[0.3em] focus:outline-none focus:border-primary/40 transition-all font-mono text-white placeholder:text-white/40"
+              className="w-full bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-2xl py-3 pl-14 pr-6 text-xs font-bold tracking-[0.3em] focus:outline-none focus:border-primary/40 transition-all font-mono text-[var(--fg)] placeholder:text-[var(--fg-dim)]"
               value={password} onChange={e => setPassword(e.target.value)}
             />
           </div>
@@ -233,9 +233,9 @@ DeepStegAI`
                 <PowerBar progress={progress} active={isProcessing} />
                 {!isProcessing && (
                     <div className="mt-10">
-                        <Shield className="h-12 w-12 mx-auto text-white/5 mb-6" />
-                        <h3 className="text-base font-black italic tracking-tighter text-white/10 uppercase mb-2">Node Standby</h3>
-                        <p className="text-[9px] text-white/5 font-black uppercase tracking-[0.3em] max-w-[200px] leading-loose">Waiting for asset synchronization and synthesis command.</p>
+                        <Shield className="h-12 w-12 mx-auto text-[var(--fg-dim)]/20 mb-6" />
+                        <h3 className="text-base font-black italic tracking-tighter text-[var(--fg-dim)]/30 uppercase mb-2">Node Standby</h3>
+                        <p className="text-[9px] text-[var(--fg-dim)]/20 font-black uppercase tracking-[0.3em] max-w-[200px] leading-loose">Waiting for asset synchronization and synthesis command.</p>
                     </div>
                 )}
               </motion.div>
@@ -243,7 +243,7 @@ DeepStegAI`
               <motion.div key="result" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex-1 flex flex-col gap-4 min-h-0">
                 <div className="relative glass-panel rounded-3xl p-4 flex-1 flex flex-col min-h-0 border-primary/20 bg-primary/[0.02]">
                     <div className="absolute top-4 right-4 z-10 px-4 py-1.5 bg-primary rounded-full text-[9px] font-black uppercase text-black">SYNTHESIS_SUCCESS</div>
-                    <div className="flex-1 flex items-center justify-center overflow-hidden rounded-2xl bg-black/40 mt-10">
+                    <div className="flex-1 flex items-center justify-center overflow-hidden rounded-2xl bg-[var(--bg-sidebar)] mt-10">
                         <img src={result.image} alt="Stego" className="max-w-full max-h-full object-contain" />
                     </div>
                 </div>
@@ -252,11 +252,11 @@ DeepStegAI`
                   <div className="glass-panel rounded-2xl p-5 border-primary/20 bg-primary/5">
                     <div className="flex items-center justify-between mb-3 text-[9px] font-black uppercase tracking-[0.4em] text-primary">
                       <span>Recovery Signature</span>
-                      <button onClick={() => navigator.clipboard.writeText(result.token!)} className="text-white/20 hover:text-white transition-colors">
+                      <button onClick={() => navigator.clipboard.writeText(result.token!)} className="text-[var(--fg-dim)] hover:text-[var(--fg)] transition-colors">
                         <Copy className="h-4 w-4" />
                       </button>
                     </div>
-                    <div className="bg-black/60 rounded-xl p-3 font-mono text-[10px] break-all text-primary/80">{result.token}</div>
+                    <div className="bg-[var(--bg-sidebar)] rounded-xl p-3 font-mono text-[10px] break-all text-primary/80">{result.token}</div>
                   </div>
                 )}
 
@@ -267,7 +267,7 @@ DeepStegAI`
                     <a
                       href={result.image}
                       download="deep_container.png"
-                      className="bg-white text-black font-black tracking-[0.2em] text-[10px] uppercase rounded-2xl py-4 text-center transition-all hover:bg-white/90 active:scale-[0.98] shadow-2xl glitch-hover"
+                      className="bg-[var(--fg)] text-[var(--bg)] font-black tracking-[0.2em] text-[10px] uppercase rounded-2xl py-4 text-center transition-all hover:opacity-90 active:scale-[0.98] shadow-2xl glitch-hover"
                     >
                       Download
                     </a>
@@ -315,7 +315,7 @@ DeepStegAI`
                             Open Gmail &amp; Download File
                           </button>
 
-                          <p className="text-[8px] text-white/20 font-bold uppercase tracking-widest text-center">
+                          <p className="text-[8px] text-[var(--fg-dim)] font-bold uppercase tracking-widest text-center">
                             File auto-downloads — attach it in the Gmail compose window
                           </p>
                         </div>

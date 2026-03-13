@@ -5,11 +5,47 @@
 @tailwind utilities;
 
 :root {
+  --accent: #ff00ea;
+  --silver: #c0c0c0;
+  
+  /* Shared Defaults */
+  --radius: 1rem;
+}
+
+.dark {
   --primary: #00f2ff;
   --primary-glow: rgba(0, 242, 255, 0.4);
-  --accent: #ff00ea;
   --bg: #050505;
-  --silver: #c0c0c0;
+  --bg-sidebar: rgba(0, 0, 0, 0.8);
+  --bg-header: rgba(0, 0, 0, 0.5);
+  --fg: #ffffff;
+  --fg-dim: rgba(255, 255, 255, 0.4);
+  --fg-silver: #ffffff;
+  --border: rgba(255, 255, 255, 0.05);
+  --border-active: rgba(0, 242, 255, 0.2);
+  --glass-bg: rgba(0, 0, 0, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --noise-opacity: 0.04;
+  --scrollbar: rgba(0, 242, 255, 0.3);
+  --scrollbar-hover: rgba(0, 242, 255, 0.6);
+}
+
+.light {
+  --primary: #00a2b0; /* Rich cyan for contrast on light backgrounds */
+  --primary-glow: rgba(0, 162, 176, 0.3);
+  --bg: #ffffff; /* Light white tone background */
+  --bg-sidebar: #f5f5f7; /* Cream/soft off-white for modules */
+  --bg-header: rgba(245, 245, 247, 0.85);
+  --fg: #1d1d1f;
+  --fg-dim: #6b7280;
+  --fg-silver: #475569;
+  --border: rgba(0, 0, 0, 0.15); /* Slightly stronger borders */
+  --border-active: var(--primary);
+  --glass-bg: rgba(245, 245, 247, 0.85); /* Creamy glass */
+  --glass-border: rgba(0, 0, 0, 0.12);
+  --noise-opacity: 0.015;
+  --scrollbar: rgba(0, 0, 0, 0.1);
+  --scrollbar-hover: rgba(0, 0, 0, 0.2);
 }
 
 /* ─── Force hide native cursor everywhere ─── */
@@ -27,30 +63,32 @@ html {
 }
 
 body {
-  background-color: #050505;
-  color: #ffffff;
+  background-color: var(--bg);
+  color: var(--fg);
   overflow: hidden;
   font-family: 'Inter', sans-serif;
   /* GPU acceleration hint for the whole layer */
   transform: translateZ(0);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* ─── Text selection ─── */
 ::selection {
-  background: rgba(0, 242, 255, 0.4);
+  background: var(--primary-glow);
   color: white;
 }
 
-/* ─── Input text always white while typing ─── */
+/* ─── Input text ─── */
 input, textarea, select {
-  color: white;
+  color: var(--fg);
   caret-color: var(--primary);
   font-family: 'JetBrains Mono', monospace;
+  background: transparent;
 }
 
-/* ─── Placeholder: white, high visibility ─── */
+/* ─── Placeholder ─── */
 ::placeholder {
-  color: rgba(255, 255, 255, 0.6) !important;
+  color: var(--fg-dim) !important;
   font-weight: 700;
   letter-spacing: 0.1em;
 }
@@ -61,18 +99,24 @@ input, textarea, select {
   inset: 0;
   pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  opacity: 0.04;
+  opacity: var(--noise-opacity);
   mix-blend-mode: overlay;
+  transition: opacity 0.3s ease;
 }
 
 /* ─── Glass panel ─── */
 .glass-panel {
-  backdrop-filter: blur(12px); /* Slightly reduced from 20px for performance */
+  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  background-color: rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transform: translateZ(0); /* Force GPU layer */
+  background-color: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  transform: translateZ(0);
   will-change: transform, opacity;
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.light .glass-panel {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.02);
 }
 
 /* ─── Glow text ─── */
@@ -80,7 +124,7 @@ input, textarea, select {
   text-shadow: 0 0 25px var(--primary-glow);
 }
 
-/* ─── Removed Glitch to prevent 'rippling' ─── */
+/* ─── Glitch hover ─── */
 .glitch-hover {
   transition: all 0.3s ease;
 }
@@ -88,12 +132,12 @@ input, textarea, select {
 /* ─── Scrollbar ─── */
 ::-webkit-scrollbar       { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(0,242,255,0.3); border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(0,242,255,0.6); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
 
 /* ─── White label utility ─── */
 .label-silver {
-  color: #ffffff;
+  color: var(--fg-silver);
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
