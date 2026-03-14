@@ -169,11 +169,11 @@ export const Overview = memo(function Overview() {
               fontWeight: 900,
               letterSpacing: '-0.04em',
               textShadow: '0 0 35px var(--primary-glow)',
-              color: 'var(--fg)'
+              color: 'var(--fg-title)'
             }}
             className="text-5xl sm:text-7xl md:text-9xl select-none"
           >
-            DEEP<span style={{ color: '#00f2ff', fontStyle: 'italic' }}>STEG</span>AI
+            DEEP<span style={{ color: 'var(--primary)', fontStyle: 'italic' }}>STEG</span>AI
           </motion.h1>
           {/* depth ghost */}
           <h1
