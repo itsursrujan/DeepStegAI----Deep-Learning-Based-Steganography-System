@@ -51,6 +51,17 @@ function GlobalCursor() {
     const onDown = () => setIsClicked(true)
     const onUp   = () => setIsClicked(false)
     
+    // Listen for custom ripple event (Initialization)
+    const handleInitRipple = ((e: Event) => {
+      const { x, y } = (e as any).detail;
+      const id = Date.now()
+      setRipples(prev => [...prev, { id, x, y }])
+      // Secondary echo ripple
+      setTimeout(() => {
+        setRipples(prev => [...prev, { id: id + 1, x, y }])
+      }, 150)
+    }) as EventListener;
+
     // Optimize: mouseover fires only on element entry, not every move
     const onOver = (e: MouseEvent) => {
       const target = e.target as HTMLElement
@@ -67,6 +78,7 @@ function GlobalCursor() {
     window.addEventListener('mouseup', onUp)
 
     return () => {
+      window.removeEventListener('init-ripple', handleInitRipple)
       window.removeEventListener('mousemove', move)
       window.removeEventListener('mouseover', onOver)
       window.removeEventListener('mousedown', onDown)
@@ -81,12 +93,12 @@ function GlobalCursor() {
         {ripples.map(r => (
           <motion.div
             key={r.id}
-            initial={{ opacity: 1, scale: 0.4, x: r.x, y: r.y, translateX: '-50%', translateY: '-50%' }}
-            animate={{ opacity: 0, scale: 5 }}
+            initial={{ opacity: 0.8, scale: 0.2, x: r.x, y: r.y, translateX: '-50%', translateY: '-50%' }}
+            animate={{ opacity: 0, scale: 8 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
             onAnimationComplete={() => setRipples(p => p.filter(i => i.id !== r.id))}
-            className="pointer-events-none fixed top-0 left-0 z-[10001] h-12 w-12 rounded-full border border-primary"
+            className="pointer-events-none fixed top-0 left-0 z-[10001] h-16 w-16 rounded-full border-2 border-primary"
           />
         ))}
       </AnimatePresence>
@@ -238,7 +250,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           >
             {/* Logo — always navigates to / */}
             <div className="flex h-12 items-center px-4 border-b border-white/5">
-              <Link to="/" className="flex items-center gap-4 group lg:cursor-none">
+              <Link to="/" onClick={() => setSystemInitialized(false)} className="flex items-center gap-4 group lg:cursor-none">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/30 shadow-[0_0_15px_rgba(0,242,255,0.15)] group-hover:shadow-[0_0_25px_rgba(0,242,255,0.4)] transition-all">
                   <Cpu className="h-4 w-4 text-primary" />
                 </div>

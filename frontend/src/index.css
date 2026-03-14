@@ -33,7 +33,9 @@
 
 .light {
   --primary: #0096a3; /* Toned down cyan for better light mode comfort */
-  --primary-glow: rgba(0, 150, 163, 0.25);
+  --primary-glow: rgba(0, 150, 163, 0.35); /* Slightly stronger for better visibility */
+  --bg-button: rgba(0, 150, 163, 0.1);
+  --bg-button-hover: rgba(0, 150, 163, 0.15);
   --bg: #ffffff; /* Light white tone background */
   --bg-sidebar: #f5f5f7; /* Cream/soft off-white for modules */
   --bg-header: rgba(245, 245, 247, 0.85);
@@ -144,3 +146,19 @@ input, textarea, select {
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
+
+/* ─── Card Enhanced (Light Mode Only) ─── */
+.light .card-enhanced {
+  border: 1.5px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.light .hover-reactive:hover {
+  background-color: var(--bg-button-hover) !important;
+  border-color: var(--primary) !important;
+}
+
+.light .hover-reactive:active {
+  transform: scale(0.98);
+}
+

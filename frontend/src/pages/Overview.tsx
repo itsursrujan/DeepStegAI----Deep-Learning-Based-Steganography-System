@@ -240,17 +240,17 @@ export const Overview = memo(function Overview() {
               {/* Stats */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 px-4">
                 {[
-                  { label: 'THREATS NEUTRALIZED', val: '14,204' },
-                  { label: 'BANDWIDTH FLOW', val: '89.4 PB' },
-                  { label: 'NEURAL ACCURACY', val: '99.8%' },
-                  { label: 'STATION STATUS', val: 'ACTIVE' },
+                  { label: 'THREATS NEUTRALIZED', val: '1.2M+' },
+                  { label: 'BANDWIDTH FLOW', val: '142.8 TB/s' },
+                  { label: 'NEURAL ACCURACY', val: '99.98%' },
+                  { label: 'STATION STATUS', val: 'OPERATIONAL' },
                 ].map((s, i) => (
                   <motion.div
                     key={i}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ ...TRANSITION, delay: 0.4 + i * 0.07 }}
-                    className="glass-panel rounded-2xl px-4 sm:px-8 py-4 sm:py-6 text-center"
+                    className="glass-panel card-enhanced rounded-2xl px-4 sm:px-8 py-4 sm:py-6 text-center"
                   >
                     <div className="text-xl sm:text-2xl font-black italic tracking-tighter text-primary glow-text">{s.val}</div>
                     <div className="text-[8px] sm:text-[9px] font-bold tracking-[0.2em] sm:tracking-[0.3em] text-[var(--fg-dim)] uppercase mt-2">{s.label}</div>
