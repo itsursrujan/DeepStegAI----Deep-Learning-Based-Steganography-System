@@ -11,9 +11,22 @@ const Analyze  = lazy(() => import('./pages/Analyze').then(m => ({ default: m.An
 const Batch    = lazy(() => import('./pages/Batch').then(m => ({ default: m.Batch })))
 const Admin    = lazy(() => import('./pages/Admin').then(m => ({ default: m.Admin })))
 const Support  = lazy(() => import('./pages/Support').then(m => ({ default: m.Support })))
+const Login    = lazy(() => import('./pages/Login').then(m => ({ default: m.Login })))
+const Signup   = lazy(() => import('./pages/Signup').then(m => ({ default: m.Signup })))
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword').then(m => ({ default: m.ForgotPassword })))
+const ResetPassword  = lazy(() => import('./pages/ResetPassword').then(m => ({ default: m.ResetPassword })))
+
+import { useStore } from './store/useStore'
+import { Navigate } from 'react-router-dom'
 
 const TRANSITION = { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }
-const TOOL_PATHS = ['/embed', '/extract', '/analyze', '/batch', '/admin', '/support']
+const TOOL_PATHS = ['/embed', '/extract', '/analyze', '/batch', '/admin', '/support', '/login', '/signup', '/forgot-password', '/reset-password']
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const isAuthenticated = useStore(s => s.isAuthenticated)
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+  return <>{children}</>
+}
 
 function AnimatedRoutes() {
   const location = useLocation()
@@ -32,12 +45,18 @@ function AnimatedRoutes() {
         <Suspense fallback={null}>
           <Routes location={location}>
             <Route path="/" element={<Overview />} />
-            <Route path="/embed" element={<Embed />} />
-            <Route path="/extract" element={<Extract />} />
-            <Route path="/analyze" element={<Analyze />} />
-            <Route path="/batch" element={<Batch />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/support" element={<Support />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            
+            {/* Protected Routes */}
+            <Route path="/embed"   element={<ProtectedRoute><Embed /></ProtectedRoute>} />
+            <Route path="/extract" element={<ProtectedRoute><Extract /></ProtectedRoute>} />
+            <Route path="/analyze" element={<ProtectedRoute><Analyze /></ProtectedRoute>} />
+            <Route path="/batch"   element={<ProtectedRoute><Batch /></ProtectedRoute>} />
+            <Route path="/admin"   element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+            <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
           </Routes>
         </Suspense>
       </motion.div>

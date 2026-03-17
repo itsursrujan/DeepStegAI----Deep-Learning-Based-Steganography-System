@@ -10,6 +10,19 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet">
+    <script>
+      (function() {
+        try {
+          const store = JSON.parse(localStorage.getItem('stego-store'));
+          const theme = store && store.state && store.state.theme ? store.state.theme : 'dark';
+          document.documentElement.classList.add(theme);
+          document.documentElement.style.backgroundColor = theme === 'light' ? '#f0f4f8' : '#020202';
+        } catch (e) {
+          document.documentElement.classList.add('dark');
+          document.documentElement.style.backgroundColor = '#020202';
+        }
+      })();
+    </script>
   </head>
   <body class="bg-[#020202] text-[#e2e2e2] overflow-x-hidden">
     <div id="root"></div>

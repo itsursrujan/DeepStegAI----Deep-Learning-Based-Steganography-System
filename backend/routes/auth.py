@@ -5,6 +5,9 @@ from models.user import User
 from schemas.user import UserSignUp, UserLogin
 from utils.auth import hash_password, verify_password, create_access_token
 from sqlalchemy.exc import IntegrityError
+import secrets
+import datetime
+from utils.email_utils import send_password_reset_email
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -31,7 +34,7 @@ def signup():
         new_user = User(
             email=user_data.email,
             password_hash=hash_password(user_data.password),
-            credits=0
+            credits=50
         )
         db.add(new_user)
         db.commit()
@@ -71,7 +74,10 @@ def login():
             return jsonify({"error": "Invalid email or password"}), 401
 
         # Generate JWT token
-        access_token = create_access_token(data={"user_id": str(user.id)})
+        access_token = create_access_token(data={
+            "user_id": str(user.id),
+            "email": user.email
+        })
 
         return jsonify({
             "access_token": access_token,
@@ -80,6 +86,67 @@ def login():
         }), 200
 
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+@auth_bp.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    data = request.get_json()
+    email = data.get('email')
+    
+    if not email:
+        return jsonify({"error": "Email is required"}), 400
+        
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.email == email).first()
+        if user:
+            # Generate secure token
+            token = secrets.token_urlsafe(32)
+            user.reset_token = token
+            user.reset_token_expiry = datetime.datetime.now() + datetime.timedelta(hours=1)
+            db.commit()
+            
+            # Send email
+            send_password_reset_email(user.email, token)
+            
+        # Always return success to prevent email enumeration
+        return jsonify({"message": "If this email is registered, a reset link has been sent."}), 200
+    except Exception as e:
+        db.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+@auth_bp.route('/reset-password', methods=['POST'])
+def reset_password():
+    data = request.get_json()
+    token = data.get('token')
+    new_password = data.get('password')
+    
+    if not token or not new_password:
+        return jsonify({"error": "Token and new password are required"}), 400
+        
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(
+            User.reset_token == token,
+            User.reset_token_expiry > datetime.datetime.now()
+        ).first()
+        
+        if not user:
+            return jsonify({"error": "Invalid or expired token"}), 400
+            
+        # Update password
+        user.password_hash = hash_password(new_password)
+        user.reset_token = None
+        user.reset_token_expiry = None
+        db.commit()
+        
+        return jsonify({"message": "Password updated successfully"}), 200
+    except Exception as e:
+        db.rollback()
         return jsonify({"error": str(e)}), 500
     finally:
         db.close()

@@ -42,10 +42,11 @@ function HyperButton({ onClick }: { onClick: () => void }) {
   const startFill = () => {
     if (complete) return
     setFilling(true)
+    if (intervalRef.current) clearInterval(intervalRef.current)
     intervalRef.current = setInterval(() => {
       setProgress(p => {
         if (p >= 100) {
-          clearInterval(intervalRef.current!)
+          if (intervalRef.current) clearInterval(intervalRef.current)
           setComplete(true)
           if (btnRef.current) {
             const r = btnRef.current.getBoundingClientRect()
@@ -54,9 +55,9 @@ function HyperButton({ onClick }: { onClick: () => void }) {
           setTimeout(onClick, 500)
           return 100
         }
-        return p + 5.0
+        return p + 2.5 // Slightly smoother
       })
-    }, 20)
+    }, 16)
   }
 
   const stopFill = () => {
@@ -66,18 +67,25 @@ function HyperButton({ onClick }: { onClick: () => void }) {
     setProgress(0)
   }
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (complete) return
+    
+    // Immediate activation on click if not already complete
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    setComplete(true)
+    setProgress(100)
+    
     const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect()
     const id = Date.now()
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
     setClickRipples(prev => [...prev, { id, x, y }])
-    setTimeout(() => setClickRipples(prev => prev.filter(r => r.id !== id)), 700)
+    
+    fireInitRipple(rect.left + rect.width / 2, rect.top + rect.height / 2)
+    setTimeout(onClick, 400)
   }
 
   return (
-    // Wrapper: relative + inline-block so ripple rings can escape the button's overflow-hidden
     <motion.div
       className="relative inline-block"
       initial={{ opacity: 0, y: 20 }}
@@ -92,15 +100,15 @@ function HyperButton({ onClick }: { onClick: () => void }) {
         ref={btnRef}
         onMouseEnter={startFill}
         onMouseLeave={stopFill}
-        onMouseDown={handleMouseDown}
-        className="group relative overflow-hidden rounded-2xl border border-primary/40 bg-primary/10 px-14 py-5 text-sm font-black tracking-[0.4em] uppercase text-[var(--fg)] hover-reactive transition-all duration-300"
+        onClick={handleClick}
+        className="group relative overflow-hidden rounded-2xl border border-primary/40 bg-primary/10 px-14 py-5 text-sm font-black tracking-[0.4em] uppercase text-[var(--fg)] transition-all duration-300"
         style={{
           boxShadow: complete
             ? '0 0 60px var(--primary-glow)'
             : filling ? '0 0 30px var(--primary-glow)' : '0 0 15px rgba(0,242,255,0.05)',
         }}
       >
-        {/* Click ripples — inside the button, clipped naturally */}
+        {/* Click ripples */}
         {clickRipples.map(r => (
           <motion.span
             key={r.id}
@@ -112,11 +120,24 @@ function HyperButton({ onClick }: { onClick: () => void }) {
           />
         ))}
 
-        {/* Fill bar */}
+        {/* Fill Background */}
         <motion.div
-          className="absolute inset-0 bg-primary/20"
-          style={{ scaleX: progress / 100, originX: 0 }}
+          className="absolute inset-0 bg-primary/40 pointer-events-none"
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: progress / 100 }}
+          style={{ originX: 0 }}
+          transition={{ duration: 0.1, ease: "linear" }}
         />
+        
+        {/* Progress Bar (Visible Edge) */}
+        <motion.div
+          className="absolute bottom-0 left-0 h-1 w-full bg-primary shadow-[0_0_15px_var(--primary-glow)] pointer-events-none"
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: progress / 100 }}
+          style={{ originX: 0 }}
+          transition={{ duration: 0.1, ease: "linear" }}
+        />
+
         {complete && <div className="absolute inset-0 bg-primary/30 animate-pulse" />}
 
         <SonarRipples />
@@ -142,13 +163,13 @@ const highlights = [
 export const Overview = memo(function Overview() {
   const systemInitialized = useStore(s => s.systemInitialized)
   const setSystemInitialized = useStore(s => s.setSystemInitialized)
+  const isAuthenticated = useStore(s => s.isAuthenticated)
   const theme = useStore(s => s.theme)
   const isLight = theme === 'light'
 
   return (
-    /* z-3 so it sits above Digital Rain (z-1) and noise (z-2) */
     <div className="relative min-h-screen w-full overflow-y-auto bg-transparent will-change-scroll" style={{ zIndex: 3 }}>
-      {/* ── 3D Sphere — z-4, renders above rain/noise ── */}
+      {/* 3D Sphere */}
       <div className={`absolute inset-0 pointer-events-none transition-all duration-700 ${isLight ? 'drop-shadow-[0_0_40px_rgba(0,184,196,0.3)]' : ''}`} style={{ zIndex: 4, transform: 'translateZ(0)' }}>
         <Suspense fallback={null}>
           <Canvas camera={{ position: [0, 0, 14], fov: 60 }}>
@@ -159,15 +180,12 @@ export const Overview = memo(function Overview() {
         </Suspense>
       </div>
 
-      {/* ── UI cards / content — z-5 ── */}
       <div className="relative flex min-h-screen flex-col items-center justify-center px-4 text-center" style={{ zIndex: 5 }}>
         
-        {/* Toggle Top Right */}
         <div className="absolute top-6 right-6 z-50">
           <ThemeToggle />
         </div>
 
-        {/* Badge */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -180,7 +198,6 @@ export const Overview = memo(function Overview() {
           </span>
         </motion.div>
 
-        {/* Title */}
         <div className="relative px-2">
           <motion.h1
             initial={{ opacity: 0, scale: 0.9 }}
@@ -197,13 +214,8 @@ export const Overview = memo(function Overview() {
           >
             DEEP<span style={{ color: 'var(--primary)', fontStyle: 'italic' }}>STEG</span>AI
           </motion.h1>
-          
-
-
-
         </div>
 
-        {/* Subtitle */}
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -213,7 +225,6 @@ export const Overview = memo(function Overview() {
           Advanced steganography intelligence suite powered by AI forensic analysis.
         </motion.p>
 
-        {/* CTA */}
         <div className="mt-14">
           {!systemInitialized ? (
             <HyperButton onClick={() => setSystemInitialized(true)} />
@@ -224,38 +235,61 @@ export const Overview = memo(function Overview() {
               transition={TRANSITION}
               className="flex flex-wrap justify-center gap-4 sm:gap-6 px-4"
             >
-              <Link to="/embed" className="w-full sm:w-auto lg:cursor-none">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="w-full sm:w-auto rounded-2xl bg-primary px-8 sm:px-10 py-4 sm:py-5 text-[10px] sm:text-xs font-black tracking-[0.2em] sm:tracking-[0.4em] text-black shadow-[0_0_20px_rgba(0,242,255,0.3)] uppercase"
-                >
-                  Enter Embed Node
-                </motion.button>
-              </Link>
-              <Link to="/analyze" className="w-full sm:w-auto lg:cursor-none">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="w-full sm:w-auto rounded-2xl border border-[var(--border)] bg-[var(--bg-sidebar)] px-8 sm:px-10 py-4 sm:py-5 text-[10px] sm:text-xs font-black tracking-[0.2em] sm:tracking-[0.4em] text-[var(--fg)] uppercase"
-                >
-                  Scanner Access
-                </motion.button>
-              </Link>
+              {!isAuthenticated ? (
+                <>
+                  <Link to="/login" className="w-full sm:w-auto lg:cursor-none">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="w-full sm:w-auto rounded-2xl bg-primary px-12 py-5 text-[10px] sm:text-xs font-black tracking-[0.4em] text-black shadow-[0_0_20px_rgba(0,242,255,0.3)] uppercase italic"
+                    >
+                      Authorize Access (LOGIN)
+                    </motion.button>
+                  </Link>
+                  <Link to="/signup" className="w-full sm:w-auto lg:cursor-none">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="w-full sm:w-auto rounded-2xl border border-[var(--border)] bg-[var(--bg-sidebar)] px-12 py-5 text-[10px] sm:text-xs font-black tracking-[0.4em] text-[var(--fg)] uppercase italic"
+                    >
+                      Create Protocol Profile (SIGNUP)
+                    </motion.button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link to="/embed" className="w-full sm:w-auto lg:cursor-none">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="w-full sm:w-auto rounded-2xl bg-primary px-10 py-5 text-[10px] sm:text-xs font-black tracking-[0.4em] text-black shadow-[0_0_20px_rgba(0,242,255,0.3)] uppercase"
+                    >
+                      Enter Embed Node
+                    </motion.button>
+                  </Link>
+                  <Link to="/analyze" className="w-full sm:w-auto lg:cursor-none">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="w-full sm:w-auto rounded-2xl border border-[var(--border)] bg-[var(--bg-sidebar)] px-10 py-5 text-[10px] sm:text-xs font-black tracking-[0.4em] text-[var(--fg)] uppercase"
+                    >
+                      Scanner Access
+                    </motion.button>
+                  </Link>
+                </>
+              )}
             </motion.div>
           )}
         </div>
 
-        {/* Post-init content */}
         <AnimatePresence>
           {systemInitialized && (
             <motion.div
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ ...TRANSITION, delay: 0.3 }}
-              className="mt-20 space-y-12"
+              className="mt-20 space-y-12 pb-20"
             >
-              {/* Stats */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 px-4">
                 {[
                   { label: 'THREATS NEUTRALIZED', val: '1.2M+' },
@@ -265,9 +299,6 @@ export const Overview = memo(function Overview() {
                 ].map((s, i) => (
                   <motion.div
                     key={i}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ ...TRANSITION, delay: 0.4 + i * 0.07 }}
                     className={`rounded-2xl px-4 sm:px-8 py-4 sm:py-6 text-center transition-all duration-300 ${isLight ? 'bg-[#dff6ff] border border-primary/20 shadow-lg' : 'bg-[var(--bg-card)] border border-[var(--border)]'}`}
                   >
                     <div className={`text-xl sm:text-2xl font-black italic tracking-tighter ${isLight ? 'text-black' : 'text-primary glow-text'}`}>{s.val}</div>
@@ -276,22 +307,15 @@ export const Overview = memo(function Overview() {
                 ))}
               </div>
 
-              {/* Feature cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
                 {highlights.map((h, i) => (
                   <motion.div
                     key={i}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ ...TRANSITION, delay: 0.55 + i * 0.07 }}
-                    whileHover={{
-                      y: -5,
-                      transition: { duration: 0, ease: "easeOut" }
-                    }}
-                    className="group flex gap-6 rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-8 text-left backdrop-blur-xl hover:bg-[var(--fg)]/5 transition-all duration-[400ms]"
+                    whileHover={{ y: -5 }}
+                    className="group flex gap-6 rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-8 text-left backdrop-blur-xl hover:bg-[var(--fg)]/5 transition-all"
                   >
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--bg)] group-hover:border-primary/50 group-hover:bg-primary/10 transition-all duration-[400ms]">
-                      <h.icon className="h-7 w-7 text-[var(--fg-dim)] group-hover:text-primary transition-colors duration-[400ms]" />
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--bg)] group-hover:border-primary/50 group-hover:bg-primary/10 transition-all">
+                      <h.icon className="h-7 w-7 text-[var(--fg-dim)] group-hover:text-primary transition-colors" />
                     </div>
                     <div>
                       <h3 className="text-sm font-black italic tracking-tight text-[var(--fg)]">{h.title}</h3>

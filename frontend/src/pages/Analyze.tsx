@@ -54,6 +54,7 @@ export const Analyze = memo(function Analyze() {
   const [isScanning, setIsScanning] = useState(false)
   const [progress, setProgress] = useState(0)
   const [result, setResult] = useState<any | null>(null)
+  const [showRing, setShowRing] = useState(false)
   const setStatus = useStore(state => state.setStatus)
   const [isDesktop, setIsDesktop] = useState(window.innerWidth > 1024)
 
@@ -67,7 +68,7 @@ export const Analyze = memo(function Analyze() {
     const file = acceptedFiles[0]
     setImage(file)
     setPreview(URL.createObjectURL(file))
-    setResult(null); setProgress(0)
+    setResult(null); setProgress(0); setShowRing(false)
   }, [])
 
   const { getRootProps, getInputProps } = useDropzone({ onDrop, accept: { 'image/*': [] }, multiple: false })
@@ -76,6 +77,7 @@ export const Analyze = memo(function Analyze() {
     setImage(null)
     setPreview(null)
     setResult(null)
+    setShowRing(false)
     setIsScanning(false)
     setProgress(0)
     setStatus('READY')
@@ -83,7 +85,7 @@ export const Analyze = memo(function Analyze() {
 
   const handleScan = async () => {
     if (!image) return
-    setIsScanning(true); setStatus('ANALYZING'); setProgress(0)
+    setIsScanning(true); setStatus('ANALYZING'); setProgress(0); setShowRing(false)
     
     // Weighted progress: 3-5s neural scan simulation
     const timer = setInterval(() => {
@@ -101,13 +103,20 @@ export const Analyze = memo(function Analyze() {
     try {
       const res = await stegoApi.analyze(formData)
       clearInterval(timer); setProgress(100)
+      
+      // Delay result slightly to allow progress bar to be seen at 100%
       setTimeout(() => {
           setResult(res.data)
           setStatus(res.data.detected ? 'COMPROMISED' : 'SECURE')
-      }, 500)
+          setIsScanning(false)
+          setShowRing(true)
+          // Hide ring after 2 seconds as per user request
+          setTimeout(() => setShowRing(false), 2000)
+      }, 600)
     } catch (err) {
       clearInterval(timer); setStatus('READY')
-    } finally { setIsScanning(false) }
+      setIsScanning(false)
+    }
   }
 
   return (
@@ -146,7 +155,13 @@ export const Analyze = memo(function Analyze() {
             </div>
           )}
 
-          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-3xl overflow-hidden min-h-[180px] md:min-h-0 flex-1 relative">
+          <div className={`bg-[var(--bg-card)] border border-[var(--border)] rounded-3xl overflow-hidden min-h-[180px] md:min-h-0 flex-1 relative transition-all duration-700 ${
+            result 
+              ? (result.detected 
+                  ? 'shadow-[inset_0_0_50px_rgba(255,59,59,0.3)] border-red-500/50' 
+                  : 'shadow-[inset_0_0_50px_rgba(0,255,156,0.3)] border-[#00FF9C]/50')
+              : ''
+          }`}>
             {preview && (
               <button 
                 onClick={handleClear}
@@ -155,6 +170,7 @@ export const Analyze = memo(function Analyze() {
                 <X className="h-4 w-4" />
               </button>
             )}
+
             <Suspense fallback={null}>
               <Canvas camera={{ position: [0, 0, 15] }}>
                 <ambientLight intensity={0.5} />
@@ -163,8 +179,34 @@ export const Analyze = memo(function Analyze() {
               </Canvas>
             </Suspense>
 
+            {/* Glowing feedback ring - moved after canvas for stacking */}
+            <AnimatePresence>
+              {showRing && result && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.02 }}
+                  key="result-ring"
+                  className={`absolute inset-0 z-[50] pointer-events-none rounded-3xl border-[3px] transition-colors duration-700 ${
+                    result.detected ? 'border-red-500' : 'border-[#00FF9C]'
+                  }`}
+                  style={{
+                    boxShadow: result.detected 
+                      ? 'inset 0 0 80px rgba(255,59,59,0.5), 0 0 40px rgba(255,59,59,0.3)' 
+                      : 'inset 0 0 80px rgba(0,255,156,0.5), 0 0 40px rgba(0,255,156,0.3)'
+                  }}
+                >
+                  <motion.div 
+                    animate={{ opacity: [0.3, 0.6, 0.3] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                    className={`absolute inset-0 rounded-3xl ${result.detected ? 'bg-red-500/10' : 'bg-[#00FF9C]/10'}`}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {isScanning && (
-                <div className="absolute top-4 left-4 sm:top-8 sm:left-8">
+                <div className="absolute top-4 left-4 sm:top-8 sm:left-8 z-[60]">
                     <PowerBar progress={progress} active={true} />
                 </div>
             )}

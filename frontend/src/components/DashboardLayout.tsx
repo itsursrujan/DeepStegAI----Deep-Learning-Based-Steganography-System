@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence, useSpring, useMotionValue } from 'framer-motion'
 import {
   Layers, Download, Upload,
-  Settings, Menu, X, Activity, Cpu, ShieldCheck, HelpCircle, Lock as LockIcon
+  Cpu, X, Menu, Terminal, Activity, Bell, Zap, ShieldCheck, Lock as LockIcon, HelpCircle
 } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { useStore } from '@/store/useStore'
@@ -143,12 +143,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const status   = useStore(s => s.status)
   const systemInitialized = useStore(s => s.systemInitialized)
   const setSystemInitialized = useStore(s => s.setSystemInitialized)
+  const isAuthenticated = useStore(s => s.isAuthenticated)
+  const user = useStore(s => s.user)
+  const logout = useStore(s => s.logout)
   const theme = useStore(s => s.theme)
   const [pulseColor, setPulseColor] = useState<string | null>(null)
 
   const isToolPage = TOOL_PATHS.includes(location.pathname)
+  // Sidebar only appears AFTER system initialization and successful authentication
+  const showSidebar = systemInitialized && isAuthenticated
 
-  // Auto-initialize if landing on a tool page directly (fixes missing sidebar on refresh)
+  // Auto-initialize if landing on a tool page directly
   useEffect(() => {
     if (location.pathname !== '/' && !systemInitialized) {
       setSystemInitialized(true)
@@ -192,6 +197,18 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     }
   }, [status, getStatusStyle])
 
+  // Filter nav items: only "hjsudarshan18@gmail.com" can see the Admin Panel
+  // and they don't need the Support section as they are the operator
+  const filteredNavItems = navItems.filter(item => {
+    if (item.path === '/admin') {
+      return user?.email === 'hjsudarshan18@gmail.com'
+    }
+    if (item.path === '/support') {
+      return user?.email !== 'hjsudarshan18@gmail.com'
+    }
+    return true
+  })
+
   return (
     <div className={`flex h-screen overflow-hidden text-[var(--fg)] relative select-none ${theme} ${window.innerWidth > 768 ? 'cursor-none' : 'cursor-auto'}`} style={{ background: 'var(--bg)' }}>
       {/* ── Layer 1: Digital Rain (z-1) ── */}
@@ -217,9 +234,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         )}
       </AnimatePresence>
 
-      {/* ── Landing mode (before boot) ── */}
-      {!systemInitialized ? (
-        <main className="relative flex-1 overflow-hidden" style={{ zIndex: 3 }}>
+      {/* ── Landing mode (before boot or unauthenticated) ── */}
+      {!showSidebar ? (
+        <main className="relative flex-1 overflow-y-auto overflow-x-hidden" style={{ zIndex: 3 }}>
           {children}
         </main>
       ) : (
@@ -278,9 +295,38 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               </button>
             </div>
 
+            {/* Neural Credits Display */}
+            <AnimatePresence>
+              {(isSidebarOpen || isMobileMenuOpen) && user && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="px-4 py-3 border-b border-[var(--border)] bg-primary/5"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <Zap className={`h-3 w-3 ${user.credits < 10 ? 'text-red-500 animate-pulse' : 'text-primary'}`} />
+                      <span className="text-[10px] font-black tracking-widest uppercase opacity-60">Neural Credits</span>
+                    </div>
+                    <span className={`text-xs font-mono font-bold ${user.credits < 10 ? 'text-red-500' : 'text-primary'}`}>
+                      {user?.email === 'hjsudarshan18@gmail.com' ? '∞' : user.credits}
+                    </span>
+                  </div>
+                  <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: user?.email === 'hjsudarshan18@gmail.com' ? '100%' : `${Math.min(100, (user.credits / 50) * 100)}%` }}
+                      className={`h-full ${user.credits < 10 ? 'bg-red-500' : 'bg-primary'}`}
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Nav */}
             <nav className="flex-1 space-y-1 p-3 mt-3 overflow-y-auto overflow-x-hidden">
-              {navItems.map(item => {
+              {filteredNavItems.map(item => {
                 const isActive = location.pathname === item.path
                 return (
                   <Link
@@ -309,6 +355,31 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 )
               })}
             </nav>
+
+            {/* Logout (Bottom of Nav) */}
+            <div className="p-3 border-t border-[var(--border)]">
+              <button
+                onClick={() => {
+                  logout()
+                  setSystemInitialized(false)
+                }}
+                className={`flex items-center gap-3 w-full rounded-2xl px-3 py-2 text-red-500 hover:bg-red-500/10 transition-all lg:cursor-none`}
+              >
+                <X className="h-4 w-4 shrink-0" />
+                <AnimatePresence>
+                  {(isSidebarOpen || isMobileMenuOpen) && (
+                    <motion.span
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="text-sm font-black tracking-[0.15em] uppercase italic whitespace-nowrap"
+                    >
+                      Logout Session
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </button>
+            </div>
 
             {/* Collapse (Desktop) */}
             <div className="p-3 border-t border-[var(--border)] hidden lg:block">
@@ -344,14 +415,28 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 </div>
                 
                 <div className="flex items-center gap-4 sm:gap-6">
+                  {/* Header Credit Counter (Compact) */}
+                  {isAuthenticated && user && (
+                    <div className={`flex items-center gap-2 px-2 py-0.5 rounded-md border ${user.credits < 10 ? 'bg-red-500/10 border-red-500/30' : 'bg-primary/5 border-primary/20'}`}>
+                      <Zap className={`h-2.5 w-2.5 ${user.credits < 10 ? 'text-red-500' : 'text-primary'}`} />
+                      <span className={`text-[10px] font-mono font-bold ${user.credits < 10 ? 'text-red-500' : 'text-primary'}`}>
+                        {user?.email === 'hjsudarshan18@gmail.com' ? 'INF' : user.credits}
+                      </span>
+                    </div>
+                  )}
+                  {isAuthenticated && user && (
+                    <div className="hidden xl:flex items-center gap-2 px-3 py-1 rounded-full bg-primary/5 border border-primary/20">
+                      <span className="text-[8px] font-black tracking-widest text-primary/40 uppercase">Operator</span>
+                      <span className="text-[9px] font-mono font-bold text-primary truncate max-w-[120px]">
+                        {user.email}
+                      </span>
+                    </div>
+                  )}
                   <span className={`text-[10px] font-mono font-black tracking-widest hidden sm:inline-block ${getStatusStyle().color}`}>
                     SYS_{status}
                   </span>
                   <div className="h-6 w-px bg-[var(--border)] hidden sm:block" />
                   <ThemeToggle />
-                  <button className="text-[var(--fg-dim)] hover:text-[var(--fg)] transition-colors lg:cursor-none">
-                    <Settings className="h-4 w-4" />
-                  </button>
                 </div>
               </header>
             )}

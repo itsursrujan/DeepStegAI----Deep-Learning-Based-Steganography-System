@@ -52,7 +52,7 @@ export function DigitalRain() {
       const isDark = document.documentElement.classList.contains('dark')
       
       // Clear with specified background color for better visibility in dark mode
-      ctx.fillStyle = isDark ? '#0f0f0f' : '#ffffff'
+      ctx.fillStyle = isDark ? '#0a0a0a' : '#ffffff'
       ctx.globalAlpha = 0.15
       ctx.fillRect(0, 0, W, H)
       ctx.globalAlpha = 1.0
@@ -108,7 +108,7 @@ export function DigitalRain() {
     <canvas
       ref={canvasRef}
       className="pointer-events-none fixed inset-0 z-[1] will-change-transform"
-      style={{ opacity: theme === 'light' ? 0.15 : 0.08 }} // Reduced opacity for light mode
+      style={{ opacity: theme === 'light' ? 0.15 : 0.12 }} // Adjusted for theme differentiation
     />
   )
 }

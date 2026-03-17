@@ -2,18 +2,31 @@ import { create } from 'zustand'
 
 export type SystemStatus = 'READY' | 'PROCESSING' | 'ANALYZING' | 'SECURE' | 'COMPROMISED'
 
+interface User {
+  id: string
+  email: string
+  credits: number
+}
+
 interface SystemState {
   status: SystemStatus
   logs: string[]
   stats: { analyses: number; embedded: number; threats: number }
   systemInitialized: boolean
+  isAuthenticated: boolean
+  user: User | null
   theme: 'dark' | 'light'
   setStatus: (status: SystemStatus) => void
   addLog: (msg: string) => void
   incrementStat: (key: keyof SystemState['stats']) => void
   setSystemInitialized: (val: boolean) => void
+  setAuthenticated: (val: boolean) => void
+  setUser: (user: User | null) => void
+  logout: () => void
+  setLogin: (accessToken: string, user: User, remember: boolean) => void
   setTheme: (theme: 'dark' | 'light') => void
   toggleTheme: () => void
+  setCredits: (credits: number) => void
 }
 
 export const useStore = create<SystemState>((set) => ({
@@ -21,6 +34,8 @@ export const useStore = create<SystemState>((set) => ({
   logs: [`[${new Date().toLocaleTimeString()}] KERNEL_READY: DeepSteg AI Suite v1.0.4 initialized.`],
   stats: { analyses: 4, embedded: 2, threats: 1 },
   systemInitialized: false,
+  isAuthenticated: !!(localStorage.getItem('access_token') || sessionStorage.getItem('access_token')),
+  user: null,
   theme: (localStorage.getItem('theme') as 'dark' | 'light') || 'dark',
 
   setStatus: (status) => set((state) => ({
@@ -37,6 +52,25 @@ export const useStore = create<SystemState>((set) => ({
   })),
 
   setSystemInitialized: (val) => set({ systemInitialized: val }),
+  
+  setAuthenticated: (val) => set({ isAuthenticated: val }),
+  
+  setUser: (user) => set({ user }),
+
+  logout: () => {
+    localStorage.removeItem('access_token')
+    sessionStorage.removeItem('access_token')
+    set({ isAuthenticated: false, user: null })
+  },
+
+  setLogin: (accessToken, user, remember) => {
+    if (remember) {
+      localStorage.setItem('access_token', accessToken)
+    } else {
+      sessionStorage.setItem('access_token', accessToken)
+    }
+    set({ isAuthenticated: true, user })
+  },
 
   setTheme: (theme) => {
     localStorage.setItem('theme', theme)
@@ -48,4 +82,7 @@ export const useStore = create<SystemState>((set) => ({
     localStorage.setItem('theme', newTheme)
     return { theme: newTheme }
   }),
+  setCredits: (credits) => set((state) => ({
+    user: state.user ? { ...state.user, credits } : null
+  })),
 }))

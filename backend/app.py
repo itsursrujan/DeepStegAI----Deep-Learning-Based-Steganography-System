@@ -28,6 +28,8 @@ from adaptive_engine import embed_file_adaptive, extract_file_adaptive, MAGIC_AD
 from detection_engine import scan_image_for_signature
 from steganalysis_model import get_model
 from train_stego_model import predict_image
+from utils.auth import token_required, require_credits
+from utils.email_utils import send_admin_notification, send_user_receipt
 
 # --- Professional Logging Setup ---
 logging.basicConfig(
@@ -40,16 +42,14 @@ logger = logging.getLogger("DeepStegAI")
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "deepstegai_secure_key_2024")
 
-# Admin PIN Management: Use environment variable or a secure hashed default
-# Generated hash for "1234" for compatibility, but recommend setting ADMIN_PIN_HASH in env
-DEFAULT_PIN_HASH = b'$2b$12$K7B3dF6.mXv8wJkY5Hj6u.vQ9zR0T1U2V3W4X5Y6Z7A8B9C0D1E2' # Hash for "1234" (example)
-ADMIN_PIN_HASH = os.environ.get("ADMIN_PIN_HASH", DEFAULT_PIN_HASH.decode())
+# Admin access is now restricted by verified developer email
+DEVELOPER_EMAIL = "hjsudarshan18@gmail.com"
 
 # Load environment variables
 load_dotenv()
 
 # Register Blueprints
-app.register_blueprint(auth_bp, url_prefix='/auth')
+app.register_blueprint(auth_bp, url_prefix='/api/auth')
 
 # Initialize Database
 try:
@@ -125,6 +125,8 @@ load_ai_model()
 # --- Routes ---
 
 @app.route('/api/batch', methods=['POST', 'OPTIONS'])
+@token_required
+@require_credits(cost_per_unit=2, unit_field=['covers', 'stegos'])
 def api_batch():
     try:
         mode = request.form.get('mode') # 'hide' or 'extract'
@@ -335,15 +337,28 @@ def api_contact():
             with open(MESSAGES_FILE, 'w') as f:
                 json.dump(messages, f, indent=4)
             
+        # Send Email Notifications in background (To Admin and User receipt)
+        def notify_all(entry):
+            send_admin_notification(entry)
+            send_user_receipt(entry)
+            
+        threading.Thread(target=notify_all, args=(entry,), daemon=True).start()
+            
         return jsonify({'success': True})
     except Exception as e:
         logger.error(f"Contact API Error: {e}", exc_info=True)
         return jsonify({'error': "Processing Failed"}), 500
 
 @app.route('/api/messages', methods=['GET'])
+@token_required
 def get_messages():
-    """Admin endpoint to retrieve support queries."""
+    """Admin endpoint to retrieve support queries. Only accessible by the developer."""
     try:
+        # Strict Developer Check
+        if getattr(request, 'user_email', None) != DEVELOPER_EMAIL:
+            logger.warning(f"Unauthorized access attempt to admin messages from {getattr(request, 'user_email', 'Unknown')}")
+            return jsonify({'error': 'Unauthorized. Operational clearance required.'}), 403
+
         if os.path.exists(MESSAGES_FILE):
             with open(MESSAGES_FILE, 'r') as f:
                 messages = json.load(f)
@@ -355,6 +370,8 @@ def get_messages():
 # --- Core API ---
 
 @app.route('/api/embed', methods=['POST'])
+@token_required
+@require_credits(cost_fixed=5)
 def api_embed():
     logger.info("Processing embedding request")
     try:
@@ -408,7 +425,8 @@ def api_embed():
             'image_data': img_b64,
             'filename': 'stego_image.png',
             'recovery_token': recovery_token,
-            'method': method
+            'method': method,
+            'credits': getattr(request, 'updated_credits', None)
         })
 
     except Exception as e:
@@ -416,6 +434,8 @@ def api_embed():
         return jsonify({'error': "Internal server error during embedding processing."}), 500
 
 @app.route('/api/extract', methods=['POST'])
+@token_required
+@require_credits(cost_fixed=2)
 def api_extract():
     logger.info("Processing extraction request")
     try:
@@ -484,6 +504,8 @@ def api_extract():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/analyze', methods=['POST'])
+@token_required
+@require_credits(cost_fixed=2)
 def api_analyze():
     logger.info("Processing analysis request")
     try:
@@ -540,7 +562,8 @@ def api_analyze():
                 "available": ai_success,
                 "score": float(ai_score),
                 "threshold": 0.5
-            }
+            },
+            "credits": getattr(request, 'updated_credits', None)
         }
         
         return jsonify(response)
@@ -551,6 +574,8 @@ def api_analyze():
 @app.route('/api/batch_analyze', methods=['POST'])
 @app.route('/api/detection/batch', methods=['POST'])
 @app.route('/api/analyze/batch', methods=['POST'])
+@token_required
+@require_credits(cost_per_unit=2, unit_field='images')
 def api_batch_analyze():
     """Performs deep AI analysis on multiple images."""
     if 'images' not in request.files:
@@ -593,7 +618,10 @@ def api_batch_analyze():
             logger.error(f"Error in batch scan for {f.filename}: {e}")
             results.append({'filename': f.filename, 'error': str(e)})
             
-    return jsonify({'results': results})
+    return jsonify({
+        'results': results,
+        'credits': getattr(request, 'updated_credits', None)
+    })
 
 if __name__ == '__main__':
-    app.run(debug=True, host='127.0.0.1', port=8000, use_reloader=False)
+    app.run(debug=True, host='127.0.0.1', port=5000, use_reloader=False)

@@ -71,23 +71,32 @@ export function NeuralSphere() {
           <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
           <bufferAttribute attach="attributes-color" count={count} array={colors} itemSize={3} />
         </bufferGeometry>
-        <pointsMaterial size={0.03} color={isLight ? "#0096a3" : "#ffffff"} vertexColors={!isLight} transparent opacity={isLight ? 1.0 : 0.6} blending={isLight ? THREE.NormalBlending : THREE.AdditiveBlending} depthWrite={false} sizeAttenuation={true} />
+        <pointsMaterial 
+          size={isLight ? 0.03 : 0.045} 
+          color={isLight ? "#0096a3" : "#ffffff"} 
+          vertexColors={!isLight} 
+          transparent 
+          opacity={isLight ? 1.0 : 0.85} 
+          blending={isLight ? THREE.NormalBlending : THREE.AdditiveBlending} 
+          depthWrite={false} 
+          sizeAttenuation={true} 
+        />
       </points>
       
       {/* Industrial Outer Rings */}
       <mesh ref={ring1Ref}>
-        <torusGeometry args={[5.2, 0.01, 8, 64]} />
-        <meshBasicMaterial color={isLight ? "#0096a3" : "#00f2ff"} transparent opacity={isLight ? 0.5 : 0.15} />
+        <torusGeometry args={[5.2, 0.015, 8, 64]} />
+        <meshBasicMaterial color={isLight ? "#0096a3" : "#00f2ff"} transparent opacity={isLight ? 0.5 : 0.4} />
       </mesh>
       
       <mesh ref={ring2Ref} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[5.5, 0.005, 8, 64]} />
-        <meshBasicMaterial color={isLight ? "#0096a3" : "#00f2ff"} transparent opacity={isLight ? 0.4 : 0.1} />
+        <torusGeometry args={[5.5, 0.01, 8, 64]} />
+        <meshBasicMaterial color={isLight ? "#0096a3" : "#00f2ff"} transparent opacity={isLight ? 0.4 : 0.3} />
       </mesh>
       
       <mesh ref={ring3Ref} rotation={[0, Math.PI / 4, 0]}>
         <sphereGeometry args={[4.8, 16, 16]} />
-        <meshBasicMaterial color={isLight ? "#0096a3" : "#00f2ff"} wireframe transparent opacity={isLight ? 0.15 : 0.03} />
+        <meshBasicMaterial color={isLight ? "#0096a3" : "#00f2ff"} wireframe transparent opacity={isLight ? 0.15 : 0.1} />
       </mesh>
       
       {/* Internal core glow */}

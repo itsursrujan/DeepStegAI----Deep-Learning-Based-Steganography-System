@@ -1,82 +1,78 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Lock as LockIcon, Mail, Clock, LogOut, ChevronRight, Cpu, Calendar } from 'lucide-react'
+import { Lock as LockIcon, Mail, Clock, ChevronRight, Cpu, Calendar } from 'lucide-react'
 import { stegoApi } from '@/services/api'
+import { useStore } from '@/store/useStore'
 
 const TRANSITION = { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
 
 export function Admin() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [pin, setPin] = useState('')
+  const user = useStore(state => state.user)
   const [messages, setMessages] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (pin === '1234') { 
-        setIsLoggedIn(true)
-    }
-  }
+  const isDeveloper = user?.email === 'hjsudarshan18@gmail.com'
 
   useEffect(() => {
-    if (isLoggedIn) {
+    if (isDeveloper) {
         const fetchData = async () => {
             try {
                 const res = await stegoApi.getMessages()
                 setMessages(res.data.reverse())
             } catch (err) {
                 console.error("Data fetch failed:", err)
+            } finally {
+                setIsLoading(false)
             }
         }
         fetchData()
         const interval = setInterval(fetchData, 10000)
         return () => clearInterval(interval)
+    } else {
+        setIsLoading(false)
     }
-  }, [isLoggedIn])
+  }, [isDeveloper])
 
-  if (!isLoggedIn) {
+  if (!isDeveloper) {
     return (
       <div className="h-full flex items-center justify-center px-4 cursor-none">
         <motion.div 
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={TRANSITION}
-            className="bg-[var(--bg-card)] max-w-sm w-full rounded-3xl p-6 space-y-6 text-center relative overflow-hidden border border-[var(--border)] shadow-2xl"
+            className="bg-[var(--bg-card)] max-w-sm w-full rounded-3xl p-8 space-y-6 text-center relative overflow-hidden border border-red-500/20 shadow-2xl"
         >
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500/50 to-transparent" />
             
-            <div className="relative group mx-auto w-16 h-16">
-                <div className="h-16 w-16 bg-primary/10 border border-primary/20 rounded-full flex items-center justify-center transition-all group-hover:shadow-[0_0_60px_var(--primary-glow)]">
-                    <LockIcon className="h-7 w-7 text-primary" />
+            <div className="relative mx-auto w-20 h-20">
+                <div className="h-20 w-20 bg-red-500/10 border border-red-500/20 rounded-full flex items-center justify-center">
+                    <LockIcon className="h-10 w-10 text-red-500" />
                 </div>
-                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 10, ease: "linear" }} className="absolute inset-0 border border-dashed border-primary/20 rounded-full" />
             </div>
             
             <div className="space-y-3">
-                <h3 className="text-2xl font-black italic tracking-tighter uppercase glow-text text-[var(--fg)]">Command Access</h3>
-                <p className="text-[var(--fg-dim)]/80 text-[9px] font-bold tracking-[0.3em] uppercase italic">Authorized Personnel Node</p>
+                <h3 className="text-2xl font-black italic tracking-tighter uppercase text-red-500">Access Denied</h3>
+                <p className="text-[var(--fg-dim)]/80 text-[10px] font-bold tracking-[0.3em] uppercase italic">Operational Clearance Required</p>
             </div>
 
-            <form onSubmit={handleLogin} className="space-y-6">
-                <input 
-                    type="password"
-                    placeholder="SESSION PIN"
-                    className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-2xl py-4 px-6 text-center text-2xl tracking-[0.6em] font-black focus:outline-none focus:border-primary/60 transition-all font-mono text-[var(--fg)] placeholder:text-[var(--fg-dim)]"
-                    value={pin}
-                    onChange={(e) => setPin(e.target.value)}
-                    autoFocus
-                />
-                <button className="w-full bg-primary py-3 rounded-2xl text-black font-black tracking-[0.4em] text-xs hover:opacity-90 transition-all uppercase shadow-[0_0_30px_var(--primary-glow)] active:scale-95">
-                    Initialize Session
-                </button>
-            </form>
-            
-            <p className="text-[10px] text-[var(--fg-dim)]/40 uppercase tracking-[0.3em] font-bold italic">
-                Secure Link: [Encrypted Channel 0X882]
+            <p className="text-[11px] font-medium leading-relaxed text-[var(--fg-dim)]">
+              This terminal is restricted to level-1 developer access. Intrusions are logged and monitored.
             </p>
+            
+            <div className="pt-4">
+               <button 
+                 onClick={() => window.location.href = '/'}
+                 className="px-8 py-3 rounded-xl bg-[var(--bg)] border border-[var(--border)] text-[9px] font-black tracking-widest uppercase text-[var(--fg-dim)] hover:text-primary transition-all"
+               >
+                 Return to Command Center
+               </button>
+            </div>
         </motion.div>
       </div>
     )
   }
+
+  if (isLoading) return null;
 
   return (
     <div className="h-full flex flex-col gap-3 max-w-7xl mx-auto cursor-none">
@@ -94,13 +90,6 @@ export function Admin() {
                 </div>
             </div>
         </div>
-        <button 
-            onClick={() => setIsLoggedIn(false)}
-            className="flex items-center gap-3 px-8 py-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-sidebar)] text-[var(--fg-dim)] hover:bg-red-500/10 hover:border-red-500/20 hover:text-red-500 transition-all text-[10px] font-bold uppercase tracking-[0.3em]"
-        >
-            <LogOut className="h-4 w-4" />
-            Terminate Protocol
-        </button>
       </div>
 
       <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-4 gap-3">

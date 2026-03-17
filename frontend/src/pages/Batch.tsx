@@ -128,7 +128,7 @@ export function Batch() {
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-[var(--bg-card)] border border-[var(--border)] rounded-3xl p-4 flex-1 min-h-0 flex flex-col gap-3">
                 <div className="flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-2"><Zap className="h-4 w-4 text-primary" /><span className="text-[10px] font-black tracking-[0.4em] text-[var(--fg)] uppercase italic">Synchronization Locked ({files.length})</span></div>
-                  <button onClick={() => setFiles([])} className="text-[9px] text-red-500/40 hover:text-red-500 font-black uppercase tracking-widest transition-colors">Abort All</button>
+                  <button onClick={() => { setFiles([]); setBatchResults(null); setIsSuccess(false); setStatus('READY'); }} className="text-[9px] text-red-500/40 hover:text-red-500 font-black uppercase tracking-widest transition-colors">Abort All</button>
                 </div>
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 overflow-y-auto flex-1 pr-2">
                   {files.map((file, i) => (

@@ -1,8 +1,46 @@
 import axios, { AxiosError } from 'axios'
+import { useStore } from '@/store/useStore'
 
 const api = axios.create({
   baseURL: '/api',
 })
+
+// Add a request interceptor to include the JWT token
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
+// Add a response interceptor to sync credits and handle common errors
+api.interceptors.response.use(
+  (response) => {
+    // Sync Credits from Body
+    const creditsFromBody = response.data?.credits
+    if (typeof creditsFromBody === 'number') {
+      useStore.getState().setCredits(creditsFromBody)
+    }
+
+    // Sync Credits from Header (X-Updated-Credits)
+    const creditsFromHeader = response.headers['x-updated-credits']
+    if (creditsFromHeader) {
+      useStore.getState().setCredits(parseInt(creditsFromHeader, 10))
+    }
+
+    return response
+  },
+  async (error) => {
+    // Handle 402 Insufficient Credits
+    if (error.response?.status === 402) {
+      const msg = error.response?.data?.message || "Insufficient Neural Credits for this operation."
+      // Optionally trigger a global alert or notification here
+      console.warn('CREDIT_EXHAUSTION:', msg)
+    }
+    return Promise.reject(error)
+  }
+)
 
 // Helper: when responseType is 'blob' but server returns a JSON error,
 // parse the blob back into a readable error message.
@@ -19,6 +57,13 @@ async function readBlobError(err: AxiosError): Promise<string> {
 }
 
 export const stegoApi = {
+  // --- Auth ---
+  login: (data: any) => api.post('/auth/login', data),
+  signup: (data: any) => api.post('/auth/signup', data),
+  forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
+  resetPassword: (data: any) => api.post('/auth/reset-password', data),
+
+  // --- Core ---
   embed: (formData: FormData) =>
     api.post('/embed', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
