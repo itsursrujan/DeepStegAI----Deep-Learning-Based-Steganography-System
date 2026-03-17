@@ -16,40 +16,46 @@
   --primary: #00f2ff;
   --primary-glow: rgba(0, 242, 255, 0.4);
   --bg: #050505;
-  --bg-sidebar: rgba(0, 0, 0, 0.8);
-  --bg-header: rgba(0, 0, 0, 0.5);
+  --bg-card: #111111;
+  --bg-sidebar: #0d0d0d;
+  --bg-header: rgba(5, 5, 5, 0.8);
+  --bg-canvas: #0f0f0f;
   --fg: #ffffff;
-  --fg-dim: rgba(255, 255, 255, 0.4);
+  --fg-dim: rgba(255, 255, 255, 0.5);
   --fg-silver: #ffffff;
-  --border: rgba(255, 255, 255, 0.05);
-  --border-active: rgba(0, 242, 255, 0.2);
-  --glass-bg: rgba(0, 0, 0, 0.6);
-  --glass-border: rgba(255, 255, 255, 0.1);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-active: rgba(0, 242, 255, 0.3);
+  --glass-bg: rgba(17, 17, 17, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.08);
   --noise-opacity: 0.04;
   --scrollbar: rgba(0, 242, 255, 0.3);
   --scrollbar-hover: rgba(0, 242, 255, 0.6);
   --fg-title: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.5);
 }
 
 .light {
-  --primary: #0096a3; /* Toned down cyan for better light mode comfort */
-  --primary-glow: rgba(0, 150, 163, 0.35); /* Slightly stronger for better visibility */
+  --primary: #0096a3;
+  --primary-glow: rgba(0, 150, 163, 0.35);
   --bg-button: rgba(0, 150, 163, 0.1);
   --bg-button-hover: rgba(0, 150, 163, 0.15);
-  --bg: #ffffff; /* Light white tone background */
-  --bg-sidebar: #f5f5f7; /* Cream/soft off-white for modules */
-  --bg-header: rgba(245, 245, 247, 0.85);
-  --fg: #1d1d1f;
-  --fg-dim: #6b7280;
+  --bg: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-sidebar: #f1f5f9;
+  --bg-header: rgba(248, 250, 252, 0.85);
+  --bg-canvas: #ffffff;
+  --fg: #0f172a;
+  --fg-dim: #64748b;
   --fg-silver: #475569;
-  --border: rgba(0, 0, 0, 0.15); /* Slightly stronger borders */
+  --border: rgba(15, 23, 42, 0.1);
   --border-active: var(--primary);
-  --glass-bg: rgba(245, 245, 247, 0.85); /* Creamy glass */
-  --glass-border: rgba(0, 0, 0, 0.12);
-  --noise-opacity: 0.015;
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(15, 23, 42, 0.1);
+  --noise-opacity: 0.02;
   --scrollbar: rgba(0, 0, 0, 0.1);
   --scrollbar-hover: rgba(0, 0, 0, 0.2);
-  --fg-title: #3c4858; /* Softer dark gray for headings */
+  --fg-title: #1e293b;
+  --text-muted: #64748b;
 }
 
 /* ─── Force hide native cursor everywhere ─── */

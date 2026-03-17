@@ -26,7 +26,7 @@ function PowerBar({ progress, active }: { progress: number; active: boolean }) {
               className={`w-1.5 rounded-sm ${isActive ? 'bg-primary' : 'bg-[var(--border)]'}`}
               animate={{
                 height: isActive ? '100%' : '18%',
-                boxShadow: isActive ? '0 0 10px #00f2ff' : 'none',
+                boxShadow: isActive ? '0 0 10px var(--primary-glow)' : 'none',
                 opacity: isActive ? [0.75, 1, 0.8] : 0.2,
               }}
               transition={isActive ? { repeat: Infinity, duration: 0.3, ease: 'easeInOut' } : { duration: 0.3 }}
@@ -35,7 +35,7 @@ function PowerBar({ progress, active }: { progress: number; active: boolean }) {
         })}
       </div>
       <div className="flex items-baseline gap-1.5">
-        <span className="font-mono text-xl font-black text-primary" style={{ textShadow: '0 0 12px rgba(0,242,255,0.7)' }}>
+        <span className="font-mono text-xl font-black text-primary" style={{ textShadow: '0 0 12px var(--primary-glow)' }}>
           {active ? flickerPct : '—'}
         </span>
         {active && <span className="font-mono text-xs font-bold text-primary/60">%</span>}
@@ -138,7 +138,7 @@ export const Analyze = memo(function Analyze() {
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass-panel border-dashed border-[var(--border)] rounded-3xl p-6 flex flex-col items-center justify-center transition-all hover:bg-[var(--fg)]/[0.04] group min-h-[120px]"
+                className="bg-[var(--bg-card)] border border-dashed border-[var(--border)] rounded-3xl p-6 flex flex-col items-center justify-center transition-all hover:bg-[var(--fg)]/[0.04] group min-h-[120px]"
               >
                 <Search className="h-10 w-10 mb-4 text-[var(--fg-dim)]" />
                 <p className="text-sm font-bold tracking-widest uppercase text-[var(--fg-dim)]">Stage Carrier for Scan</p>
@@ -146,7 +146,7 @@ export const Analyze = memo(function Analyze() {
             </div>
           )}
 
-          <div className="glass-panel rounded-3xl overflow-hidden min-h-[180px] md:min-h-0 flex-1 relative bg-[var(--bg-sidebar)]">
+          <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-3xl overflow-hidden min-h-[180px] md:min-h-0 flex-1 relative">
             {preview && (
               <button 
                 onClick={handleClear}
@@ -176,7 +176,7 @@ export const Analyze = memo(function Analyze() {
               animate={{ opacity: 1 }}
               className="flex justify-start"
             >
-                <button onClick={handleScan} className="bg-primary hover:bg-primary/90 text-black px-12 py-4 rounded-2xl font-bold tracking-[0.2em] text-[10px] uppercase shadow-[0_0_30px_rgba(0,242,255,0.3)] transition-all active:scale-95 lg:cursor-none w-full sm:w-auto">
+                <button onClick={handleScan} className="bg-primary hover:opacity-90 text-black px-12 py-4 rounded-2xl font-bold tracking-[0.2em] text-[10px] uppercase shadow-[0_0_30px_var(--primary-glow)] transition-all active:scale-95 lg:cursor-none w-full sm:w-auto">
                   Execute Deep Scan
                 </button>
             </motion.div>
@@ -192,7 +192,7 @@ export const Analyze = memo(function Analyze() {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="glass-panel rounded-3xl p-4 bg-[var(--bg-sidebar)] space-y-4"
+                 className="bg-[var(--bg-card)] border border-[var(--border)] rounded-3xl p-4 space-y-4"
               >
                 <div>
                   <h4 className="text-[9px] font-black tracking-[0.3em] uppercase mb-4 text-[var(--fg-dim)]/50">Forensic Verdict</h4>
@@ -251,7 +251,7 @@ export const Analyze = memo(function Analyze() {
                     </div>
                   </div>
 
-                  <div className="glass-panel rounded-3xl p-4 bg-[var(--bg-sidebar)]">
+                  <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-3xl p-4">
                     <h4 className="text-[10px] font-black tracking-[0.4em] text-[var(--fg-dim)]/30 uppercase mb-6 flex items-center gap-2 italic">
                       <BarChart className="h-4 w-4 text-accent" /> Monitoring
                     </h4>

@@ -15,7 +15,7 @@ function PowerBar({ progress, active }: { progress: number; active: boolean }) {
           return (
             <motion.div
               key={i}
-              className={`w-1.5 rounded-sm transition-all duration-300 ${isActive ? 'bg-primary shadow-[0_0_12px_#00f2ff]' : 'bg-[var(--border)]'}`}
+              className={`w-1.5 rounded-sm transition-all duration-300 ${isActive ? 'bg-primary shadow-[0_0_12px_var(--primary-glow)]' : 'bg-[var(--border)]'}`}
               animate={{ height: isActive ? '100%' : '20%', opacity: isActive ? [0.7, 1, 0.8] : 0.3 }}
               transition={isActive ? { repeat: Infinity, duration: 0.2 } : {}}
             />
@@ -84,7 +84,7 @@ export function Extract() {
         <p className="text-[9px] font-bold tracking-[0.2em] uppercase mt-1 text-[var(--fg-dim)]">Steganographic Forensic Node</p>
       </div>
 
-      <div className="flex-1 glass-panel rounded-3xl p-4 space-y-3 flex flex-col min-h-0 overflow-y-auto">
+      <div className="flex-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-3xl p-4 space-y-3 flex flex-col min-h-0 overflow-y-auto">
         {/* Drop zone */}
         <div {...getRootProps()} className={`relative h-28 sm:h-32 border border-dashed rounded-3xl flex flex-col items-center justify-center transition-all lg:cursor-none ${isDragActive ? 'border-primary bg-primary/10' : 'border-[var(--border)] bg-[var(--bg-sidebar)] hover:border-primary/40'}`}>
           <input {...getInputProps()} />
@@ -164,7 +164,7 @@ export function Extract() {
         </div>
 
         <button disabled={!stego || isProcessing} onClick={handleExtract}
-          className="w-full bg-primary text-black font-bold tracking-[0.2em] sm:tracking-[0.4em] text-[10px] uppercase rounded-2xl py-3 shadow-[0_0_30px_rgba(0,242,255,0.2)] hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-30 lg:cursor-none"
+          className="w-full bg-primary text-black font-bold tracking-[0.2em] sm:tracking-[0.4em] text-[10px] uppercase rounded-2xl py-3 shadow-[0_0_30px_var(--primary-glow)] hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-30 lg:cursor-none"
         >
           {isProcessing ? 'DECRYPTING...' : 'INITIALIZE RECOVERY'}
         </button>

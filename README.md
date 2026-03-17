@@ -16,19 +16,25 @@ This repository contains the split modern architecture: a React built frontend a
 
 To run the DeepStegAI suite locally, you need two terminals—one for the backend API and one for the frontend UI.
 
-### 1. Running the API Backend
+### 1. Prerequisites
+- **PostgreSQL**: Install and create a database named `deepstegai`.
+- **Python 3.10+**
+- **Node.js 18+**
 
-The backend provides the AI detection models and embedding algorithms on port 5000.
+### 2. Running the API Backend
+
+The backend provides AI detection, steganography, and user authentication on **Port 8000**.
 
 ```bash
 # Terminal 1
 cd backend
+cp .env.example .env  # Update DATABASE_URL with your local DB password
 python app.py
 ```
 
-*The backend now acts purely as a JSON API layer.*
+*Note: The database tables will be automatically created on the first run.*
 
-### 2. Running the React Frontend
+### 3. Running the React Frontend
 
 The frontend provides the main "Obsidian Industrial" interface.
 
@@ -39,14 +45,15 @@ npm install   # Only needed the first time
 npm run dev
 ```
 
-The frontend will start at `http://localhost:5173`. Opening this URL in your browser will automatically route API calls to the backend running on port 5000.
+The frontend will start at `http://localhost:5173`. It is configured to communicate with the backend on **Port 8000**.
 
 ---
 
 ## 🛠️ Technology Stack
 - **Frontend UI**: React 18, Vite, TypeScript, TailwindCSS, Zustand, React-Three-Fiber
-- **Backend API**: Python 3.10+, Flask
+- **Backend API**: Python 3.10+, Flask, SQLAlchemy
+- **Database**: PostgreSQL (User Authentication & Credits)
 - **Deep Learning**: PyTorch (SRM-CNN Architecture)
-- **Security**: AES-256 (GCM Mode) & SHA-256
+- **Authentication**: JWT & Bcrypt
 
 *Powered by DeepStegAI Research Group*

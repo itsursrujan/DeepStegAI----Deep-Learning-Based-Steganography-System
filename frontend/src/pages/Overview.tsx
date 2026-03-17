@@ -19,6 +19,26 @@ function HyperButton({ onClick }: { onClick: () => void }) {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
 
+  // Sonar Ripple components for the button
+  const SonarRipples = () => (
+    <div className="absolute inset-0 -z-10 pointer-events-none">
+      {[0, 1, 2].map((i) => (
+        <motion.div
+          key={i}
+          className="absolute inset-0 rounded-2xl border border-primary/40 bg-primary/5"
+          initial={{ opacity: 0, scale: 1 }}
+          animate={{ opacity: [0, 0.4, 0], scale: [1, 1.4, 1.8] }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            delay: i * 1,
+            ease: "easeOut"
+          }}
+        />
+      ))}
+    </div>
+  )
+
   const startFill = () => {
     if (complete) return
     setFilling(true)
@@ -73,11 +93,11 @@ function HyperButton({ onClick }: { onClick: () => void }) {
         onMouseEnter={startFill}
         onMouseLeave={stopFill}
         onMouseDown={handleMouseDown}
-        className="group relative overflow-hidden rounded-2xl border border-primary/30 px-14 py-5 text-sm font-bold tracking-[0.4em] uppercase text-[var(--fg)] hover-reactive"
+        className="group relative overflow-hidden rounded-2xl border border-primary/40 bg-primary/10 px-14 py-5 text-sm font-black tracking-[0.4em] uppercase text-[var(--fg)] hover-reactive transition-all duration-300"
         style={{
           boxShadow: complete
-            ? '0 0 60px rgba(0,242,255,0.5)'
-            : filling ? '0 0 24px rgba(0,242,255,0.25)' : '0 0 8px rgba(0,242,255,0.1)',
+            ? '0 0 60px var(--primary-glow)'
+            : filling ? '0 0 30px var(--primary-glow)' : '0 0 15px rgba(0,242,255,0.05)',
         }}
       >
         {/* Click ripples — inside the button, clipped naturally */}
@@ -98,6 +118,8 @@ function HyperButton({ onClick }: { onClick: () => void }) {
           style={{ scaleX: progress / 100, originX: 0 }}
         />
         {complete && <div className="absolute inset-0 bg-primary/30 animate-pulse" />}
+
+        <SonarRipples />
 
         <span className="relative z-10 flex items-center gap-4">
           INITIALIZE SYSTEM
@@ -153,7 +175,7 @@ export const Overview = memo(function Overview() {
           className="mb-10 inline-flex items-center gap-3 rounded-full border border-primary/20 bg-primary/10 px-6 py-2.5 backdrop-blur-xl"
         >
           <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-          <span className="text-[10px] font-bold tracking-[0.4em] uppercase text-primary">
+          <span className="text-[10px] font-black tracking-[0.4em] uppercase text-primary">
             Kernel Link Staged // v3.1 Obsidian
           </span>
         </motion.div>
@@ -168,21 +190,17 @@ export const Overview = memo(function Overview() {
               fontFamily: 'Inter, sans-serif',
               fontWeight: 900,
               letterSpacing: '-0.04em',
-              textShadow: '0 0 35px var(--primary-glow)',
+              textShadow: '4px 4px 8px rgba(0,0,0,0.2)',
               color: 'var(--fg-title)'
             }}
             className="text-5xl sm:text-7xl md:text-9xl select-none"
           >
             DEEP<span style={{ color: 'var(--primary)', fontStyle: 'italic' }}>STEG</span>AI
           </motion.h1>
-          {/* depth ghost */}
-          <h1
-            aria-hidden
-            className="absolute inset-0 -z-10 text-5xl sm:text-7xl md:text-9xl text-primary/5 translate-x-[2px] translate-y-[2px] select-none pointer-events-none"
-            style={{ fontFamily: '"Geist", "Inter", sans-serif', fontWeight: 700, letterSpacing: '-0.02em' }}
-          >
-            DEEPSTEGAI
-          </h1>
+          
+
+
+
         </div>
 
         {/* Subtitle */}
@@ -250,10 +268,10 @@ export const Overview = memo(function Overview() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ ...TRANSITION, delay: 0.4 + i * 0.07 }}
-                    className="glass-panel card-enhanced rounded-2xl px-4 sm:px-8 py-4 sm:py-6 text-center"
+                    className={`rounded-2xl px-4 sm:px-8 py-4 sm:py-6 text-center transition-all duration-300 ${isLight ? 'bg-[#dff6ff] border border-primary/20 shadow-lg' : 'bg-[var(--bg-card)] border border-[var(--border)]'}`}
                   >
-                    <div className="text-xl sm:text-2xl font-black italic tracking-tighter text-primary glow-text">{s.val}</div>
-                    <div className="text-[8px] sm:text-[9px] font-bold tracking-[0.2em] sm:tracking-[0.3em] text-[var(--fg-dim)] uppercase mt-2">{s.label}</div>
+                    <div className={`text-xl sm:text-2xl font-black italic tracking-tighter ${isLight ? 'text-black' : 'text-primary glow-text'}`}>{s.val}</div>
+                    <div className={`text-[8px] sm:text-[9px] font-bold tracking-[0.2em] sm:tracking-[0.3em] uppercase mt-2 ${isLight ? 'text-black/60' : 'text-[var(--fg-dim)]'}`}>{s.label}</div>
                   </motion.div>
                 ))}
               </div>
@@ -270,7 +288,7 @@ export const Overview = memo(function Overview() {
                       y: -5,
                       transition: { duration: 0, ease: "easeOut" }
                     }}
-                    className="group flex gap-6 rounded-3xl border border-[var(--border)] bg-[var(--bg-sidebar)] p-8 text-left backdrop-blur-xl hover:bg-[var(--fg)]/5 transition-all duration-[400ms]"
+                    className="group flex gap-6 rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-8 text-left backdrop-blur-xl hover:bg-[var(--fg)]/5 transition-all duration-[400ms]"
                   >
                     <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--bg)] group-hover:border-primary/50 group-hover:bg-primary/10 transition-all duration-[400ms]">
                       <h.icon className="h-7 w-7 text-[var(--fg-dim)] group-hover:text-primary transition-colors duration-[400ms]" />

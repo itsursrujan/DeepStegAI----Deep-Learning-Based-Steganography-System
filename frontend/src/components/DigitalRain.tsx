@@ -49,45 +49,46 @@ export function DigitalRain() {
       const H = canvas.height
 
       // Use theme-aware background
-      const isDark = document.documentElement.classList.contains('dark') || 
-                     (!document.documentElement.classList.contains('light') && 
-                      window.matchMedia('(prefers-color-scheme: dark)').matches)
+      const isDark = document.documentElement.classList.contains('dark')
       
-      ctx.fillStyle = isDark ? '#050505' : '#fdfbf7'
-      ctx.globalAlpha = isDark ? 0.1 : 0.15
+      // Clear with specified background color for better visibility in dark mode
+      ctx.fillStyle = isDark ? '#0f0f0f' : '#ffffff'
+      ctx.globalAlpha = 0.15
       ctx.fillRect(0, 0, W, H)
       ctx.globalAlpha = 1.0
 
       ctx.font = `${FONT_SIZE}px "JetBrains Mono", monospace`
+      ctx.textAlign = 'center'
 
-      columns.forEach((col, i) => {
-        const x = i * COLUMN_WIDTH
+      for (let i = 0; i < columns.length; i++) {
+        const col = columns[i]
+        const x = i * COLUMN_WIDTH + COLUMN_WIDTH / 2
 
-        col.chars.forEach((ch, j) => {
+        for (let j = 0; j < col.chars.length; j++) {
           const charY = col.y - j * FONT_SIZE
-          if (charY < -FONT_SIZE || charY > H + FONT_SIZE) return
+          if (charY < -FONT_SIZE || charY > H + FONT_SIZE) continue
 
           const isHead = j === 0
-          let alpha = isHead ? 0.8 : Math.max(0, 0.15 - j * 0.01)
-          if (!isDark) alpha *= 0.6 // Lighten the rain (reduce alpha) in light mode
-          if (alpha <= 0) return
+          let alpha = isHead ? 0.7 : Math.max(0, 0.12 - j * 0.005)
+          if (!isDark) alpha *= 0.5 
+          if (alpha <= 0) continue
 
-          ctx.fillStyle = isHead ? (isDark ? '#ffffff' : '#0f172a') : (isDark ? '#00f2ff' : '#00b8c4')
-          ctx.globalAlpha = Math.min(1, alpha)
+          ctx.fillStyle = isHead ? (isDark ? '#ffffff' : '#0f172a') : (isDark ? '#00f2ff' : '#0096a3')
+          ctx.globalAlpha = alpha
 
-          if (Math.random() > 0.98) {
+          if (Math.random() > 0.99) {
             col.chars[j] = HEX_CHARS[Math.floor(Math.random() * HEX_CHARS.length)]
           }
 
-          ctx.fillText(ch, x, charY)
-        })
+          ctx.fillText(col.chars[j], x, charY)
+        }
 
-        col.y += col.speed * FONT_SIZE * 0.3
+        col.y += col.speed * FONT_SIZE * 0.25
         if (col.y - col.chars.length * FONT_SIZE > H) {
           col.y = -20
-          col.speed = 0.6 + Math.random() * 1.2
+          col.speed = 0.5 + Math.random() * 1.5
         }
-      })
+      }
       ctx.globalAlpha = 1.0
     }
 

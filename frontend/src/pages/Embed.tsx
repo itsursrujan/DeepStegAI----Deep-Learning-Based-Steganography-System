@@ -26,7 +26,7 @@ function PowerBar({ progress, active }: { progress: number; active: boolean }) {
               className={`w-2 rounded-sm ${isActive ? 'bg-primary' : 'bg-[var(--border)]'}`}
               animate={{
                 height: isActive ? '100%' : '15%',
-                boxShadow: isActive ? '0 0 14px #00f2ff' : 'none',
+                boxShadow: isActive ? '0 0 14px var(--primary-glow)' : 'none',
                 opacity: isActive ? [0.75, 1, 0.85] : 0.2,
               }}
               transition={isActive ? { repeat: Infinity, duration: 0.35, ease: 'easeInOut' } : { duration: 0.3 }}
@@ -35,7 +35,7 @@ function PowerBar({ progress, active }: { progress: number; active: boolean }) {
         })}
       </div>
       <div className="flex items-baseline gap-2">
-        <span className="font-mono text-3xl font-black text-primary tracking-tighter tabular-nums" style={{ textShadow: '0 0 16px rgba(0,242,255,0.7)' }}>
+        <span className="font-mono text-3xl font-black text-primary tracking-tighter tabular-nums" style={{ textShadow: '0 0 16px var(--primary-glow)' }}>
           {active ? flickerPct : '—'}
         </span>
         {active && <span className="font-mono text-sm font-bold text-primary/60">%</span>}
@@ -141,13 +141,13 @@ DeepStegAI`
         </div>
         <div className="flex items-center gap-3">
             <span className="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase text-[var(--fg-dim)]">Security Clearance:</span>
-            <span className="px-3 py-1 bg-primary/20 border border-primary/40 text-primary text-[8px] sm:text-[9px] font-bold uppercase tracking-widest rounded-full shadow-[0_0_10px_rgba(0,242,255,0.2)]">Level-04</span>
+            <span className="px-3 py-1 bg-primary/20 border border-primary/40 text-primary text-[8px] sm:text-[9px] font-black uppercase tracking-widest rounded-full shadow-[0_0_10px_var(--primary-glow)]">Level-04</span>
         </div>
       </div>
 
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-3 min-h-0 overflow-y-auto lg:overflow-hidden pb-4 lg:pb-0">
         {/* Input Card */}
-        <div className="glass-panel rounded-3xl p-4 space-y-3 flex flex-col min-h-0 overflow-y-auto">
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-3xl p-4 space-y-3 flex flex-col min-h-0 overflow-y-auto">
           {/* Cover dropzone */}
           <div {...getCoverProps()} className={`relative h-24 sm:h-28 border border-dashed rounded-2xl flex items-center justify-center transition-all lg:cursor-none ${isCoverActive ? 'border-primary bg-primary/10' : 'border-[var(--border)] bg-[var(--bg-sidebar)] hover:border-primary/40'}`}>
             <input {...getCoverInputProps()} />
@@ -219,7 +219,7 @@ DeepStegAI`
           </AnimatePresence>
 
           <button disabled={!cover || !secret || isProcessing} onClick={handleEmbed}
-            className="w-full bg-primary text-black font-bold tracking-[0.2em] sm:tracking-[0.4em] text-[10px] uppercase rounded-2xl py-3 shadow-[0_0_30px_rgba(0,242,255,0.3)] hover:bg-primary/90 hover:shadow-[0_0_50px_rgba(0,242,255,0.5)] transition-all active:scale-[0.98] disabled:opacity-30 lg:cursor-none"
+            className="w-full bg-primary text-black font-bold tracking-[0.2em] sm:tracking-[0.4em] text-[10px] uppercase rounded-2xl py-3 shadow-[0_0_30px_var(--primary-glow)] hover:opacity-90 hover:shadow-[0_0_50px_var(--primary-glow)] transition-all active:scale-[0.98] disabled:opacity-30 lg:cursor-none"
           >
             {isProcessing ? 'SYNTHESIZING...' : 'EXECUTE INJECTION'}
           </button>

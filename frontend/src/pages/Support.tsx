@@ -40,7 +40,7 @@ export const Support = memo(function Support() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Left Side: Info */}
                 <div className="space-y-4">
-                    <div className="glass-panel p-5 rounded-[2rem] bg-[var(--bg-sidebar)] border border-[var(--border)] space-y-4">
+                    <div className="bg-[var(--bg-card)] p-5 rounded-[2rem] border border-[var(--border)] space-y-4 shadow-xl">
                         <div className="p-4 bg-primary/10 rounded-2xl border border-primary/20 w-fit">
                             <ShieldCheck className="h-8 w-8 text-primary" />
                         </div>
@@ -72,7 +72,7 @@ export const Support = memo(function Support() {
                         </div>
                     </div>
 
-                    <div className="glass-panel p-4 rounded-3xl bg-[var(--bg-sidebar)] border border-[var(--border)] text-center">
+                    <div className="bg-[var(--bg-card)] p-4 rounded-3xl border border-[var(--border)] text-center shadow-lg">
                         <p className="text-[10px] text-[var(--fg-dim)]/20 font-bold italic uppercase tracking-widest">
                             Authorized personnel only. Logs are maintained for audit trails.
                         </p>
@@ -88,7 +88,7 @@ export const Support = memo(function Support() {
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
-                                className="glass-panel h-full flex flex-col items-center justify-center p-8 rounded-[2rem] bg-primary/5 border border-primary/20 text-center space-y-4"
+                                className="bg-[var(--bg-card)] h-full flex flex-col items-center justify-center p-8 rounded-[2rem] border border-primary/20 text-center space-y-4 shadow-2xl"
                             >
                                 <div className="h-20 w-20 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center">
                                     <CheckCircle2 className="h-10 w-10 text-primary" />
@@ -114,7 +114,7 @@ export const Support = memo(function Support() {
                                 exit={{ opacity: 0, x: -20 }}
                                 transition={TRANSITION}
                                 onSubmit={handleSubmit}
-                                className="glass-panel p-5 rounded-[2rem] bg-[var(--bg-sidebar)] border border-[var(--border)] space-y-4"
+                                className="bg-[var(--bg-card)] p-5 rounded-[2rem] border border-[var(--border)] space-y-4 shadow-2xl"
                             >
                                 <div className="space-y-3">
                                     <div className="space-y-2">
@@ -177,7 +177,7 @@ export const Support = memo(function Support() {
 
                                 <button 
                                     disabled={isSubmitting}
-                                    className="w-full bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-black py-3 rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-[0_0_30px_rgba(0,242,255,0.2)] hover:shadow-[0_0_40px_rgba(0,242,255,0.4)] transition-all active:scale-95 flex items-center justify-center gap-3"
+                                    className="w-full bg-primary hover:opacity-90 disabled:bg-primary/50 text-black py-3 rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-[0_0_30px_var(--primary-glow)] hover:shadow-[0_0_40px_var(--primary-glow)] transition-all active:scale-95 flex items-center justify-center gap-3"
                                 >
                                     {isSubmitting ? (
                                         <>

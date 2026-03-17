@@ -246,12 +246,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               opacity: 1
             }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className={`fixed inset-y-0 left-0 lg:relative flex flex-col shrink-0 border-r border-white/5 bg-[var(--bg-sidebar)] backdrop-blur-3xl z-[50] lg:z-[20] text-sm`}
+            className={`fixed inset-y-0 left-0 lg:relative flex flex-col shrink-0 border-r border-[var(--border)] bg-[var(--bg-sidebar)] z-[50] lg:z-[20] text-sm transition-colors duration-300`}
           >
             {/* Logo — always navigates to / */}
-            <div className="flex h-12 items-center px-4 border-b border-white/5">
+            <div className="flex h-12 items-center px-4 border-b border-[var(--border)]">
               <Link to="/" onClick={() => setSystemInitialized(false)} className="flex items-center gap-4 group lg:cursor-none">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/30 shadow-[0_0_15px_rgba(0,242,255,0.15)] group-hover:shadow-[0_0_25px_rgba(0,242,255,0.4)] transition-all">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/30 shadow-[0_0_15px_var(--primary-glow)] group-hover:shadow-[0_0_25px_var(--primary-glow)] transition-all">
                   <Cpu className="h-4 w-4 text-primary" />
                 </div>
                 <AnimatePresence>
@@ -288,8 +288,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                     to={item.path}
                     className={`flex items-center gap-3 rounded-2xl px-3 py-2 transition-all duration-200 group lg:cursor-none ${
                       isActive
-                        ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,242,255,0.1)]'
-                        : 'text-[var(--fg-dim)] hover:text-[var(--fg)] hover:bg-[var(--fg)]/5'
+                        ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_var(--primary-glow)]'
+                        : 'text-[var(--text-muted)] hover:text-primary hover:bg-primary/5'
                     }`}
                   >
                     <item.icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-primary' : 'group-hover:text-[var(--fg)]'}`} />
@@ -311,10 +311,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </nav>
 
             {/* Collapse (Desktop) */}
-            <div className="p-3 border-t border-white/5 hidden lg:block">
+            <div className="p-3 border-t border-[var(--border)] hidden lg:block">
               <button
                 onClick={() => setSidebarOpen(!isSidebarOpen)}
-                className="flex w-full items-center justify-center rounded-2xl py-3 border border-[var(--border)] bg-[var(--fg)]/5 text-[var(--fg-dim)] hover:text-[var(--fg)] hover:border-[var(--fg)]/20 transition-all lg:cursor-none"
+                className="flex w-full items-center justify-center rounded-2xl py-3 border border-[var(--border)] bg-[var(--fg)]/5 text-[var(--fg-dim)] hover:text-primary hover:border-primary/30 transition-all lg:cursor-none"
               >
                 {isSidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
               </button>
@@ -325,7 +325,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <main className="relative flex flex-col flex-1 min-w-0 overflow-hidden" style={{ zIndex: 10 }}>
             {/* Tool header */}
             {(isToolPage || window.innerWidth < 1024) && (
-              <header className="flex h-10 shrink-0 items-center justify-between px-3 lg:px-5 bg-[var(--bg-header)] backdrop-blur-2xl border-b border-white/5">
+              <header className="flex h-10 shrink-0 items-center justify-between px-3 lg:px-5 bg-[var(--bg-header)] backdrop-blur-2xl border-b border-[var(--border)]">
                 <div className="flex items-center gap-4">
                   {/* Mobile Menu Toggle */}
                   <button 

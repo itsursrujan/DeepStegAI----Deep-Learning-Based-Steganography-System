@@ -10,8 +10,11 @@ import numpy as np
 import zipfile
 import markdown
 import filetype
-import datetime
 import base64
+import datetime
+from dotenv import load_dotenv
+from database.db import engine, Base
+from routes.auth import auth_bp
 from PIL import Image
 from flask import Flask, request, jsonify, send_file, render_template, redirect, session, url_for
 from flask_cors import CORS
@@ -41,6 +44,19 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "deepstegai_secure_key_2024"
 # Generated hash for "1234" for compatibility, but recommend setting ADMIN_PIN_HASH in env
 DEFAULT_PIN_HASH = b'$2b$12$K7B3dF6.mXv8wJkY5Hj6u.vQ9zR0T1U2V3W4X5Y6Z7A8B9C0D1E2' # Hash for "1234" (example)
 ADMIN_PIN_HASH = os.environ.get("ADMIN_PIN_HASH", DEFAULT_PIN_HASH.decode())
+
+# Load environment variables
+load_dotenv()
+
+# Register Blueprints
+app.register_blueprint(auth_bp, url_prefix='/auth')
+
+# Initialize Database
+try:
+    Base.metadata.create_all(bind=engine)
+    logger.info("Database tables initialized successfully.")
+except Exception as e:
+    logger.error(f"Failed to initialize database: {e}")
 
 MESSAGES_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'messages.json')
 
@@ -580,4 +596,4 @@ def api_batch_analyze():
     return jsonify({'results': results})
 
 if __name__ == '__main__':
-    app.run(debug=True, host='127.0.0.1', port=5000, use_reloader=False)
+    app.run(debug=True, host='127.0.0.1', port=8000, use_reloader=False)

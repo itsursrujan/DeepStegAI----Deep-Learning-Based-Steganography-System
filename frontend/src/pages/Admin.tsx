@@ -40,12 +40,12 @@ export function Admin() {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={TRANSITION}
-            className="glass-panel max-w-sm w-full rounded-3xl p-6 space-y-6 text-center relative overflow-hidden bg-[var(--bg-sidebar)] border border-[var(--border)]"
+            className="bg-[var(--bg-card)] max-w-sm w-full rounded-3xl p-6 space-y-6 text-center relative overflow-hidden border border-[var(--border)] shadow-2xl"
         >
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
             
             <div className="relative group mx-auto w-16 h-16">
-                <div className="h-16 w-16 bg-primary/10 border border-primary/20 rounded-full flex items-center justify-center transition-all group-hover:shadow-[0_0_60px_rgba(0,242,255,0.3)]">
+                <div className="h-16 w-16 bg-primary/10 border border-primary/20 rounded-full flex items-center justify-center transition-all group-hover:shadow-[0_0_60px_var(--primary-glow)]">
                     <LockIcon className="h-7 w-7 text-primary" />
                 </div>
                 <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 10, ease: "linear" }} className="absolute inset-0 border border-dashed border-primary/20 rounded-full" />
@@ -65,7 +65,7 @@ export function Admin() {
                     onChange={(e) => setPin(e.target.value)}
                     autoFocus
                 />
-                <button className="w-full bg-primary py-3 rounded-2xl text-black font-bold tracking-[0.4em] text-xs hover:bg-primary/90 transition-all uppercase shadow-[0_0_30px_rgba(0,242,255,0.3)] active:scale-95">
+                <button className="w-full bg-primary py-3 rounded-2xl text-black font-black tracking-[0.4em] text-xs hover:opacity-90 transition-all uppercase shadow-[0_0_30px_var(--primary-glow)] active:scale-95">
                     Initialize Session
                 </button>
             </form>
@@ -83,7 +83,7 @@ export function Admin() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-5">
-            <div className="h-10 w-10 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(0,242,255,0.1)]">
+            <div className="h-10 w-10 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center shadow-[0_0_20px_var(--primary-glow)]">
                 <Cpu className="h-5 w-5 text-primary" />
             </div>
             <div>
@@ -117,7 +117,7 @@ export function Admin() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
                     key={i} 
-                    className="glass-panel rounded-3xl p-4 border border-[var(--border)] bg-[var(--bg-sidebar)] flex flex-col justify-center relative overflow-hidden group"
+                    className="bg-[var(--bg-card)] rounded-3xl p-4 border border-[var(--border)] flex flex-col justify-center relative overflow-hidden group shadow-lg"
                   >
                       <div className="absolute top-0 left-0 w-1 h-full bg-primary/20 group-hover:bg-primary transition-colors" />
                       <div className="text-[10px] font-black tracking-[0.3em] text-[var(--fg-dim)]/20 uppercase mb-2 italic">{s.label}</div>
@@ -129,7 +129,7 @@ export function Admin() {
           {/* Main Dashboard Area */}
           <div className="xl:col-span-3">
               {/* Messages Hub */}
-              <div className="glass-panel rounded-[2rem] overflow-hidden border border-[var(--border)] bg-[var(--bg-sidebar)] flex flex-col flex-1 min-h-0">
+              <div className="bg-[var(--bg-card)] rounded-[2rem] overflow-hidden border border-[var(--border)] flex flex-col flex-1 min-h-0 shadow-xl">
                   <div className="p-4 border-b border-[var(--border)] flex items-center justify-between shrink-0 bg-[var(--fg)]/[0.02]">
                       <div className="flex items-center gap-4">
                           <div className="p-3 bg-primary/10 rounded-xl border border-primary/20">

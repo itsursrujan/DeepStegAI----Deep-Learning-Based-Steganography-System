@@ -15,7 +15,7 @@ function PowerBar({ progress, active }: { progress: number; active: boolean }) {
           return (
             <motion.div
               key={i}
-              className={`w-1 rounded-sm transition-all duration-300 ${isActive ? 'bg-primary shadow-[0_0_8px_#00f2ff]' : 'bg-[var(--border)]'}`}
+              className={`w-1 rounded-sm transition-all duration-300 ${isActive ? 'bg-primary shadow-[0_0_8px_var(--primary-glow)]' : 'bg-[var(--border)]'}`}
               animate={{ height: isActive ? '100%' : '30%', opacity: isActive ? [0.7, 1, 0.8] : 0.2 }}
               transition={isActive ? { repeat: Infinity, duration: 0.25 } : {}}
             />
@@ -103,7 +103,7 @@ export function Batch() {
         <div className="flex bg-[var(--bg-sidebar)] p-1.5 rounded-2xl border border-[var(--border)] gap-1">
           {(['hide', 'extract', 'scan'] as const).map(m => (
             <button key={m} onClick={() => { setMode(m); setError(null); setIsSuccess(false); setBatchResults(null) }}
-              className={`px-5 py-3 rounded-xl text-[10px] font-black tracking-[0.3em] uppercase transition-all ${mode === m ? 'bg-primary text-black shadow-[0_0_20px_rgba(0,255,255,0.2)]' : 'text-[var(--fg-dim)]/30 hover:text-[var(--fg-dim)]/60'}`}
+              className={`px-5 py-3 rounded-xl text-[10px] font-black tracking-[0.3em] uppercase transition-all ${mode === m ? 'bg-primary text-black shadow-[0_0_20px_var(--primary-glow)]' : 'text-[var(--fg-dim)]/30 hover:text-[var(--fg-dim)]/60'}`}
             >
               {m === 'hide' ? 'Embed' : m === 'extract' ? 'Extract' : 'Deep_Scan'}
             </button>
@@ -125,7 +125,7 @@ export function Batch() {
 
           <AnimatePresence>
             {files.length > 0 && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-panel rounded-3xl p-4 bg-[var(--bg-sidebar)] flex-1 min-h-0 flex flex-col gap-3">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-[var(--bg-card)] border border-[var(--border)] rounded-3xl p-4 flex-1 min-h-0 flex flex-col gap-3">
                 <div className="flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-2"><Zap className="h-4 w-4 text-primary" /><span className="text-[10px] font-black tracking-[0.4em] text-[var(--fg)] uppercase italic">Synchronization Locked ({files.length})</span></div>
                   <button onClick={() => setFiles([])} className="text-[9px] text-red-500/40 hover:text-red-500 font-black uppercase tracking-widest transition-colors">Abort All</button>
@@ -147,7 +147,7 @@ export function Batch() {
         </div>
 
         {/* Configuration */}
-        <div className="glass-panel rounded-3xl p-4 bg-[var(--bg-sidebar)] flex flex-col gap-3 min-h-0">
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-3xl p-4 flex flex-col gap-3 min-h-0">
           {mode === 'hide' && (
             <div className="space-y-4">
               <div className="space-y-2 px-2">
@@ -155,7 +155,7 @@ export function Batch() {
                 <div className="grid grid-cols-2 gap-2">
                   {(['lsb', 'adaptive'] as const).map(m => (
                     <button key={m} onClick={() => setMethod(m)}
-                      className={`py-2.5 rounded-xl text-[9px] font-black tracking-widest uppercase transition-all border ${method === m ? 'bg-primary/20 border-primary/40 text-primary shadow-[0_0_15px_rgba(0,242,255,0.1)]' : 'bg-[var(--bg-sidebar)] border-[var(--border)] text-[var(--fg-dim)] hover:text-[var(--fg)]'}`}
+                      className={`py-2.5 rounded-xl text-[9px] font-black tracking-widest uppercase transition-all border ${method === m ? 'bg-primary/20 border-primary/40 text-primary shadow-[0_0_15px_var(--primary-glow)]' : 'bg-[var(--bg-sidebar)] border-[var(--border)] text-[var(--fg-dim)] hover:text-[var(--fg)]'}`}
                     >
                       {m}
                     </button>
@@ -249,8 +249,11 @@ export function Batch() {
             </AnimatePresence>
           </div>
 
-          <button disabled={files.length === 0 || (mode === 'hide' && !secret) || isProcessing} onClick={handleBatch}
-            className="w-full bg-primary text-black font-bold tracking-[0.4em] text-[10px] uppercase rounded-2xl py-3 shadow-[0_0_30px_rgba(0,242,255,0.3)] hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-30"
+          <button 
+            disabled={files.length === 0 || (mode === 'hide' && !secret) || isProcessing} 
+            onClick={handleBatch}
+            style={{ color: '#000000' }}
+            className="w-full bg-primary disabled:bg-primary/20 font-black tracking-[0.2em] text-[13px] uppercase rounded-2xl py-3 shadow-[0_0_30px_var(--primary-glow)] hover:opacity-90 transition-all active:scale-[0.98] lg:cursor-none"
           >
             {isProcessing ? 'SYNCHRONIZING...' : 'INITIALIZE PROTOCOL'}
           </button>

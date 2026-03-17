@@ -7,41 +7,33 @@ export default {
   ],
   theme: {
   	extend: {
-  		colors: {
-  			border: 'hsl(var(--border))',
-  			input: 'hsl(var(--input))',
-  			ring: 'hsl(var(--ring))',
-  			background: 'hsl(var(--background))',
-  			foreground: 'hsl(var(--foreground))',
-  			primary: {
-  				DEFAULT: '#00f2ff', // Bright Cyber Cyan
-  				foreground: 'hsl(var(--primary-foreground))'
-  			},
-  			secondary: {
-  				DEFAULT: '#7000ff', // Deep Purple
-  				foreground: 'hsl(var(--secondary-foreground))'
-  			},
-  			destructive: {
-  				DEFAULT: 'hsl(var(--destructive))',
-  				foreground: 'hsl(var(--destructive-foreground))'
-  			},
-  			muted: {
-  				DEFAULT: 'hsl(var(--muted))',
-  				foreground: 'hsl(var(--muted-foreground))'
-  			},
-  			accent: {
-  				DEFAULT: 'hsl(var(--accent))',
-  				foreground: 'hsl(var(--accent-foreground))'
-  			},
-  			popover: {
-  				DEFAULT: 'hsl(var(--popover))',
-  				foreground: 'hsl(var(--popover-foreground))'
-  			},
-  			card: {
-  				DEFAULT: 'hsl(var(--card))',
-  				foreground: 'hsl(var(--card-foreground))'
-  			}
-  		},
+    colors: {
+        border: 'var(--border)',
+        input: 'var(--border)',
+        ring: 'var(--primary)',
+        background: 'var(--bg)',
+        foreground: 'var(--fg)',
+        primary: {
+          DEFAULT: 'var(--primary)',
+          foreground: 'var(--fg)'
+        },
+        secondary: {
+          DEFAULT: '#7000ff', // Hardcoded but keep for now unless asked
+          foreground: '#ffffff'
+        },
+        muted: {
+          DEFAULT: 'var(--text-muted)',
+          foreground: 'var(--fg-dim)'
+        },
+        accent: {
+          DEFAULT: 'var(--accent)',
+          foreground: '#ffffff'
+        },
+        card: {
+          DEFAULT: 'var(--bg-card)',
+          foreground: 'var(--fg)'
+        }
+      },
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
