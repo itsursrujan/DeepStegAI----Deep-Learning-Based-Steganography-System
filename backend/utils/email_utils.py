@@ -13,9 +13,20 @@ def send_admin_notification(entry):
     """
     smtp_server = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
     smtp_port = int(os.environ.get("SMTP_PORT", "587"))
-    smtp_user = os.environ.get("SMTP_USER")
-    smtp_pass = os.environ.get("SMTP_PASS")
-    notify_email = os.environ.get("NOTIFY_EMAIL", "hjsudarshan18@gmail.com")
+    smtp_user = os.environ.get("SMTP_USER", "").strip()
+    smtp_pass = os.environ.get("SMTP_PASS", "").replace(" ", "").strip()
+    notify_email = os.environ.get("NOTIFY_EMAIL", "hjsudarshan18@gmail.com").strip()
+    use_mock = os.environ.get("USE_MOCK_EMAIL", "False").lower() == "true"
+
+    if use_mock:
+        print("\n" + "="*50)
+        print("📨 [MOCK EMAIL] NEW ADMIN NOTIFICATION")
+        print(f"To: {notify_email}")
+        print(f"Subject: New Message from {entry.get('name')}")
+        print(f"Content: {entry.get('message')}")
+        print("="*50 + "\n")
+        logger.info(f"Mock admin notification logged for {notify_email}")
+        return
 
     if not smtp_user or not smtp_pass:
         logger.warning("SMTP credentials not configured. Skipping email notification.")
@@ -67,8 +78,21 @@ def send_password_reset_email(user_email, reset_token):
     """
     smtp_server = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
     smtp_port = int(os.environ.get("SMTP_PORT", "587"))
-    smtp_user = os.environ.get("SMTP_USER")
-    smtp_pass = os.environ.get("SMTP_PASS")
+    smtp_user = os.environ.get("SMTP_USER", "").strip()
+    smtp_pass = os.environ.get("SMTP_PASS", "").replace(" ", "").strip()
+    frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:5173").strip()
+    use_mock = os.environ.get("USE_MOCK_EMAIL", "False").lower() == "true"
+
+    reset_link = f"{frontend_url}/reset-password?token={reset_token}"
+
+    if use_mock:
+        print("\n" + "="*50)
+        print("📨 [MOCK EMAIL] PASSWORD RESET REQUEST")
+        print(f"To: {user_email}")
+        print(f"Reset Link: {reset_link}")
+        print("="*50 + "\n")
+        logger.info(f"Mock reset email logged for {user_email}")
+        return
 
     if not smtp_user or not smtp_pass:
         logger.warning("SMTP credentials not configured. Skipping reset email.")
@@ -79,8 +103,6 @@ def send_password_reset_email(user_email, reset_token):
         msg['From'] = smtp_user
         msg['To'] = user_email
         msg['Subject'] = "🔐 DeepStegAI: Password Reset Request"
-
-        reset_link = f"http://localhost:3000/reset-password?token={reset_token}"
         
         body = f"""
         <html>
@@ -118,10 +140,17 @@ def send_user_receipt(entry):
 
     smtp_server = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
     smtp_port = int(os.environ.get("SMTP_PORT", "587"))
-    smtp_user = os.environ.get("SMTP_USER")
-    smtp_pass = os.environ.get("SMTP_PASS")
+    smtp_user = os.environ.get("SMTP_USER", "").strip()
+    smtp_pass = os.environ.get("SMTP_PASS", "").replace(" ", "").strip()
+    use_mock = os.environ.get("USE_MOCK_EMAIL", "False").lower() == "true"
 
-    if not smtp_user or not smtp_pass:
+    if use_mock:
+        print("\n" + "="*50)
+        print("📨 [MOCK EMAIL] USER RECEIPT")
+        print(f"To: {user_email}")
+        print(f"Message: Protocol Initiated for ID #{entry.get('id')}")
+        print("="*50 + "\n")
+        logger.info(f"Mock user receipt logged for {user_email}")
         return
 
     try:

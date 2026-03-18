@@ -17,8 +17,8 @@ api.interceptors.request.use((config) => {
 // Add a response interceptor to sync credits and handle common errors
 api.interceptors.response.use(
   (response) => {
-    // Sync Credits from Body
-    const creditsFromBody = response.data?.credits
+    // Sync Credits from Body (Standardized Envelope)
+    const creditsFromBody = response.data?.data?.credits || response.data?.credits
     if (typeof creditsFromBody === 'number') {
       useStore.getState().setCredits(creditsFromBody)
     }
@@ -60,6 +60,7 @@ export const stegoApi = {
   // --- Auth ---
   login: (data: any) => api.post('/auth/login', data),
   signup: (data: any) => api.post('/auth/signup', data),
+  getCurrentUser: () => api.get('/auth/me'),
   forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
   resetPassword: (data: any) => api.post('/auth/reset-password', data),
 
@@ -109,6 +110,9 @@ export const stegoApi = {
     }),
 
   getMessages: () => api.get('/messages'),
+  getAnalysisList: () => api.get('/analysis'),
+  getFiles: () => api.get('/files'),
+  getCredits: () => api.get('/credits'),
 }
 
 export default api
