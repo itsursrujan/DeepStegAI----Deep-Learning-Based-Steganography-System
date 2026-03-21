@@ -48,6 +48,14 @@ export function Batch() {
 
   const handleBatch = async () => {
     if (files.length === 0 || (mode === 'hide' && !secret)) return
+
+    let promptMsg = ''
+    if (mode === 'hide') promptMsg = `Batch embedding will process ${files.length} files. Estimated cost: ${files.length * 2} Neural Credits. Proceed?`
+    else if (mode === 'extract') promptMsg = `Batch extraction will process ${files.length} payloads. Estimated cost: ${files.length * 2} Neural Credits. Proceed?`
+    else promptMsg = `Batch AI scan will process ${files.length} images. Estimated cost: ${files.length * 2} Neural Credits. Proceed?`
+
+    if (!window.confirm(promptMsg)) return
+
     setIsProcessing(true); setStatus('PROCESSING'); setError(null); setIsSuccess(false); setProgress(0); setBatchResults(null)
     
     const timer = setInterval(() => {
@@ -61,7 +69,7 @@ export function Batch() {
         files.forEach(f => fd.append('images', f))
         const res = await stegoApi.batchAnalyze(fd)
         clearInterval(timer); setProgress(100)
-        setBatchResults(res.data.results)
+        setBatchResults(res.data.data.results)
         setIsSuccess(true)
         setStatus('SECURE')
       } else {
@@ -94,7 +102,7 @@ export function Batch() {
   }
 
   return (
-    <div className="h-full flex flex-col gap-2 max-w-7xl mx-auto overflow-hidden cursor-none">
+    <div className={`h-full flex flex-col gap-2 max-w-7xl mx-auto overflow-hidden ${window.innerWidth > 768 ? 'cursor-none' : 'cursor-auto'}`}>
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-black italic tracking-tighter uppercase text-[var(--fg)] glow-text leading-none">Industrial Mass-Engine</h2>

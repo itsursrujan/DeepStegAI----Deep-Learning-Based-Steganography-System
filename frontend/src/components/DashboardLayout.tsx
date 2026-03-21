@@ -2,12 +2,13 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence, useSpring, useMotionValue } from 'framer-motion'
 import {
   Layers, Download, Upload,
-  Cpu, X, Menu, Terminal, Activity, Bell, Zap, ShieldCheck, Lock as LockIcon, HelpCircle
+  Cpu, X, Menu, Activity, Zap, ShieldCheck, Lock as LockIcon, HelpCircle
 } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { useStore } from '@/store/useStore'
 import { DigitalRain } from '@/components/DigitalRain'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import api from '@/services/api'
 
 
 
@@ -18,10 +19,11 @@ const navItems = [
   { path: '/analyze', label: 'AI Detection', icon: ShieldCheck },
   { path: '/batch', label: 'Batch Operations', icon: Layers },
   { path: '/admin', label: 'Admin Panel', icon: LockIcon },
+  { path: '/pricing', label: 'Top-Up Credits', icon: Zap },
   { path: '/support', label: 'Support', icon: HelpCircle },
 ]
 
-const TOOL_PATHS = ['/embed', '/extract', '/analyze', '/batch', '/admin', '/support']
+const TOOL_PATHS = ['/embed', '/extract', '/analyze', '/batch', '/admin', '/support', '/pricing']
 
 // ─────────────────────── Global Cursor ───────────────────────
 // Ripple is exposed via a global event so Overview's init button can fire it
@@ -140,18 +142,22 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024)
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false)
   const location = useLocation()
-  const status   = useStore(s => s.status)
+  const status = useStore((state) => state.status)
+  const theme = useStore(s => s.theme)
+  const serverStatus = useStore((state) => state.serverStatus)
+  const setServerStatus = useStore((state) => state.setServerStatus)
   const systemInitialized = useStore(s => s.systemInitialized)
   const setSystemInitialized = useStore(s => s.setSystemInitialized)
   const isAuthenticated = useStore(s => s.isAuthenticated)
   const user = useStore(s => s.user)
   const logout = useStore(s => s.logout)
-  const theme = useStore(s => s.theme)
   const [pulseColor, setPulseColor] = useState<string | null>(null)
 
   const isToolPage = TOOL_PATHS.includes(location.pathname)
   // Sidebar only appears AFTER system initialization and successful authentication
   const showSidebar = systemInitialized && isAuthenticated
+
+  const fetchUser = useStore(s => s.fetchUser)
 
   // Auto-initialize if landing on a tool page directly
   useEffect(() => {
@@ -159,6 +165,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       setSystemInitialized(true)
     }
   }, [location.pathname, systemInitialized, setSystemInitialized])
+
+  // Sync user profile on mount
+  useEffect(() => {
+    if (isAuthenticated && !user) {
+      fetchUser()
+    }
+  }, [isAuthenticated, user, fetchUser])
 
   // Handle window resize
   useEffect(() => {
@@ -178,7 +191,24 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     setMobileMenuOpen(false)
   }, [location.pathname])
 
+  // Poll /api/health every 30s
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        await api.get('/health')
+        setServerStatus('ONLINE')
+      } catch (err) {
+        setServerStatus('OFFLINE')
+      }
+    }
+    checkHealth()
+    const interval = setInterval(checkHealth, 30000)
+    return () => clearInterval(interval)
+  }, [setServerStatus])
+
+  // System Status Style (Top Bar)
   const getStatusStyle = useCallback(() => {
+    if (serverStatus === 'OFFLINE') return { color: 'text-red-500', hex: '#ef4444' }
     switch (status) {
       case 'ANALYZING':   return { color: 'text-primary',    hex: '#00f2ff' }
       case 'COMPROMISED': return { color: 'text-[#FF3B3B]',  hex: '#FF3B3B' }
@@ -203,7 +233,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     if (item.path === '/admin') {
       return user?.email === 'hjsudarshan18@gmail.com'
     }
-    if (item.path === '/support') {
+    if (item.path === '/support' || item.path === '/pricing') {
       return user?.email !== 'hjsudarshan18@gmail.com'
     }
     return true
@@ -433,7 +463,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                     </div>
                   )}
                   <span className={`text-[10px] font-mono font-black tracking-widest hidden sm:inline-block ${getStatusStyle().color}`}>
-                    SYS_{status}
+                    {serverStatus === 'OFFLINE' ? 'SYS_OFFLINE' : `SYS_${status}`}
                   </span>
                   <div className="h-6 w-px bg-[var(--border)] hidden sm:block" />
                   <ThemeToggle />

@@ -7,6 +7,10 @@ from services.analysis_service import AnalysisService
 
 api_bp = Blueprint('api', __name__)
 
+@api_bp.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({"status": "ok"}), 200
+
 @api_bp.route('/files', methods=['GET'])
 @token_required
 def list_files():
@@ -71,6 +75,21 @@ def get_analysis(file_id):
         return jsonify({
             "success": True,
             "data": analysis.to_dict(),
+            "error": None
+        })
+    finally:
+        db.close()
+
+@api_bp.route('/activity', methods=['GET'])
+@token_required
+def get_activity():
+    from models.activity_log import ActivityLog
+    db = SessionLocal()
+    try:
+        logs = db.query(ActivityLog).filter(ActivityLog.user_id == request.user_id).order_by(ActivityLog.created_at.desc()).limit(50).all()
+        return jsonify({
+            "success": True,
+            "data": [l.to_dict() for l in logs],
             "error": None
         })
     finally:

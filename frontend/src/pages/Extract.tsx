@@ -44,7 +44,12 @@ export function Extract() {
 
   const handleExtract = async () => {
     if (!stego) return
-    setIsProcessing(true); setStatus('PROCESSING'); setError(null); setIsSuccess(false); setProgress(0)
+
+    if (!window.confirm('Extracting a payload costs 2 Neural Credits. Proceed?')) return
+
+    setIsProcessing(true)
+    setStatus('PROCESSING')
+    setError(null); setIsSuccess(false); setProgress(0)
     
     const timer = setInterval(() => {
         setProgress(p => (p < 95 ? p + Math.random() * 8 : p))

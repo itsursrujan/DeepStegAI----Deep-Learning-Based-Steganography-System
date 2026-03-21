@@ -188,3 +188,59 @@ def send_user_receipt(entry):
         
     except Exception as e:
         logger.error(f"Failed to send user receipt: {e}")
+
+def send_otp_email(user_email, otp_code):
+    """
+    Sends a 6-digit OTP to the user for signup verification.
+    """
+    smtp_server = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
+    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+    smtp_user = os.environ.get("SMTP_USER", "").strip()
+    smtp_pass = os.environ.get("SMTP_PASS", "").replace(" ", "").strip()
+    use_mock = os.environ.get("USE_MOCK_EMAIL", "False").lower() == "true"
+
+    if use_mock:
+        print("\n" + "="*50)
+        print("📨 [MOCK EMAIL] OTP VERIFICATION")
+        print(f"To: {user_email}")
+        print(f"OTP Code: {otp_code}")
+        print("="*50 + "\n")
+        logger.info(f"Mock OTP email logged for {user_email}")
+        return
+
+    if not smtp_user or not smtp_pass:
+        logger.warning("SMTP credentials not configured. Skipping OTP email.")
+        return
+
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = smtp_user
+        msg['To'] = user_email
+        msg['Subject'] = "🔐 DeepStegAI: Verify Your Email"
+        
+        body = f"""
+        <html>
+        <body style="font-family: sans-serif; color: #1e293b;">
+            <div style="background: #0f172a; padding: 20px; border-radius: 10px; color: white;">
+                <h2 style="color: #00f2ff;">Verify Your Email Address</h2>
+                <p>Welcome to DeepStegAI! Please use the following One-Time Password to complete your registration:</p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <span style="background: rgba(255,255,255,0.1); color: #00f2ff; padding: 15px 30px; border-radius: 8px; font-size: 24px; font-weight: bold; letter-spacing: 5px;">{otp_code}</span>
+                </div>
+                <p style="font-size: 12px; opacity: 0.7;">This code will expire in 10 minutes. Do not share this code with anyone.</p>
+            </div>
+        </body>
+        </html>
+        """
+        msg.attach(MIMEText(body, 'html'))
+
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.send_message(msg)
+            
+        logger.info(f"OTP email sent to {user_email}")
+        
+    except Exception as e:
+        logger.error(f"Failed to send OTP email: {e}")
+

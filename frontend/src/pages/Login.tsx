@@ -11,6 +11,8 @@ export function Login() {
   const [remember, setRemember] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [requiresOTP, setRequiresOTP] = useState(false)
+  const [otp, setOtp] = useState('')
   
   const navigate = useNavigate()
   const { setLogin, addLog } = useStore()
@@ -22,12 +24,45 @@ export function Login() {
     
     try {
       const res = await stegoApi.login({ email, password })
-      setLogin(res.data.access_token, res.data.user, remember)
-      addLog(`User ${res.data.user.email} authenticated successfully (Persistence: ${remember}).`)
+      const loginData = res.data.data
+      setLogin(loginData.access_token, loginData.user, remember)
+      addLog(`User ${loginData.user.email} authenticated successfully (Persistence: ${remember}).`)
       navigate('/')
     } catch (err: any) {
+      if (err.response?.data?.data?.requires_verification) {
+          setRequiresOTP(true);
+          setError("Account not verified. A new OTP has been dispatched to your email.");
+          return;
+      }
       setError(err.response?.data?.error || 'Authorization failed. Check credentials.')
       addLog(`Login failure for ${email}.`)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    setError(null)
+    try {
+      const res = await stegoApi.verifyEmail({ email, otp })
+      if (!res.data.success) {
+        throw new Error(res.data.error || 'Verification failed')
+      }
+      
+      const loginData = res.data.data;
+      if (loginData.access_token) {
+          setLogin(loginData.access_token, loginData.user, remember);
+          addLog(`User ${email} verified and authenticated.`);
+          navigate('/');
+      } else {
+          setRequiresOTP(false);
+          setError("Verified. Please log in again.");
+      }
+    } catch (err: any) {
+      setError((err.response?.data?.error || 'Verification failed').toUpperCase())
+      addLog(`Verification failure for ${email}.`)
     } finally {
       setIsSubmitting(false)
     }
@@ -48,9 +83,58 @@ export function Login() {
           </div>
           <h2 className="text-3xl font-black italic tracking-tighter uppercase text-[var(--fg)] glow-text leading-none">Access Control</h2>
           <p className="text-[10px] font-bold tracking-[0.4em] uppercase mt-3 text-[var(--fg-dim)]/60">Stage Authorization Credentials</p>
+          <p className="text-[10px] font-bold tracking-[0.4em] uppercase mt-3 text-[var(--fg-dim)]/60">Stage Authorization Credentials</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-5">
+        {requiresOTP ? (
+          <form onSubmit={handleVerifyOTP} className="space-y-4">
+            <div className="text-center mb-6">
+              <p className="text-sm font-bold text-primary mb-2">Awaiting Verification Code</p>
+              <p className="text-[10px] uppercase font-bold text-[var(--fg-dim)]">An OTP was dispatched to {email}.</p>
+            </div>
+            <div className="relative group">
+              <ShieldCheck className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--fg-dim)] group-focus-within:text-primary transition-colors" />
+              <input
+                type="text"
+                placeholder="6-DIGIT OTP"
+                required
+                maxLength={6}
+                className="w-full bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-2xl py-4 pl-14 pr-6 text-center text-xl tracking-[1em] font-black focus:outline-none focus:border-primary/40 transition-all font-mono text-[var(--fg)] placeholder:text-[var(--fg-dim)]/40 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]"
+                value={otp}
+                onChange={e => setOtp(e.target.value)}
+              />
+            </div>
+            
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-2xl p-4 text-red-400"
+              >
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <p className="text-[10px] font-black uppercase tracking-widest leading-none shadow-glow text-left">{error}</p>
+              </motion.div>
+            )}
+
+            <button
+              disabled={isSubmitting}
+              className="w-full bg-primary text-black font-black tracking-[0.4em] text-xs uppercase rounded-2xl py-4 shadow-[0_0_30px_var(--primary-glow)] hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-30 group"
+            >
+              <span className="flex items-center justify-center gap-3">
+                {isSubmitting ? 'VERIFYING...' : 'CONFIRM ACCESS'}
+                {!isSubmitting && <ArrowRight className="h-4 w-4 group-hover:translate-x-1" />}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setRequiresOTP(false); setError(null); setOtp(''); }}
+              className="w-full text-center mt-4 text-[10px] uppercase font-bold tracking-widest text-[var(--fg-dim)] hover:text-[var(--fg)]"
+            >
+              Back to Login
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleLogin} className="space-y-5">
           <div className="relative group">
             <Mail className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--fg-dim)] group-focus-within:text-primary transition-colors" />
             <input
@@ -114,6 +198,7 @@ export function Login() {
             </span>
           </button>
         </form>
+        )}
 
         <div className="mt-8 pt-6 border-t border-[var(--border)] flex flex-col items-center gap-4">
           <p className="text-[10px] font-bold tracking-widest uppercase text-[var(--fg-dim)]/40 italic">New Operator detected?</p>

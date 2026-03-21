@@ -18,7 +18,8 @@ export function Admin() {
         const fetchData = async () => {
             try {
                 const res = await stegoApi.getMessages()
-                setMessages(res.data.reverse())
+                const msgData = res.data.success ? res.data.data : res.data
+                setMessages(msgData.reverse())
             } catch (err) {
                 console.error("Data fetch failed:", err)
             } finally {

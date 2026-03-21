@@ -12,6 +12,8 @@ export function Signup() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [requiresOTP, setRequiresOTP] = useState(false)
+  const [otp, setOtp] = useState('')
   
   const navigate = useNavigate()
   const addLog = useStore(s => s.addLog)
@@ -46,10 +48,19 @@ export function Signup() {
     }
     
     try {
-      await stegoApi.signup({ email, password })
-      setSuccess(true)
-      addLog(`New protocol profile created for ${email}.`)
-      setTimeout(() => navigate('/login'), 2000)
+      const res = await stegoApi.signup({ email, password })
+      if (!res.data.success) {
+        throw new Error(res.data.error || 'Registration failed')
+      }
+      
+      if (res.data.data?.requires_verification) {
+        setRequiresOTP(true)
+        addLog(`Verification required for ${email}. OTP sent.`)
+      } else {
+        setSuccess(true)
+        addLog(`New protocol profile created for ${email}.`)
+        setTimeout(() => navigate('/login'), 2000)
+      }
     } catch (err: any) {
       let msg = 'Registration failed. Check your data.';
       const resData = err.response?.data;
@@ -65,6 +76,33 @@ export function Signup() {
       
       setError(msg.toUpperCase())
       addLog(`Signup failure for ${email}: ${msg}`)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    setError(null)
+    try {
+      const res = await stegoApi.verifyEmail({ email, otp })
+      if (!res.data.success) {
+        throw new Error(res.data.error || 'Verification failed')
+      }
+      
+      const loginData = res.data.data;
+      if (loginData.access_token) {
+          useStore.getState().setLogin(loginData.access_token, loginData.user, false);
+          addLog(`User ${email} verified and authenticated.`);
+          navigate('/');
+      } else {
+          setSuccess(true);
+          setTimeout(() => navigate('/login'), 2000);
+      }
+    } catch (err: any) {
+      setError((err.response?.data?.error || 'Verification failed').toUpperCase())
+      addLog(`Verification failure for ${email}.`)
     } finally {
       setIsSubmitting(false)
     }
@@ -101,6 +139,53 @@ export function Signup() {
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--fg-dim)]/40 leading-relaxed shadow-glow">Redirecting to Authorization Hub...</p>
              </div>
           </motion.div>
+        ) : requiresOTP ? (
+          <form onSubmit={handleVerifyOTP} className="space-y-4">
+            <div className="text-center mb-6">
+              <p className="text-sm font-bold text-primary mb-2">Awaiting Verification Code</p>
+              <p className="text-[10px] uppercase font-bold text-[var(--fg-dim)]">An OTP was dispatched to {email}.</p>
+            </div>
+            <div className="relative group">
+              <Key className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--fg-dim)] group-focus-within:text-primary transition-colors" />
+              <input
+                type="text"
+                placeholder="6-DIGIT OTP"
+                required
+                maxLength={6}
+                className="w-full bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-2xl py-4 pl-14 pr-6 text-center text-xl tracking-[1em] font-black focus:outline-none focus:border-primary/40 transition-all font-mono text-[var(--fg)] placeholder:text-[var(--fg-dim)]/40 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]"
+                value={otp}
+                onChange={e => setOtp(e.target.value)}
+              />
+            </div>
+            
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-2xl p-4 text-red-400"
+              >
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <p className="text-[10px] font-black uppercase tracking-widest leading-none shadow-glow text-left">{error}</p>
+              </motion.div>
+            )}
+
+            <button
+              disabled={isSubmitting}
+              className="w-full bg-primary text-black font-black tracking-[0.4em] text-xs uppercase rounded-2xl py-4 shadow-[0_0_30px_var(--primary-glow)] hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-30 group"
+            >
+              <span className="flex items-center justify-center gap-3">
+                {isSubmitting ? 'VERIFYING...' : 'CONFIRM ACCESS'}
+                {!isSubmitting && <CheckCircle className="h-4 w-4 group-hover:scale-110" />}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setRequiresOTP(false)}
+              className="w-full text-center mt-4 text-[10px] uppercase font-bold tracking-widest text-[var(--fg-dim)] hover:text-[var(--fg)]"
+            >
+              Back to Recruitment
+            </button>
+          </form>
         ) : (
           <form onSubmit={handleSignup} className="space-y-4">
             <div className="relative group">

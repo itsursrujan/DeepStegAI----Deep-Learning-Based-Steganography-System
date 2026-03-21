@@ -25,6 +25,7 @@ class UserResponse(BaseModel):
     id: str
     email: str
     credits: int
+    role: str
 
     class Config:
         from_attributes = True

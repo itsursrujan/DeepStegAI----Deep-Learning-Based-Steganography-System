@@ -68,7 +68,11 @@ export function Embed() {
 
   const handleEmbed = async () => {
     if (!cover || !secret) return
-    setIsProcessing(true); setStatus('PROCESSING'); setError(null); setProgress(0)
+
+    if (!window.confirm('Embedding a payload costs 5 Neural Credits. Proceed?')) return
+
+    setIsProcessing(true)
+    setStatus('PROCESSING'); setError(null); setProgress(0)
     
     // Weighted progress: fast 0→60, then slow crawl 60→92 (approx 4s)
     let tick = 0
@@ -89,9 +93,13 @@ export function Embed() {
     try {
       const res = await stegoApi.embed(fd)
       clearInterval(timer); setProgress(100)
-      if (res.data?.image_data) {
+      if (res.data.success && res.data.data) {
+        const d = res.data.data
         setTimeout(() => {
-            setResult({ image: `data:image/png;base64,${res.data.image_data}`, token: res.data.recovery_token })
+            setResult({
+              image: `data:image/png;base64,${d.image_data}`,
+              token: d.recovery_token || undefined
+            })
             setStatus('SECURE')
         }, 400)
       } else { setError('Protocol Mismatch.'); setStatus('READY') }

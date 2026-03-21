@@ -1,5 +1,6 @@
 import axios, { AxiosError } from 'axios'
 import { useStore } from '@/store/useStore'
+import { toast } from '@/components/Toaster'
 
 const api = axios.create({
   baseURL: '/api',
@@ -26,7 +27,16 @@ api.interceptors.response.use(
     // Sync Credits from Header (X-Updated-Credits)
     const creditsFromHeader = response.headers['x-updated-credits']
     if (creditsFromHeader) {
-      useStore.getState().setCredits(parseInt(creditsFromHeader, 10))
+      const newCredits = parseInt(creditsFromHeader, 10)
+      const oldCredits = useStore.getState().user?.credits
+      if (oldCredits !== undefined && newCredits < oldCredits) {
+        toast({ 
+          title: `-${oldCredits - newCredits} CREDITS`, 
+          description: 'Neural operation cost deducted.', 
+          type: 'credit' 
+        })
+      }
+      useStore.getState().setCredits(newCredits)
     }
 
     return response
@@ -60,9 +70,13 @@ export const stegoApi = {
   // --- Auth ---
   login: (data: any) => api.post('/auth/login', data),
   signup: (data: any) => api.post('/auth/signup', data),
+  verifyEmail: (data: any) => api.post('/auth/verify-email', data),
   getCurrentUser: () => api.get('/auth/me'),
   forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
   resetPassword: (data: any) => api.post('/auth/reset-password', data),
+
+  // --- Payment ---
+  createRazorpayOrder: (amount_inr: number) => api.post('/razorpay/create-order', { amount_inr }),
 
   // --- Core ---
   embed: (formData: FormData) =>
@@ -113,6 +127,7 @@ export const stegoApi = {
   getAnalysisList: () => api.get('/analysis'),
   getFiles: () => api.get('/files'),
   getCredits: () => api.get('/credits'),
+  getActivity: () => api.get('/activity')
 }
 
 export default api

@@ -34,21 +34,21 @@ def scan_image_for_signature(img: Image.Image) -> dict:
                 "detected": True,
                 "confidence": "100%",
                 "message": "DeepStegAI Signature Found (Standard LSB)",
-                "magic_bytes": header_bytes
+                "magic_bytes": header_bytes.hex()
             }
         elif header_bytes.startswith(b"ADPT") or header_bytes.startswith(b"ADPS"):
             return {
                 "detected": True,
                 "confidence": "100%",
                 "message": "DeepStegAI Signature Found (Adaptive Edge)",
-                "magic_bytes": header_bytes
+                "magic_bytes": header_bytes.hex()
             }
         else:
             return {
                 "detected": False,
                 "confidence": "0%",
                 "message": "No Signature Found",
-                "magic_bytes": header_bytes
+                "magic_bytes": header_bytes.hex()
             }
             
     except Exception as e:

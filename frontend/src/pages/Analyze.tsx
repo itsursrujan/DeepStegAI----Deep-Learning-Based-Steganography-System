@@ -1,4 +1,4 @@
-import { useState, useCallback, Suspense, useEffect, memo } from 'react'
+import { useState, useCallback, Suspense, useEffect, memo, Component } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Canvas } from '@react-three/fiber'
@@ -6,6 +6,30 @@ import { Scanner3D } from '@/three/Scanner3D'
 import { Search, Activity, BarChart, X } from 'lucide-react'
 import { stegoApi } from '@/services/api'
 import { useStore } from '@/store/useStore'
+
+// Error Boundary to prevent Canvas crashes from blanking the whole page
+class CanvasErrorBoundary extends Component<
+  { children: React.ReactNode; fallback?: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: any) {
+    super(props)
+    this.state = { hasError: false }
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || (
+        <div className="flex items-center justify-center h-full text-[var(--fg-dim)] text-xs font-bold uppercase tracking-widest">
+          3D Renderer unavailable
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 
 // ───────────────────────── Power Bar ─────────────────────────
 function PowerBar({ progress, active }: { progress: number; active: boolean }) {
@@ -85,6 +109,9 @@ export const Analyze = memo(function Analyze() {
 
   const handleScan = async () => {
     if (!image) return
+
+    if (!window.confirm('Executing a neural scan costs 2 Neural Credits. Proceed?')) return
+
     setIsScanning(true); setStatus('ANALYZING'); setProgress(0); setShowRing(false)
     
     // Weighted progress: 3-5s neural scan simulation
@@ -106,11 +133,13 @@ export const Analyze = memo(function Analyze() {
       
       // Delay result slightly to allow progress bar to be seen at 100%
       setTimeout(() => {
-          setResult(res.data)
-          setStatus(res.data.detected ? 'COMPROMISED' : 'SECURE')
+          const analysisData = res.data.success ? res.data.data : res.data
+          setResult(analysisData)
+          
+          const isCompromised = analysisData.verdict !== 'CLEAN'
+          setStatus(isCompromised ? 'COMPROMISED' : 'SECURE')
           setIsScanning(false)
           setShowRing(true)
-          // Hide ring after 2 seconds as per user request
           setTimeout(() => setShowRing(false), 2000)
       }, 600)
     } catch (err) {
@@ -157,7 +186,7 @@ export const Analyze = memo(function Analyze() {
 
           <div className={`bg-[var(--bg-card)] border border-[var(--border)] rounded-3xl overflow-hidden min-h-[180px] md:min-h-0 flex-1 relative transition-all duration-700 ${
             result 
-              ? (result.detected 
+              ? (result.verdict !== 'CLEAN' 
                   ? 'shadow-[inset_0_0_50px_rgba(255,59,59,0.3)] border-red-500/50' 
                   : 'shadow-[inset_0_0_50px_rgba(0,255,156,0.3)] border-[#00FF9C]/50')
               : ''
@@ -171,13 +200,21 @@ export const Analyze = memo(function Analyze() {
               </button>
             )}
 
-            <Suspense fallback={null}>
-              <Canvas camera={{ position: [0, 0, 15] }}>
-                <ambientLight intensity={0.5} />
-                <pointLight position={[10, 10, 10]} intensity={1} color="#00f2ff" />
-                <Scanner3D image={preview || undefined} scanning={isScanning} />
-              </Canvas>
-            </Suspense>
+            <CanvasErrorBoundary fallback={
+              preview ? (
+                <div className="flex items-center justify-center h-full p-4">
+                  <img src={preview} alt="Preview" className="max-w-full max-h-full object-contain rounded-xl" />
+                </div>
+              ) : null
+            }>
+              <Suspense fallback={null}>
+                <Canvas camera={{ position: [0, 0, 15] }}>
+                  <ambientLight intensity={0.5} />
+                  <pointLight position={[10, 10, 10]} intensity={1} color="#00f2ff" />
+                  <Scanner3D image={preview || undefined} scanning={isScanning} />
+                </Canvas>
+              </Suspense>
+            </CanvasErrorBoundary>
 
             {/* Glowing feedback ring - moved after canvas for stacking */}
             <AnimatePresence>
@@ -188,10 +225,10 @@ export const Analyze = memo(function Analyze() {
                   exit={{ opacity: 0, scale: 1.02 }}
                   key="result-ring"
                   className={`absolute inset-0 z-[50] pointer-events-none rounded-3xl border-[3px] transition-colors duration-700 ${
-                    result.detected ? 'border-red-500' : 'border-[#00FF9C]'
+                    result.verdict !== 'CLEAN' ? 'border-red-500' : 'border-[#00FF9C]'
                   }`}
                   style={{
-                    boxShadow: result.detected 
+                    boxShadow: result.verdict !== 'CLEAN'
                       ? 'inset 0 0 80px rgba(255,59,59,0.5), 0 0 40px rgba(255,59,59,0.3)' 
                       : 'inset 0 0 80px rgba(0,255,156,0.5), 0 0 40px rgba(0,255,156,0.3)'
                   }}
@@ -199,7 +236,7 @@ export const Analyze = memo(function Analyze() {
                   <motion.div 
                     animate={{ opacity: [0.3, 0.6, 0.3] }}
                     transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                    className={`absolute inset-0 rounded-3xl ${result.detected ? 'bg-red-500/10' : 'bg-[#00FF9C]/10'}`}
+                    className={`absolute inset-0 rounded-3xl ${result.verdict !== 'CLEAN' ? 'bg-red-500/10' : 'bg-[#00FF9C]/10'}`}
                   />
                 </motion.div>
               )}
@@ -239,11 +276,11 @@ export const Analyze = memo(function Analyze() {
                 <div>
                   <h4 className="text-[9px] font-black tracking-[0.3em] uppercase mb-4 text-[var(--fg-dim)]/50">Forensic Verdict</h4>
                   <div className={`px-6 py-3 rounded-2xl border text-xs font-black tracking-[0.2em] italic uppercase text-center transition-all duration-500 ${
-                    !result.detected
+                    ! (result.verdict !== 'CLEAN')
                     ? 'bg-[#00FF9C]/10 border-[#00FF9C]/30 text-[#00FF9C] shadow-[0_0_20px_rgba(0,255,156,0.1)]'
                     : 'bg-[#FF3B3B]/10 border-[#FF3B3B]/30 text-[#FF3B3B] shadow-[0_0_20px_rgba(255,59,59,0.2)]'
                   }`}>
-                      {result.detected ? 'PAYLOAD DETECTED' : 'CLEAN ASSET'}
+                      {result.verdict !== 'CLEAN' ? 'PAYLOAD DETECTED' : 'CLEAN ASSET'}
                   </div>
                 </div>
 
@@ -252,24 +289,24 @@ export const Analyze = memo(function Analyze() {
                 <div>
                   <div className="flex justify-between items-end mb-3">
                     <span className="text-[9px] font-black tracking-[0.2em] uppercase text-[var(--fg-dim)]/70">Neural Confidence</span>
-                    <span className={`text-sm font-mono font-black ${result.detected ? 'text-[#FF3B3B]' : 'text-[#00FF9C]'}`}>
-                      {(result.ai_analysis.score * 100).toFixed(2)}%
+                    <span className={`text-sm font-mono font-black ${result.verdict !== 'CLEAN' ? 'text-[#FF3B3B]' : 'text-[#00FF9C]'}`}>
+                      {(result.ai_score * 100).toFixed(2)}%
                     </span>
                   </div>
                   <div className="h-1.5 w-full bg-[var(--border)] rounded-full overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
-                        animate={{ width: `${result.ai_analysis.score * 100}%` }}
+                        animate={{ width: `${result.ai_score * 100}%` }}
                         transition={{ duration: 1, ease: "easeOut" }}
-                        className={`h-full ${result.detected ? 'bg-[#FF3B3B]' : 'bg-[#00FF9C]'}`}
+                        className={`h-full ${result.verdict !== 'CLEAN' ? 'bg-[#FF3B3B]' : 'bg-[#00FF9C]'}`}
                       />
                   </div>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-[var(--fg)]/[0.03] border border-[var(--border)]">
                   <p className="text-[8px] font-black text-[var(--fg-dim)]/20 uppercase mb-2 tracking-widest">Heuristic Analysis</p>
-                  <p className={`text-[10px] font-bold italic leading-relaxed ${result.detected ? 'text-[#FF3B3B]' : 'text-[var(--fg-dim)]'}`}>
-                    {result.detected ? "High-entropy signature detected in high-frequency spectral regions. Evidence of LSB-Adaptive manipulation." : "No significant pixel-variance detected. Statistics align with natural image distribution."}
+                  <p className={`text-[10px] font-bold italic leading-relaxed ${result.verdict !== 'CLEAN' ? 'text-[#FF3B3B]' : 'text-[var(--fg-dim)]'}`}>
+                    {result.details?.extra?.description || "No anomalies detected."}
                   </p>
                 </div>
               </motion.div>

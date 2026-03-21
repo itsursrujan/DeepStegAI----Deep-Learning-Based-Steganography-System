@@ -1,9 +1,9 @@
 import { Suspense, useState, useRef, memo, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Canvas } from '@react-three/fiber'
 import { NeuralSphere } from '@/three/NeuralSphere'
-import { Shield, Zap, Lock, Globe, ArrowRight, Clock, ChevronRight, Activity, Search } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Shield, Zap, Lock, Globe, ArrowRight, Clock, ChevronRight, Activity } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useStore } from '@/store/useStore'
 import { fireInitRipple } from '@/components/DashboardLayout'
 import { ThemeToggle } from '@/components/ThemeToggle'
@@ -168,22 +168,23 @@ export const Overview = memo(function Overview() {
   const theme = useStore(s => s.theme)
   const isLight = theme === 'light'
   
-  const [data, setData] = useState<{ analysis: any[]; files: any[] }>({ analysis: [], files: [] })
+  const [data, setData] = useState<{ analysis: any[]; files: any[]; activity: any[] }>({ analysis: [], files: [], activity: [] })
   const [isLoading, setIsLoading] = useState(false)
-  const navigate = useNavigate()
 
   useEffect(() => {
     if (isAuthenticated && systemInitialized) {
         const fetchDashboardData = async () => {
             setIsLoading(true)
             try {
-                const [filesRes, analysisRes] = await Promise.all([
+                const [filesRes, analysisRes, activityRes] = await Promise.all([
                     stegoApi.getFiles(),
-                    stegoApi.getAnalysisList()
+                    stegoApi.getAnalysisList(),
+                    stegoApi.getActivity()
                 ])
                 setData({
                     files: filesRes.data.success ? filesRes.data.data : [],
-                    analysis: analysisRes.data.success ? analysisRes.data.data : []
+                    analysis: analysisRes.data.success ? analysisRes.data.data : [],
+                    activity: activityRes.data.success ? activityRes.data.data : []
                 })
             } catch (err) {
                 console.error("Dashboard fetch failed:", err)
@@ -198,7 +199,7 @@ export const Overview = memo(function Overview() {
   // Compute stats
   const totalScans = data.analysis.length
   const threatsDetected = data.analysis.filter(a => a.verdict === 'DETECTED' || a.verdict === 'SUSPICIOUS').length
-  const recentActivity = data.analysis.slice(0, 5)
+  const recentActivity = data.activity.slice(0, 5) // Now pulling from Unified DB logs
 
   return (
     <div className="relative min-h-screen w-full overflow-y-auto bg-transparent will-change-scroll" style={{ zIndex: 3 }}>
@@ -372,11 +373,8 @@ export const Overview = memo(function Overview() {
                     <div className="flex items-center justify-between mb-6 px-2">
                         <div className="flex items-center gap-3">
                             <Clock className="h-4 w-4 text-primary" />
-                            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--fg)] italic">Recent Forensic pulses</h3>
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--fg)] italic">Neural Activity Log</h3>
                         </div>
-                        <Link to="/analyze" className="text-[9px] font-black uppercase tracking-widest text-primary/60 hover:text-primary transition-colors flex items-center gap-2">
-                            View All <ChevronRight className="h-3 w-3" />
-                        </Link>
                     </div>
 
                     <div className={`rounded-3xl border ${isLight ? 'bg-white border-primary/10 shadow-xl' : 'bg-[var(--bg-card)] border-[var(--border)] shadow-2xl'} overflow-hidden min-h-[120px] relative`}>
@@ -389,34 +387,22 @@ export const Overview = memo(function Overview() {
                             </div>
                         ) : recentActivity.length > 0 ? (
                             <div className="divide-y divide-[var(--border)]">
-                                {recentActivity.map((r, i) => (
-                                    <button 
+                                {recentActivity.map((r) => (
+                                    <div 
                                         key={r.id} 
-                                        onClick={() => navigate(`/analysis/${r.file_id}`)}
                                         className="w-full flex items-center justify-between p-5 hover:bg-primary/[0.03] transition-all group lg:cursor-none"
                                     >
                                         <div className="flex items-center gap-6 max-w-[70%]">
-                                            <div className={`h-10 w-10 rounded-xl flex items-center justify-center border transition-all ${isLight ? 'bg-primary/5 border-primary/20' : 'bg-[var(--bg)] border-[var(--border)]'} group-hover:border-primary/40`}>
-                                                <Search className="h-4 w-4 text-[var(--fg-dim)] group-hover:text-primary" />
+                                            <div className={`h-10 w-10 shrink-0 rounded-xl flex items-center justify-center border transition-all ${isLight ? 'bg-primary/5 border-primary/20' : 'bg-[var(--bg)] border-[var(--border)]'} group-hover:border-primary/40`}>
+                                                <Activity className="h-4 w-4 text-[var(--fg-dim)] group-hover:text-primary" />
                                             </div>
                                             <div className="truncate">
-                                                <p className="text-xs font-black italic tracking-tight text-[var(--fg)] uppercase truncate">{r.details?.filename || 'UNNAMED_ASSET'}</p>
+                                                <p className="text-xs font-black italic tracking-tight text-[var(--fg)] uppercase truncate">{r.action}</p>
+                                                <p className="text-[10px] text-[var(--fg-dim)]/60 font-medium truncate mt-0.5">{r.details}</p>
                                                 <p className="text-[8px] text-[var(--fg-dim)]/40 font-bold uppercase tracking-widest mt-1">UUID: {r.id.substring(0, 8)}... // STAMPed: {new Date(r.created_at).toLocaleTimeString()}</p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-6">
-                                            <div className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-tighter border ${
-                                                r.verdict === 'CLEAN' 
-                                                    ? 'text-green-500 bg-green-500/10 border-green-500/20' 
-                                                    : r.verdict === 'SUSPICIOUS'
-                                                        ? 'text-amber-500 bg-amber-500/10 border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.1)]'
-                                                        : 'text-red-500 bg-red-500/10 border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]'
-                                            }`}>
-                                                {r.verdict}
-                                            </div>
-                                            <ChevronRight className="h-4 w-4 text-[var(--fg-dim)]/20 group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                                        </div>
-                                    </button>
+                                    </div>
                                 ))}
                             </div>
                         ) : (

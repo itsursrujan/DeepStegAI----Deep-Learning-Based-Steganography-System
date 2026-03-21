@@ -39,12 +39,19 @@ def require_credits(cost_fixed=0, cost_per_unit=0, unit_field=None):
         def decorated(*args, **kwargs):
             from database.db import SessionLocal
             from models.user import User
+            from services.credit_service import CreditService
             
-            user_id = getattr(request, 'user_id', None)
+            user_id_raw = getattr(request, 'user_id', None)
             email = getattr(request, 'user_email', None)
             
-            if not user_id:
+            if not user_id_raw:
                 return jsonify({"error": "Authentication required"}), 401
+            
+            from uuid import UUID
+            try:
+                user_id = UUID(str(user_id_raw))
+            except Exception:
+                user_id = user_id_raw # Fallback
             
             # Developer Bypass (hjsudarshan18@gmail.com)
             if email == "hjsudarshan18@gmail.com":
@@ -65,20 +72,19 @@ def require_credits(cost_fixed=0, cost_per_unit=0, unit_field=None):
                         unit_count += len(request.files.getlist(field))
                     total_cost += (unit_count * cost_per_unit)
                 
-                if user.credits < total_cost:
+                # Use CreditService to deduct credits and record transaction
+                description = f"Service usage: {request.path}"
+                new_balance = CreditService.deduct_credits(db, user_id, total_cost, description)
+                
+                if new_balance is None:
                     return jsonify({
                         "error": "Insufficient Neural Credits",
                         "required": total_cost,
-                        "current": user.credits,
                         "message": "Protocol rejected: Credit exhaustion detected."
                     }), 402 # Payment Required
                 
-                # Deduct credits
-                user.credits -= total_cost
-                db.commit()
-                
-                # Attach updated user/credits to request for the route to return
-                request.updated_credits = user.credits
+                # Attach updated balance to request
+                request.updated_credits = new_balance
                 
             except Exception as e:
                 db.rollback()
@@ -129,4 +135,31 @@ def token_required(f):
 
         return f(*args, **kwargs)
 
+    return decorated
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        # We assume @token_required runs before this, so request.user_id is available
+        user_id = getattr(request, 'user_id', None)
+        email = getattr(request, 'user_email', None)
+
+        if not user_id:
+            return jsonify({"message": "Authentication required for admin access"}), 401
+
+        # Developer bypass
+        if email == "hjsudarshan18@gmail.com":
+            return f(*args, **kwargs)
+
+        from database.db import SessionLocal
+        from models.user import User
+        db = SessionLocal()
+        try:
+            user = db.query(User).filter(User.id == user_id).first()
+            if not user or user.role != "admin":
+                return jsonify({"message": "Admin privileges required"}), 403
+        finally:
+            db.close()
+
+        return f(*args, **kwargs)
     return decorated

@@ -16,6 +16,7 @@ interface SystemState {
   isAuthenticated: boolean
   user: User | null
   theme: 'dark' | 'light'
+  serverStatus: 'ONLINE' | 'OFFLINE'
   setStatus: (status: SystemStatus) => void
   addLog: (msg: string) => void
   incrementStat: (key: keyof SystemState['stats']) => void
@@ -27,6 +28,8 @@ interface SystemState {
   setTheme: (theme: 'dark' | 'light') => void
   toggleTheme: () => void
   setCredits: (credits: number) => void
+  fetchUser: () => Promise<void>
+  setServerStatus: (status: 'ONLINE' | 'OFFLINE') => void
 }
 
 export const useStore = create<SystemState>((set) => ({
@@ -37,6 +40,7 @@ export const useStore = create<SystemState>((set) => ({
   isAuthenticated: !!(localStorage.getItem('access_token') || sessionStorage.getItem('access_token')),
   user: null,
   theme: (localStorage.getItem('theme') as 'dark' | 'light') || 'dark',
+  serverStatus: 'ONLINE',
 
   setStatus: (status) => set((state) => ({
     status,
@@ -85,4 +89,18 @@ export const useStore = create<SystemState>((set) => ({
   setCredits: (credits) => set((state) => ({
     user: state.user ? { ...state.user, credits } : null
   })),
+  fetchUser: async () => {
+    const { stegoApi } = await import('@/services/api')
+    try {
+      const res = await stegoApi.getCurrentUser()
+      if (res.data.success) {
+        set({ user: res.data.data, isAuthenticated: true })
+      } else {
+        set({ isAuthenticated: false, user: null })
+      }
+    } catch (err) {
+      set({ isAuthenticated: false, user: null })
+    }
+  },
+  setServerStatus: (s) => set({ serverStatus: s })
 }))
