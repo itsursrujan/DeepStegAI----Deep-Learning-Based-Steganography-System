@@ -94,3 +94,21 @@ def get_activity():
         })
     finally:
         db.close()
+
+@api_bp.route('/stats/global', methods=['GET'])
+def get_global_stats():
+    from models.analysis_result import AnalysisResult
+    db = SessionLocal()
+    try:
+        total_scans = db.query(AnalysisResult).count()
+        threats_found = db.query(AnalysisResult).filter(AnalysisResult.verdict.in_(['DETECTED', 'SUSPICIOUS'])).count()
+        return jsonify({
+            "success": True,
+            "data": {
+                "total_scans": total_scans,
+                "threats_found": threats_found
+            },
+            "error": None
+        })
+    finally:
+        db.close()

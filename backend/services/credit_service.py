@@ -11,7 +11,8 @@ class CreditService:
         Deducts credits from user and records the transaction.
         Returns the updated credit balance or None if insufficient funds.
         """
-        user = db.query(User).filter(User.id == user_id).first()
+        # CRITICAL FIX: atomic SELECT FOR UPDATE lock
+        user = db.query(User).filter(User.id == user_id).with_for_update().first()
         if not user or user.credits < amount:
             return None
         
@@ -32,7 +33,8 @@ class CreditService:
         """
         Adds credits to user and records the transaction.
         """
-        user = db.query(User).filter(User.id == user_id).first()
+        # CRITICAL FIX: atomic SELECT FOR UPDATE lock
+        user = db.query(User).filter(User.id == user_id).with_for_update().first()
         if not user:
             return None
         

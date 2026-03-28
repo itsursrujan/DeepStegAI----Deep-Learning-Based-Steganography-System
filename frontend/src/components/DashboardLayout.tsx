@@ -1,14 +1,17 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence, useSpring, useMotionValue } from 'framer-motion'
 import {
   Layers, Download, Upload,
-  Cpu, X, Menu, Activity, Zap, ShieldCheck, Lock as LockIcon, HelpCircle
+  Cpu, X, Menu, Activity, Zap, ShieldCheck, Lock as LockIcon, HelpCircle, Users
 } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { useStore } from '@/store/useStore'
 import { DigitalRain } from '@/components/DigitalRain'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import api from '@/services/api'
+import { Suspense, lazy } from 'react'
+import { Canvas } from '@react-three/fiber'
+const NeuralSphere = lazy(() => import('@/three/NeuralSphere').then(m => ({ default: m.NeuralSphere })))
 
 
 
@@ -21,9 +24,10 @@ const navItems = [
   { path: '/admin', label: 'Admin Panel', icon: LockIcon },
   { path: '/pricing', label: 'Top-Up Credits', icon: Zap },
   { path: '/support', label: 'Support', icon: HelpCircle },
+  { path: '/about', label: 'About Us', icon: Users },
 ]
 
-const TOOL_PATHS = ['/embed', '/extract', '/analyze', '/batch', '/admin', '/support', '/pricing']
+const TOOL_PATHS = ['/', '/embed', '/extract', '/analyze', '/batch', '/admin', '/support', '/pricing', '/about']
 
 // ─────────────────────── Global Cursor ───────────────────────
 // Ripple is exposed via a global event so Overview's init button can fire it
@@ -141,6 +145,7 @@ function GlobalCursor() {
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024)
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const asideRef = useRef<HTMLElement>(null)
   const location = useLocation()
   const status = useStore((state) => state.status)
   const theme = useStore(s => s.theme)
@@ -206,6 +211,33 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval)
   }, [setServerStatus])
 
+  // Sync sidebar offset for 3D sphere centering using ResizeObserver for precision
+  useEffect(() => {
+    if (!showSidebar) {
+      document.documentElement.style.setProperty('--sidebar-offset', '0px');
+      return;
+    }
+
+    const updateOffset = () => {
+      if (asideRef.current && window.innerWidth >= 1024) {
+        const width = asideRef.current.getBoundingClientRect().width;
+        document.documentElement.style.setProperty('--sidebar-offset', `${width}px`);
+      } else {
+        document.documentElement.style.setProperty('--sidebar-offset', '0px');
+      }
+    };
+
+    updateOffset();
+    const observer = new ResizeObserver(updateOffset);
+    if (asideRef.current) observer.observe(asideRef.current);
+    window.addEventListener('resize', updateOffset);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updateOffset);
+    };
+  }, [showSidebar, isSidebarOpen]);
+
   // System Status Style (Top Bar)
   const getStatusStyle = useCallback(() => {
     if (serverStatus === 'OFFLINE') return { color: 'text-red-500', hex: '#ef4444' }
@@ -240,7 +272,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   })
 
   return (
-    <div className={`flex h-screen overflow-hidden text-[var(--fg)] relative select-none ${theme} ${window.innerWidth > 768 ? 'cursor-none' : 'cursor-auto'}`} style={{ background: 'var(--bg)' }}>
+    <div className={`flex h-screen overflow-hidden text-[var(--fg)] relative select-none ${theme} ${window.innerWidth > 768 ? 'cursor-override' : ''}`} style={{ background: 'var(--bg)' }}>
       {/* ── Layer 1: Digital Rain (z-1) ── */}
       <DigitalRain />
 
@@ -249,6 +281,19 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
       {/* ── Global Cursor (z-10000) ── */}
       <GlobalCursor />
+
+      {/* ── Global 3D Background (z-1) ── */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
+        <div className="absolute top-1/2 left-1/2 w-full h-screen -translate-x-1/2 -translate-y-1/2 flex items-center justify-center">
+          <Suspense fallback={null}>
+            <Canvas camera={{ position: [0, 0, 14], fov: 60 }} dpr={[1, 2]} gl={{ antialias: true, stencil: false }}>
+              <ambientLight intensity={0.4} />
+              <pointLight position={[10, 10, 10]} intensity={1.6} color="#00f2ff" />
+              <NeuralSphere />
+            </Canvas>
+          </Suspense>
+        </div>
+      </div>
 
       {/* ── Viewport Edge Status Pulse ── */}
       <AnimatePresence>
@@ -266,9 +311,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
       {/* ── Landing mode (before boot or unauthenticated) ── */}
       {!showSidebar ? (
-        <main className="relative flex-1 overflow-y-auto overflow-x-hidden" style={{ zIndex: 3 }}>
-          {children}
-        </main>
+        <>
+          <div className="absolute top-6 right-6 sm:top-8 sm:right-8 z-[100] cursor-override">
+            <ThemeToggle />
+          </div>
+          <main className="relative flex-1 overflow-y-auto overflow-x-hidden" style={{ zIndex: 3 }}>
+            {children}
+          </main>
+        </>
       ) : (
         <>
           {/* Mobile Overlay */}
@@ -286,11 +336,20 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
           {/* ── Sidebar (z-50 on mobile, z-20 on desktop) ── */}
           <motion.aside
+            ref={asideRef}
             initial={false}
             animate={{ 
               x: (isMobileMenuOpen || window.innerWidth >= 1024) ? 0 : -300,
               width: isSidebarOpen ? 260 : (window.innerWidth >= 1024 ? 80 : 260),
               opacity: 1
+            }}
+            onUpdate={(latest) => {
+              // Smooth transition for intermediate states during spring animation
+              // @ts-ignore
+              const w = latest.width;
+              if (typeof w === 'number') {
+                document.documentElement.style.setProperty('--sidebar-offset', `${w}px`);
+              }
             }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className={`fixed inset-y-0 left-0 lg:relative flex flex-col shrink-0 border-r border-[var(--border)] bg-[var(--bg-sidebar)] z-[50] lg:z-[20] text-sm transition-colors duration-300`}
@@ -337,7 +396,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
                       <Zap className={`h-3 w-3 ${user.credits < 10 ? 'text-red-500 animate-pulse' : 'text-primary'}`} />
-                      <span className="text-[10px] font-black tracking-widest uppercase opacity-60">Neural Credits</span>
+                      <span className="text-[10px] font-semibold tracking-wide uppercase opacity-60">Credits</span>
                     </div>
                     <span className={`text-xs font-mono font-bold ${user.credits < 10 ? 'text-red-500' : 'text-primary'}`}>
                       {user?.email === 'hjsudarshan18@gmail.com' ? '∞' : user.credits}
@@ -362,20 +421,20 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`flex items-center gap-3 rounded-2xl px-3 py-2 transition-all duration-200 group lg:cursor-none ${
+                    className={`flex items-center gap-3 rounded-2xl px-3 py-2 transition-all duration-200 group ${
                       isActive
-                        ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_var(--primary-glow)]'
+                        ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_12px_var(--primary-glow)]'
                         : 'text-[var(--text-muted)] hover:text-primary hover:bg-primary/5'
                     }`}
                   >
-                    <item.icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-primary' : 'group-hover:text-[var(--fg)]'}`} />
+                    <item.icon className={`h-4 w-4 shrink-0 transition-colors ${isActive ? 'text-primary' : 'text-[var(--text-muted)] group-hover:text-[var(--fg)]'}`} />
                     <AnimatePresence>
                       {(isSidebarOpen || isMobileMenuOpen) && (
                         <motion.span
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
-                          className="text-sm font-black tracking-[0.15em] uppercase italic whitespace-nowrap"
+                          className="text-sm font-semibold tracking-normal whitespace-nowrap"
                         >
                           {item.label}
                         </motion.span>
@@ -393,7 +452,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   logout()
                   setSystemInitialized(false)
                 }}
-                className={`flex items-center gap-3 w-full rounded-2xl px-3 py-2 text-red-500 hover:bg-red-500/10 transition-all lg:cursor-none`}
+                className={`flex items-center gap-3 w-full rounded-2xl px-3 py-2 text-red-500 hover:bg-red-500/10 transition-all`}
               >
                 <X className="h-4 w-4 shrink-0" />
                 <AnimatePresence>
@@ -402,9 +461,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      className="text-sm font-black tracking-[0.15em] uppercase italic whitespace-nowrap"
+                      className="text-sm font-semibold tracking-normal whitespace-nowrap"
                     >
-                      Logout Session
+                      Sign Out
                     </motion.span>
                   )}
                 </AnimatePresence>
@@ -415,7 +474,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <div className="p-3 border-t border-[var(--border)] hidden lg:block">
               <button
                 onClick={() => setSidebarOpen(!isSidebarOpen)}
-                className="flex w-full items-center justify-center rounded-2xl py-3 border border-[var(--border)] bg-[var(--fg)]/5 text-[var(--fg-dim)] hover:text-primary hover:border-primary/30 transition-all lg:cursor-none"
+                className="flex w-full items-center justify-center rounded-2xl py-3 border border-[var(--border)] bg-[var(--fg)]/5 text-[var(--fg-dim)] hover:text-primary hover:border-primary/30 transition-all"
               >
                 {isSidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
               </button>
@@ -438,7 +497,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
                   <div className="flex items-center gap-3">
                     <div className={`h-1.5 w-1.5 rounded-full bg-current animate-pulse ${getStatusStyle().color}`} />
-                    <h2 className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] sm:tracking-[0.4em] uppercase italic text-[var(--fg)]">
+                    <h2 className="text-[11px] font-semibold tracking-wide text-[var(--fg)]">
                       {navItems.find(i => i.path === location.pathname)?.label}
                     </h2>
                   </div>
@@ -462,8 +521,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                       </span>
                     </div>
                   )}
-                  <span className={`text-[10px] font-mono font-black tracking-widest hidden sm:inline-block ${getStatusStyle().color}`}>
-                    {serverStatus === 'OFFLINE' ? 'SYS_OFFLINE' : `SYS_${status}`}
+                  <span className={`text-[10px] font-mono font-semibold tracking-wide hidden sm:inline-block ${getStatusStyle().color}`}>
+                    {serverStatus === 'OFFLINE' ? 'Offline' : (status ? status.charAt(0) + status.slice(1).toLowerCase() : 'Ready')}
                   </span>
                   <div className="h-6 w-px bg-[var(--border)] hidden sm:block" />
                   <ThemeToggle />
@@ -471,7 +530,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               </header>
             )}
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden">
               {children}
             </div>
           </main>

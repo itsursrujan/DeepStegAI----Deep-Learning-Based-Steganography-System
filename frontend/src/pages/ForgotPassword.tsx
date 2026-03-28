@@ -19,7 +19,7 @@ export function ForgotPassword() {
       await stegoApi.forgotPassword(email)
       setSubmitted(true)
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to initialize protocol.')
+      setError(err.response?.data?.error || 'Failed to send reset email. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -35,11 +35,11 @@ export function ForgotPassword() {
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
         
         <div className="text-center mb-10">
-          <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 mb-6 shadow-[0_0_30px_var(--primary-glow)]">
+          <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 mb-6 shadow-[0_0_20px_var(--primary-glow)]">
             <Mail className="h-8 w-8 text-primary" />
           </div>
-          <h2 className="text-3xl font-black italic tracking-tighter uppercase text-[var(--fg)] glow-text leading-none">Signal Recovery</h2>
-          <p className="text-[10px] font-bold tracking-[0.4em] uppercase mt-3 text-[var(--fg-dim)]/60">Initialize Identity Pinpoint</p>
+          <h2 className="text-2xl font-bold tracking-tight text-[var(--fg)] leading-none">Forgot Password</h2>
+          <p className="text-xs font-medium mt-2 text-[var(--fg-dim)]">Enter your email and we'll send a reset link</p>
         </div>
 
         {submitted ? (
@@ -49,12 +49,12 @@ export function ForgotPassword() {
             className="text-center py-6"
           >
             <CheckCircle className="h-12 w-12 text-primary mx-auto mb-6" />
-            <h3 className="text-sm font-black uppercase tracking-[0.2em] mb-3">Protocol Dispatched</h3>
-            <p className="text-[10px] text-[var(--fg-dim)]/70 font-bold uppercase tracking-widest leading-relaxed">
-              Check your support stream (Email) for the Neural Reset Link. It will be active for 60 minutes.
+            <h3 className="text-sm font-bold tracking-wide mb-3">Email Sent!</h3>
+            <p className="text-xs text-[var(--fg-dim)] font-medium leading-relaxed">
+              Check your inbox for the password reset link. It will be active for 60 minutes.
             </p>
-            <Link to="/login" className="mt-10 inline-flex items-center gap-3 text-[10px] font-black tracking-[0.3em] uppercase text-primary hover:glow-text transition-all">
-              <ArrowLeft className="h-4 w-4" /> Return to Access Control
+            <Link to="/login" className="mt-10 inline-flex items-center gap-3 text-sm font-semibold text-primary hover:glow-text transition-all">
+              <ArrowLeft className="h-4 w-4" /> Back to Sign In
             </Link>
           </motion.div>
         ) : (
@@ -63,30 +63,30 @@ export function ForgotPassword() {
               <Mail className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--fg-dim)] group-focus-within:text-primary transition-colors" />
               <input
                 type="email"
-                placeholder="REGISTRATION_EMAIL"
+                placeholder="Email"
                 required
-                className="w-full bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-2xl py-4 pl-14 pr-6 text-xs font-bold tracking-[0.2em] focus:outline-none focus:border-primary/40 transition-all font-mono text-[var(--fg)] placeholder:text-[var(--fg-dim)]/40"
+                className="w-full bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-2xl py-4 pl-14 pr-6 text-sm focus:outline-none focus:border-primary/40 transition-all font-mono text-[var(--fg)] placeholder:text-[var(--fg-dim)]/60"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
               />
             </div>
 
             {error && (
-              <p className="text-[10px] font-black uppercase tracking-widest text-red-400 text-center">{error}</p>
+              <p className="text-xs font-medium text-red-400 text-center leading-relaxed">{error}</p>
             )}
 
             <button
               disabled={isSubmitting}
-              className="w-full bg-primary text-black font-black tracking-[0.4em] text-xs uppercase rounded-2xl py-4 shadow-[0_0_30px_var(--primary-glow)] hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-30 group"
+              className="w-full bg-primary text-[var(--btn-text)] font-bold tracking-wide text-sm rounded-2xl py-4 shadow-[0_0_20px_var(--primary-glow)] hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-30 group"
             >
               <span className="flex items-center justify-center gap-3">
-                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'FETCH RESET LINK'}
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send Reset Link'}
                 {!isSubmitting && <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />}
               </span>
             </button>
 
-            <Link to="/login" className="flex items-center justify-center gap-3 text-[10px] font-black tracking-[0.3em] uppercase text-[var(--fg-dim)]/50 hover:text-primary transition-all">
-              <ArrowLeft className="h-4 w-4" /> Back to Login
+            <Link to="/login" className="flex items-center justify-center gap-3 text-xs font-medium text-[var(--fg-dim)] hover:text-primary transition-colors">
+              <ArrowLeft className="h-4 w-4" /> Back to Sign In
             </Link>
           </form>
         )}

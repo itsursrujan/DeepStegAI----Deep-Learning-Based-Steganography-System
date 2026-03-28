@@ -1,0 +1,92 @@
+name: DeepStegAI Testing Pipeline
+
+on:
+  push:
+    branches: [ "main", "dev" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: deepsteg_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+        
+    - name: Install dependencies
+      run: |
+        cd backend
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov httpx
+        
+    - name: Run Pytest (Unit & Integration & Security)
+      env:
+        DATABASE_URL: postgresql://test_user:test_password@localhost:5432/deepsteg_test
+        JWT_SECRET_KEY: CI_TEST_SECRET_KEY
+        TESTING: True
+      run: |
+        cd backend
+        pytest tests/ --cov=./ --cov-report=xml
+        
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js 18
+      uses: actions/setup-node@v3
+      with:
+        node-version: "18"
+    - name: Install dependencies
+      run: |
+        cd frontend
+        npm install
+    - name: Run Frontend Tests
+      run: |
+        cd frontend
+        npm run test
+
+  e2e-cypress:
+    needs: [test-backend, test-frontend]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Cypress Run
+      uses: cypress-io/github-action@v5
+      with:
+        working-directory: frontend
+        start: npm run dev
+        wait-on: 'http://localhost:5173'
+        
+  deploy-gate:
+    needs: [e2e-cypress]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+    - name: Trigger Deployment
+      run: echo "All tests passed. Ready for deployment."

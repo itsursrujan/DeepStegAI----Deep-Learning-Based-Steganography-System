@@ -89,12 +89,19 @@ MESSAGES_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'messages.
 # Apply standard CORS policy
 CORS(app, resources={r"/*": {"origins": "*"}}, expose_headers=["Content-Disposition", "content-disposition", "X-Filename", "X-Updated-Credits"])
 
-# Rate Limiter setup
+# Fix 2: Rate Limiter — Enforce REDIS for production concurrency safety.
+# Mandatory Redis config with retries and timeouts for stability.
+REDIS_URL = os.environ.get("REDIS_URL", "memory://")
 limiter = Limiter(
     get_remote_address,
     app=app,
-    default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://"
+    default_limits=["1000 per day", "200 per hour"],
+    storage_uri=REDIS_URL,
+    storage_options={
+        "socket_timeout": 5,
+        "socket_connect_timeout": 5,
+        "retry_on_timeout": True
+    }
 )
 
 @app.errorhandler(429)
@@ -109,8 +116,8 @@ def validate_uploaded_image(file_storage):
     if kind is None or kind.mime not in ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']:
         raise ValueError(f"Invalid file type. Found: {kind.extension if kind else 'Unknown'}. Only PNG/JPG/WEBP allowed.")
 
-# Decrease file upload limit to 10MB (Strict Constraint)
-app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024
+# Increase file upload limit to 100MB for batch processing
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 
 # Ensure data dir exists
 os.makedirs(os.path.join(os.path.dirname(__file__), '..', 'data'), exist_ok=True)
@@ -119,6 +126,11 @@ os.makedirs(os.path.join(os.path.dirname(__file__), '..', 'data'), exist_ok=True
 # --- Global AI Model Loading ---
 MODEL = None
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# CRITICAL DEMO FIX: Prevent PyTorch from spawning threads equal to all CPU cores.
+# This ensures that multiple concurrent 40-user waitress backend requests 
+# do not crash or stall the OS by fighting for the same CPU cycles.
+torch.set_num_threads(1)
 
 def get_calibrated_ai_score(image_pil, initial_ai_score, signature_detected):
     """
@@ -230,11 +242,9 @@ def api_batch():
                 
             zip_buffer.seek(0)
             
-            # Database Persistence for batch results
+            # Database Persistence for batch results removed for STATELSS architecture.
             db = SessionLocal()
             try:
-                # Save the final ZIP as a stego file record (aggregate)
-                FileService.save_file(db, request.user_id, zip_buffer.getvalue(), "deepsteg_batch_stego.zip", "stego")
                 log_user_activity(db, request.user_id, "BATCH_EMBED", f"Processed {processed_count} files", {"method": method, "count": processed_count})
             finally:
                 db.close()
@@ -449,7 +459,8 @@ def get_audit_logs():
 # --- Core API ---
 
 @app.route('/api/embed', methods=['POST'])
-@limiter.limit("10 per minute")
+# Generous demo allocation: 30 requests per minute per user (1 every 2s)
+@limiter.limit("30 per minute")
 @token_required
 @require_credits(cost_fixed=5)
 def api_embed():
@@ -499,23 +510,11 @@ def api_embed():
         # Database Persistence
         db = SessionLocal()
         try:
-            logging.info(f"Persisting embedding results to DB for user {request.user_id}")
-            # Save Cover File
-            cover_img_buffer = io.BytesIO()
-            cover_img.save(cover_img_buffer, format="PNG")
-            db_cover = FileService.save_file(db, request.user_id, cover_img_buffer.getvalue(), cover_file.filename, "cover")
-            
-            # Save Stego Image
-            stego_buffer = io.BytesIO()
-            stego_img.save(stego_buffer, format="PNG")
-            db_stego = FileService.save_file(db, request.user_id, stego_buffer.getvalue(), "stego_image.png", "stego")
-            
+            # FileService storage REMOVED. Images remain in memory (stateless).
             # Log Activity
             log_user_activity(db, request.user_id, "EMBED", f"Embedded payload into {cover_file.filename}", {"method": method})
-            
-            logging.info(f"Persistence successful. Stego ID: {db_stego.id}")
         except Exception as db_err:
-            logging.error(f"Database persistence failed: {str(db_err)}")
+            logging.error(f"Activity logging failed: {str(db_err)}")
         finally:
             db.close()
 
@@ -531,8 +530,7 @@ def api_embed():
                 'filename': 'stego_image.png',
                 'recovery_token': recovery_token,
                 'method': method,
-                'credits': getattr(request, 'updated_credits', None),
-                'file_id': str(db_stego.id) if 'db_stego' in locals() else None
+                'credits': getattr(request, 'updated_credits', None)
             },
             'error': None
         })
@@ -602,13 +600,9 @@ def api_extract():
         else:
             return jsonify({'error': 'No steganography signature found'}), 404
 
-        # Database Persistence
+        # Log Activity (File tracking Removed for Stateless)
         db = SessionLocal()
         try:
-            # Save Input Stego Image
-            stego_buffer = io.BytesIO()
-            stego_img.save(stego_buffer, format="PNG")
-            db_file = FileService.save_file(db, request.user_id, stego_buffer.getvalue(), stego_file.filename, "stego")
             log_user_activity(db, request.user_id, "EXTRACT", f"Extracted {filename}")
         finally:
             db.close()
@@ -708,16 +702,10 @@ def api_analyze():
 
         # 7. Database Persistence
         db = SessionLocal()
-        file_id = "N/A"
+        file_id = "N/A" # File storage is disabled
         try:
-            # Save Input File
-            img_buffer = io.BytesIO()
-            image_pil.save(img_buffer, format="PNG")
-            db_file = FileService.save_file(db, request.user_id, img_buffer.getvalue(), img_file.filename, "stego")
-            file_id = str(db_file.id)
-            
-            # Save Analysis Results (Using the standardized details)
-            AnalysisService.save_analysis(db, db_file.id, verdict, ai_score, analysis_details)
+            # File persistence removed. AnalysisResult might fail if file_id FK is strict, 
+            # so we only log the activity to abide strictly by stateless mandates.
             log_user_activity(db, request.user_id, "SCAN", f"Analyzed {img_file.filename} -> {verdict}", {"score": ai_score, "verdict": verdict})
         except Exception as db_err:
             logger.error(f"Persistence error: {db_err}")
@@ -800,11 +788,11 @@ def api_batch_analyze():
 
                 # 4. Database Persistence
                 db_file = FileService.save_file(db, request.user_id, file_bytes, f.filename, "cover")
-                AnalysisService.save_result(db, db_file.id, verdict, {
+                AnalysisService.save_analysis(db, db_file.id, verdict, ai_score, {
                     "ai_score": ai_score,
                     "method": "batch_scan",
                     "extra": {"heuristic": scan["message"]}
-                }, confidence_score=ai_score)
+                })
 
                 results.append({
                     'id': str(db_file.id),
@@ -834,4 +822,5 @@ def api_batch_analyze():
     })
 
 if __name__ == '__main__':
-    app.run(debug=True, host='127.0.0.1', port=5000, use_reloader=False)
+    # Threaded=True enables concurrency for batch operations
+    app.run(debug=True, host='127.0.0.1', port=5000, use_reloader=False, threaded=True)

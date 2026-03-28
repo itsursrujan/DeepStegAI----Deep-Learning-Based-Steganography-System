@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database.db import Base
 
-transaction_type_enum = ENUM('usage', 'reward', 'purchase', name='transaction_type_enum', create_type=True)
+transaction_type_enum = ENUM('usage', 'reward', 'purchase', 'refund', name='transaction_type_enum', create_type=True)
 
 class CreditTransaction(Base):
     __tablename__ = "credit_transactions"

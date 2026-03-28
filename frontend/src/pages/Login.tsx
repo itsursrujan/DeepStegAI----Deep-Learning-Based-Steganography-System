@@ -34,7 +34,7 @@ export function Login() {
           setError("Account not verified. A new OTP has been dispatched to your email.");
           return;
       }
-      setError(err.response?.data?.error || 'Authorization failed. Check credentials.')
+      setError(err.response?.data?.error || 'Login failed. Please check your credentials.')
       addLog(`Login failure for ${email}.`)
     } finally {
       setIsSubmitting(false)
@@ -61,7 +61,7 @@ export function Login() {
           setError("Verified. Please log in again.");
       }
     } catch (err: any) {
-      setError((err.response?.data?.error || 'Verification failed').toUpperCase())
+      setError(err.response?.data?.error || 'Verification failed. Please try again.')
       addLog(`Verification failure for ${email}.`)
     } finally {
       setIsSubmitting(false)
@@ -75,31 +75,31 @@ export function Login() {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         className="w-full max-w-md bg-[var(--bg-card)] border border-[var(--border)] rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden"
       >
+        {/* Top gradient accent bar */}
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
         
         <div className="text-center mb-10">
-          <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 mb-6 shadow-[0_0_30px_var(--primary-glow)]">
+          <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 mb-6 shadow-[0_0_20px_var(--primary-glow)]">
             <Lock className="h-8 w-8 text-primary" />
           </div>
-          <h2 className="text-3xl font-black italic tracking-tighter uppercase text-[var(--fg)] glow-text leading-none">Access Control</h2>
-          <p className="text-[10px] font-bold tracking-[0.4em] uppercase mt-3 text-[var(--fg-dim)]/60">Stage Authorization Credentials</p>
-          <p className="text-[10px] font-bold tracking-[0.4em] uppercase mt-3 text-[var(--fg-dim)]/60">Stage Authorization Credentials</p>
+          <h2 className="text-2xl font-bold tracking-tight text-[var(--fg)] leading-none">Sign In</h2>
+          <p className="text-xs font-medium mt-2 text-[var(--fg-dim)]">Enter your credentials to continue</p>
         </div>
 
         {requiresOTP ? (
           <form onSubmit={handleVerifyOTP} className="space-y-4">
             <div className="text-center mb-6">
-              <p className="text-sm font-bold text-primary mb-2">Awaiting Verification Code</p>
-              <p className="text-[10px] uppercase font-bold text-[var(--fg-dim)]">An OTP was dispatched to {email}.</p>
+              <p className="text-sm font-semibold text-primary mb-2">Check your email</p>
+              <p className="text-xs text-[var(--fg-dim)]">We sent a 6-digit code to {email}.</p>
             </div>
             <div className="relative group">
               <ShieldCheck className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--fg-dim)] group-focus-within:text-primary transition-colors" />
               <input
                 type="text"
-                placeholder="6-DIGIT OTP"
+                placeholder="6-digit code"
                 required
                 maxLength={6}
-                className="w-full bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-2xl py-4 pl-14 pr-6 text-center text-xl tracking-[1em] font-black focus:outline-none focus:border-primary/40 transition-all font-mono text-[var(--fg)] placeholder:text-[var(--fg-dim)]/40 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]"
+                className="w-full bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-2xl py-4 pl-14 pr-6 text-center text-xl tracking-[1em] font-bold focus:outline-none focus:border-primary/40 transition-all font-mono text-[var(--fg)] placeholder:text-[var(--fg-dim)]/40 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]"
                 value={otp}
                 onChange={e => setOtp(e.target.value)}
               />
@@ -112,25 +112,25 @@ export function Login() {
                 className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-2xl p-4 text-red-400"
               >
                 <AlertTriangle className="h-4 w-4 shrink-0" />
-                <p className="text-[10px] font-black uppercase tracking-widest leading-none shadow-glow text-left">{error}</p>
+                <p className="text-xs font-medium text-left leading-relaxed">{error}</p>
               </motion.div>
             )}
 
             <button
               disabled={isSubmitting}
-              className="w-full bg-primary text-black font-black tracking-[0.4em] text-xs uppercase rounded-2xl py-4 shadow-[0_0_30px_var(--primary-glow)] hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-30 group"
+              className="w-full bg-primary text-[var(--btn-text)] font-bold tracking-wide text-sm rounded-2xl py-4 shadow-[0_0_20px_var(--primary-glow)] hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-30 group"
             >
               <span className="flex items-center justify-center gap-3">
-                {isSubmitting ? 'VERIFYING...' : 'CONFIRM ACCESS'}
-                {!isSubmitting && <ArrowRight className="h-4 w-4 group-hover:translate-x-1" />}
+                {isSubmitting ? 'Verifying...' : 'Verify Code'}
+                {!isSubmitting && <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />}
               </span>
             </button>
             <button
               type="button"
               onClick={() => { setRequiresOTP(false); setError(null); setOtp(''); }}
-              className="w-full text-center mt-4 text-[10px] uppercase font-bold tracking-widest text-[var(--fg-dim)] hover:text-[var(--fg)]"
+              className="w-full text-center mt-4 text-xs font-medium text-[var(--fg-dim)] hover:text-[var(--fg)] transition-colors"
             >
-              Back to Login
+              ← Back to Sign In
             </button>
           </form>
         ) : (
@@ -139,9 +139,9 @@ export function Login() {
             <Mail className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--fg-dim)] group-focus-within:text-primary transition-colors" />
             <input
               type="email"
-              placeholder="OPERATOR_EMAIL"
+              placeholder="Email"
               required
-              className="w-full bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-2xl py-4 pl-14 pr-6 text-xs font-bold tracking-[0.2em] focus:outline-none focus:border-primary/40 transition-all font-mono text-[var(--fg)] placeholder:text-[var(--fg-dim)]/40"
+              className="w-full bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-2xl py-4 pl-14 pr-6 text-sm focus:outline-none focus:border-primary/40 transition-all font-mono text-[var(--fg)] placeholder:text-[var(--fg-dim)]/60"
               value={email}
               onChange={e => setEmail(e.target.value)}
             />
@@ -151,29 +151,29 @@ export function Login() {
             <ShieldCheck className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--fg-dim)] group-focus-within:text-primary transition-colors" />
             <input
               type="password"
-              placeholder="SECRET_PASSPHRASE"
+              placeholder="Password"
               required
-              className="w-full bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-2xl py-4 pl-14 pr-6 text-xs font-bold tracking-[0.2em] focus:outline-none focus:border-primary/40 transition-all font-mono text-[var(--fg)] placeholder:text-[var(--fg-dim)]/40"
+              className="w-full bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-2xl py-4 pl-14 pr-6 text-sm focus:outline-none focus:border-primary/40 transition-all font-mono text-[var(--fg)] placeholder:text-[var(--fg-dim)]/60"
               value={password}
               onChange={e => setPassword(e.target.value)}
             />
           </div>
 
           <div className="flex items-center justify-between px-2">
-            <label className="flex items-center gap-3 cursor-pointer group">
+            <label className="flex items-center gap-3 group">
               <input 
                 type="checkbox" 
                 checked={remember}
                 onChange={e => setRemember(e.target.checked)}
                 className="hidden"
               />
-              <div className={`h-5 w-5 rounded-lg border-2 transition-all flex items-center justify-center ${remember ? 'bg-primary border-primary shadow-[0_0_15px_var(--primary-glow)]' : 'bg-[var(--bg-sidebar)] border-[var(--border)]'}`}>
+              <div className={`h-5 w-5 rounded-lg border-2 transition-all flex items-center justify-center ${remember ? 'bg-primary border-primary shadow-[0_0_10px_var(--primary-glow)]' : 'bg-[var(--bg-sidebar)] border-[var(--border)]'}`}>
                 {remember && <ShieldCheck className="h-3 w-3 text-black" />}
               </div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-[var(--fg-dim)] group-hover:text-primary transition-colors">Remember Me</span>
+              <span className="text-xs font-medium text-[var(--fg-dim)] group-hover:text-primary transition-colors">Remember me</span>
             </label>
-            <Link to="/forgot-password" className="text-[10px] font-black uppercase tracking-widest text-primary hover:glow-text transition-all">
-              Lost Password?
+            <Link to="/forgot-password" className="text-xs font-semibold text-primary hover:glow-text transition-all">
+              Forgot password?
             </Link>
           </div>
 
@@ -184,16 +184,16 @@ export function Login() {
               className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-2xl p-4 text-red-400"
             >
               <AlertTriangle className="h-4 w-4 shrink-0" />
-              <p className="text-[10px] font-black uppercase tracking-widest leading-none">{error}</p>
+              <p className="text-xs font-medium leading-relaxed">{error}</p>
             </motion.div>
           )}
 
           <button
             disabled={isSubmitting}
-            className="w-full bg-primary text-black font-black tracking-[0.4em] text-xs uppercase rounded-2xl py-4 shadow-[0_0_30px_var(--primary-glow)] hover:opacity-90 hover:shadow-[0_0_50px_var(--primary-glow)] transition-all active:scale-[0.98] disabled:opacity-30 group"
+            className="w-full bg-primary text-[var(--btn-text)] font-bold tracking-wide text-sm rounded-2xl py-4 shadow-[0_0_20px_var(--primary-glow)] hover:opacity-90 hover:shadow-[0_0_35px_var(--primary-glow)] transition-all active:scale-[0.98] disabled:opacity-30 group"
           >
             <span className="flex items-center justify-center gap-3">
-              {isSubmitting ? 'AUTHORIZING...' : 'INITIALIZE LOGIN'}
+              {isSubmitting ? 'Signing in...' : 'Sign In'}
               {!isSubmitting && <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />}
             </span>
           </button>
@@ -201,12 +201,12 @@ export function Login() {
         )}
 
         <div className="mt-8 pt-6 border-t border-[var(--border)] flex flex-col items-center gap-4">
-          <p className="text-[10px] font-bold tracking-widest uppercase text-[var(--fg-dim)]/40 italic">New Operator detected?</p>
-          <Link to="/signup" className="flex items-center gap-2 text-[10px] font-black tracking-[0.3em] uppercase text-primary hover:glow-text transition-all">
-            Initialize Recruitment (SIGNUP)
+          <p className="text-xs font-medium text-[var(--fg-dim)]/60">Don't have an account?</p>
+          <Link to="/signup" className="flex items-center gap-2 text-sm font-semibold text-primary hover:glow-text transition-all">
+            Create account
           </Link>
-          <Link to="/" className="mt-2 flex items-center gap-2 text-[10px] font-black tracking-[0.3em] uppercase text-[var(--fg-dim)] hover:text-primary transition-all">
-            Return to Command Center [ESC]
+          <Link to="/" className="mt-1 flex items-center gap-2 text-xs font-medium text-[var(--fg-dim)] hover:text-primary transition-colors">
+            ← Back to home
           </Link>
         </div>
       </motion.div>

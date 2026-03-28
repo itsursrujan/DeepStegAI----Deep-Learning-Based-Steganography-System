@@ -12,6 +12,7 @@ const Analyze  = lazy(() => import('./pages/Analyze').then(m => ({ default: m.An
 const Batch    = lazy(() => import('./pages/Batch').then(m => ({ default: m.Batch })))
 const Admin    = lazy(() => import('./pages/Admin').then(m => ({ default: m.Admin })))
 const Support  = lazy(() => import('./pages/Support').then(m => ({ default: m.Support })))
+const About    = lazy(() => import('./pages/About').then(m => ({ default: m.About })))
 const Pricing  = lazy(() => import('./pages/Pricing').then(m => ({ default: m.Pricing })))
 const Login    = lazy(() => import('./pages/Login').then(m => ({ default: m.Login })))
 const Signup   = lazy(() => import('./pages/Signup').then(m => ({ default: m.Signup })))
@@ -47,6 +48,7 @@ function AnimatedRoutes() {
         <Suspense fallback={null}>
           <Routes location={location}>
             <Route path="/" element={<Overview />} />
+            <Route path="/about" element={<About />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />

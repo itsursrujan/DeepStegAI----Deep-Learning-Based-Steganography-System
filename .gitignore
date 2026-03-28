@@ -48,3 +48,10 @@ test_output.txt
 results.csv
 test_payload.txt
 psnr_plot.png
+
+# Temporary and Large Files (Excluded for GitHub)
+.coverage
+*.db
+*.rdb
+*.zip
+redis/

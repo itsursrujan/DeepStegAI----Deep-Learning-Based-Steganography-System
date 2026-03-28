@@ -127,7 +127,8 @@ export const stegoApi = {
   getAnalysisList: () => api.get('/analysis'),
   getFiles: () => api.get('/files'),
   getCredits: () => api.get('/credits'),
-  getActivity: () => api.get('/activity')
+  getActivity: () => api.get('/activity'),
+  getGlobalStats: () => api.get('/stats/global')
 }
 
 export default api

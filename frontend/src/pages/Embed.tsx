@@ -141,15 +141,15 @@ DeepStegAI`
   }
 
   return (
-    <div className={`h-full flex flex-col gap-2 max-w-6xl mx-auto ${window.innerWidth > 768 ? 'cursor-none' : 'cursor-auto'}`}>
+    <div className={`h-full flex flex-col gap-2 max-w-6xl mx-auto`}>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 px-2 sm:px-0">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black italic tracking-tighter uppercase text-[var(--fg)] glow-text leading-none">Synthesis Hub</h2>
-          <p className="text-[9px] font-bold tracking-[0.2em] uppercase mt-1 text-[var(--fg-dim)]">Steganographic Injection Node</p>
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--fg)] leading-none">Embed Data</h2>
+          <p className="text-xs font-medium mt-1 text-[var(--fg-dim)]">Hide a secret file inside an image</p>
         </div>
         <div className="flex items-center gap-3">
-            <span className="text-[9px] sm:text-[10px] font-bold tracking-widest uppercase text-[var(--fg-dim)]">Security Clearance:</span>
-            <span className="px-3 py-1 bg-primary/20 border border-primary/40 text-primary text-[8px] sm:text-[9px] font-black uppercase tracking-widest rounded-full shadow-[0_0_10px_var(--primary-glow)]">Level-04</span>
+            <span className="text-xs font-medium text-[var(--fg-dim)]">Clearance:</span>
+            <span className="px-3 py-1 bg-primary/20 border border-primary/40 text-primary text-[9px] font-bold uppercase tracking-wide rounded-full shadow-[0_0_8px_var(--primary-glow)]">Level-04</span>
         </div>
       </div>
 
@@ -157,7 +157,7 @@ DeepStegAI`
         {/* Input Card */}
         <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-3xl p-4 space-y-3 flex flex-col min-h-0 overflow-y-auto">
           {/* Cover dropzone */}
-          <div {...getCoverProps()} className={`relative h-24 sm:h-28 border border-dashed rounded-2xl flex items-center justify-center transition-all lg:cursor-none ${isCoverActive ? 'border-primary bg-primary/10' : 'border-[var(--border)] bg-[var(--bg-sidebar)] hover:border-primary/40'}`}>
+          <div {...getCoverProps()} className={`relative h-24 sm:h-28 border border-dashed rounded-2xl flex items-center justify-center transition-all ${isCoverActive ? 'border-primary bg-primary/10' : 'border-[var(--border)] bg-[var(--bg-sidebar)] hover:border-primary/40'}`}>
             <input {...getCoverInputProps()} />
             {cover ? (
                 <div className="text-center group w-full h-full flex flex-col items-center justify-center relative">
@@ -173,7 +173,8 @@ DeepStegAI`
             ) : (
                 <div className="text-center">
                     <Upload className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-[var(--fg-dim)]" />
-                    <p className="text-[10px] sm:text-xs font-bold tracking-widest uppercase italic text-[var(--fg-dim)]">Drop Cover Image</p>
+                    <p className="text-xs font-medium text-[var(--fg-dim)]">Drop cover image here</p>
+                    <p className="text-[10px] text-[var(--fg-dim)]/50 mt-1">PNG, JPG, BMP supported</p>
                 </div>
             )}
           </div>
@@ -194,7 +195,7 @@ DeepStegAI`
                     </button>
                 </div>
             ) : (
-                <div className="flex items-center gap-2 sm:gap-3"><Key className="h-4 w-4 text-[var(--fg-dim)]" /><p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest italic text-[var(--fg-dim)]">Stage Payload</p></div>
+                <div className="flex items-center gap-2 sm:gap-3"><Key className="h-4 w-4 text-[var(--fg-dim)]" /><p className="text-xs font-medium text-[var(--fg-dim)]">Drop secret file here</p></div>
             )}
           </div>
 
@@ -211,26 +212,27 @@ DeepStegAI`
 
           <div className="relative group">
             <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--fg-dim)] group-focus-within:text-primary transition-colors" />
-            <input type="password" placeholder="AES_256_KEY"
-              className="w-full bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-2xl py-3 pl-14 pr-6 text-xs font-bold tracking-[0.3em] focus:outline-none focus:border-primary/40 transition-all font-mono text-[var(--fg)] placeholder:text-[var(--fg-dim)]"
+            <input type="password" placeholder="Password (optional)"
+              className="w-full bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-2xl py-3 pl-14 pr-6 text-sm focus:outline-none focus:border-primary/40 transition-all font-mono text-[var(--fg)] placeholder:text-[var(--fg-dim)]/60"
               value={password} onChange={e => setPassword(e.target.value)}
             />
           </div>
 
           <AnimatePresence>
             {error && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-start gap-4 bg-red-500/10 border border-red-500/20 rounded-2xl p-4">
+              <motion.div layout initial={{ opacity: 0, height: 0, scale: 0.9 }} animate={{ opacity: 1, height: 'auto', scale: 1 }} exit={{ opacity: 0, height: 0, scale: 0.9 }} className="flex items-start gap-4 bg-red-500/10 border border-red-500/20 rounded-2xl p-4 overflow-hidden">
                 <AlertTriangle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
                 <p className="text-[10px] font-black text-red-400 uppercase tracking-widest leading-relaxed">{error}</p>
               </motion.div>
             )}
           </AnimatePresence>
 
-          <button disabled={!cover || !secret || isProcessing} onClick={handleEmbed}
-            className="w-full bg-primary text-black font-bold tracking-[0.2em] sm:tracking-[0.4em] text-[10px] uppercase rounded-2xl py-3 shadow-[0_0_30px_var(--primary-glow)] hover:opacity-90 hover:shadow-[0_0_50px_var(--primary-glow)] transition-all active:scale-[0.98] disabled:opacity-30 lg:cursor-none"
+          <motion.button layout disabled={!cover || !secret || isProcessing} onClick={handleEmbed}
+            className="w-full bg-primary text-[var(--btn-text)] font-bold tracking-wide text-sm uppercase rounded-2xl py-3 shadow-[0_0_20px_var(--primary-glow)] hover:opacity-90 hover:shadow-[0_0_35px_var(--primary-glow)] transition-all active:scale-[0.98] disabled:opacity-30"
           >
-            {isProcessing ? 'SYNTHESIZING...' : 'EXECUTE INJECTION'}
-          </button>
+            {isProcessing ? 'Processing...' : 'Start Embedding'}
+          </motion.button>
+          {/* trigger hmr */}
         </div>
 
         {/* Output Area */}
@@ -242,22 +244,22 @@ DeepStegAI`
                 {!isProcessing && (
                     <div className="mt-10">
                         <Shield className="h-12 w-12 mx-auto text-[var(--fg-dim)]/20 mb-6" />
-                        <h3 className="text-base font-black italic tracking-tighter text-[var(--fg-dim)]/30 uppercase mb-2">Node Standby</h3>
-                        <p className="text-[9px] text-[var(--fg-dim)]/20 font-black uppercase tracking-[0.3em] max-w-[200px] leading-loose">Waiting for asset synchronization and synthesis command.</p>
+                        <h3 className="text-sm font-semibold text-[var(--fg-dim)]/30 mb-2">Ready</h3>
+                        <p className="text-[10px] text-[var(--fg-dim)]/20 font-medium max-w-[200px] leading-loose">Drop images above to begin.</p>
                     </div>
                 )}
               </motion.div>
             ) : (
               <motion.div key="result" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex-1 flex flex-col gap-4 min-h-0">
                 <div className="relative glass-panel rounded-3xl p-4 flex-1 flex flex-col min-h-0 border-primary/20 bg-primary/[0.02]">
-                    <div className="absolute top-4 right-4 z-10 px-4 py-1.5 bg-primary rounded-full text-[9px] font-black uppercase text-black">SYNTHESIS_SUCCESS</div>
+                    <div className="absolute top-4 right-4 z-10 px-4 py-1.5 bg-primary rounded-full text-[9px] font-bold uppercase text-black">Done!</div>
                     <div className="flex-1 flex items-center justify-center overflow-hidden rounded-2xl bg-[var(--bg-sidebar)] mt-10">
                         <img src={result.image} alt="Stego" className="max-w-full max-h-full object-contain" />
                     </div>
                 </div>
 
                 {result.token && (
-                  <div className="glass-panel rounded-2xl p-5 border-primary/20 bg-primary/5">
+                  <div className="glass-panel rounded-3xl p-5 border-primary/20 bg-primary/5">
                     <div className="flex items-center justify-between mb-3 text-[9px] font-black uppercase tracking-[0.4em] text-primary">
                       <span>Recovery Signature</span>
                       <button onClick={() => navigator.clipboard.writeText(result.token!)} className="text-[var(--fg-dim)] hover:text-[var(--fg)] transition-colors">

@@ -149,18 +149,18 @@ export const Analyze = memo(function Analyze() {
   }
 
   return (
-    <div className={`h-full flex flex-col gap-2 max-w-7xl mx-auto ${isDesktop ? 'overflow-hidden cursor-none' : 'overflow-y-auto cursor-auto'}  `}>
+    <div className={`h-full flex flex-col gap-2 max-w-7xl mx-auto ${isDesktop ? 'overflow-hidden' : 'overflow-y-auto'}`}>
         <div className="flex flex-col sm:flex-row sm:items-end justify-between w-full">
             <div>
-              <h2 className="text-xl sm:text-2xl font-black italic tracking-tighter uppercase text-[var(--fg)] glow-text leading-none">Forensic Scanner</h2>
-              <p className="text-[9px] font-bold tracking-[0.2em] uppercase mt-1 text-[var(--fg-dim)]">AI Neural Inspection Node</p>
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--fg)] leading-none">AI Scan</h2>
+              <p className="text-xs font-medium mt-1 text-[var(--fg-dim)]">Detect hidden data in an image</p>
             </div>
             {preview && (
               <motion.button
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 onClick={handleClear}
-                className="mt-4 sm:mt-0 px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-[9px] sm:text-[10px] font-black tracking-widest uppercase text-red-400 hover:bg-red-500/20 transition-all flex items-center justify-center gap-2"
+                className="mt-4 sm:mt-0 px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-xs font-semibold text-red-400 hover:bg-red-500/20 transition-all flex items-center justify-center gap-2"
               >
                 <Search className="h-3 w-3 rotate-45" /> Reset Scanner Node
               </motion.button>
@@ -178,8 +178,8 @@ export const Analyze = memo(function Analyze() {
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-[var(--bg-card)] border border-dashed border-[var(--border)] rounded-3xl p-6 flex flex-col items-center justify-center transition-all hover:bg-[var(--fg)]/[0.04] group min-h-[120px]"
               >
-                <Search className="h-10 w-10 mb-4 text-[var(--fg-dim)]" />
-                <p className="text-sm font-bold tracking-widest uppercase text-[var(--fg-dim)]">Stage Carrier for Scan</p>
+                <Search className="h-10 w-10 mb-3 text-[var(--fg-dim)]" />
+                <p className="text-sm font-medium text-[var(--fg-dim)]">Drop image to scan</p>
               </motion.div>
             </div>
           )}
@@ -255,8 +255,8 @@ export const Analyze = memo(function Analyze() {
               animate={{ opacity: 1 }}
               className="flex justify-start"
             >
-                <button onClick={handleScan} className="bg-primary hover:opacity-90 text-black px-12 py-4 rounded-2xl font-bold tracking-[0.2em] text-[10px] uppercase shadow-[0_0_30px_var(--primary-glow)] transition-all active:scale-95 lg:cursor-none w-full sm:w-auto">
-                  Execute Deep Scan
+                <button onClick={handleScan} className="bg-primary hover:opacity-90 text-black px-12 py-4 rounded-2xl font-bold tracking-wide text-sm shadow-[0_0_20px_var(--primary-glow)] transition-all active:scale-95 w-full sm:w-auto">
+                  Run AI Scan
                 </button>
             </motion.div>
           )}
@@ -274,13 +274,13 @@ export const Analyze = memo(function Analyze() {
                  className="bg-[var(--bg-card)] border border-[var(--border)] rounded-3xl p-4 space-y-4"
               >
                 <div>
-                  <h4 className="text-[9px] font-black tracking-[0.3em] uppercase mb-4 text-[var(--fg-dim)]/50">Forensic Verdict</h4>
+                  <h4 className="text-[9px] font-semibold tracking-wide uppercase mb-4 text-[var(--fg-dim)]/50">Scan Result</h4>
                   <div className={`px-6 py-3 rounded-2xl border text-xs font-black tracking-[0.2em] italic uppercase text-center transition-all duration-500 ${
                     ! (result.verdict !== 'CLEAN')
                     ? 'bg-[#00FF9C]/10 border-[#00FF9C]/30 text-[#00FF9C] shadow-[0_0_20px_rgba(0,255,156,0.1)]'
                     : 'bg-[#FF3B3B]/10 border-[#FF3B3B]/30 text-[#FF3B3B] shadow-[0_0_20px_rgba(255,59,59,0.2)]'
                   }`}>
-                      {result.verdict !== 'CLEAN' ? 'PAYLOAD DETECTED' : 'CLEAN ASSET'}
+                      {result.verdict !== 'CLEAN' ? 'Hidden Data Found' : 'No Hidden Data'}
                   </div>
                 </div>
 
@@ -288,7 +288,7 @@ export const Analyze = memo(function Analyze() {
 
                 <div>
                   <div className="flex justify-between items-end mb-3">
-                    <span className="text-[9px] font-black tracking-[0.2em] uppercase text-[var(--fg-dim)]/70">Neural Confidence</span>
+                    <span className="text-[9px] font-semibold tracking-wide uppercase text-[var(--fg-dim)]/70">AI Confidence</span>
                     <span className={`text-sm font-mono font-black ${result.verdict !== 'CLEAN' ? 'text-[#FF3B3B]' : 'text-[#00FF9C]'}`}>
                       {(result.ai_score * 100).toFixed(2)}%
                     </span>
@@ -304,7 +304,7 @@ export const Analyze = memo(function Analyze() {
                 </div>
 
                 <div className="p-4 rounded-2xl bg-[var(--fg)]/[0.03] border border-[var(--border)]">
-                  <p className="text-[8px] font-black text-[var(--fg-dim)]/20 uppercase mb-2 tracking-widest">Heuristic Analysis</p>
+                  <p className="text-[8px] font-semibold text-[var(--fg-dim)]/20 uppercase mb-2 tracking-wide">Details</p>
                   <p className={`text-[10px] font-bold italic leading-relaxed ${result.verdict !== 'CLEAN' ? 'text-[#FF3B3B]' : 'text-[var(--fg-dim)]'}`}>
                     {result.details?.extra?.description || "No anomalies detected."}
                   </p>
@@ -318,9 +318,9 @@ export const Analyze = memo(function Analyze() {
                     </h4>
                     <div className="space-y-4">
                       {[
-                        { label: 'AI CORE', val: 'V4.2_ONLINE', color: 'text-primary' },
-                        { label: 'CALIBRATION', val: 'OPTIMAL', color: 'text-[#00FF9C]' },
-                        { label: 'THREAT DB', val: 'SYNCED', color: 'text-primary' },
+                    { label: 'AI Engine', val: 'V4.2_ONLINE', color: 'text-primary' },
+                        { label: 'Status', val: 'Optimal', color: 'text-[#00FF9C]' },
+                        { label: 'Threat DB', val: 'Synced', color: 'text-primary' },
                       ].map((item, idx) => (
                         <div key={idx} className="flex justify-between items-center text-[10px] pb-3 border-b border-[var(--border)] last:border-0 last:pb-0">
                            <span className="font-bold uppercase tracking-widest text-[var(--fg-dim)]/70">{item.label}</span>

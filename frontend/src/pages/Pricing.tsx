@@ -103,7 +103,7 @@ export function Pricing() {
             className={`relative rounded-3xl border p-8 backdrop-blur-sm flex flex-col transition-all duration-300 ${tier.popular ? 'bg-primary/5 border-primary shadow-[0_0_30px_var(--primary-glow)]' : 'bg-[var(--bg-card)] border-[var(--border)] shadow-xl'}`}
           >
             {tier.popular && (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-black text-[9px] font-black uppercase tracking-widest px-4 py-1 rounded-full shadow-[0_0_15px_var(--primary-glow)]">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-[var(--btn-text)] text-[9px] font-black uppercase tracking-widest px-4 py-1 rounded-full shadow-[0_0_15px_var(--primary-glow)]">
                 Most Popular
               </div>
             )}
@@ -124,9 +124,9 @@ export function Pricing() {
             <button
               onClick={() => handlePayment(tier.id)}
               disabled={loadingTier === tier.id}
-              className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] transition-all group lg:cursor-none ${tier.popular ? 'bg-primary text-black hover:shadow-[0_0_20px_var(--primary-glow)] hover:opacity-90' : 'bg-[var(--bg-sidebar)] border border-[var(--border)] text-[var(--fg)] hover:border-primary/50'}`}
+              className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 text-sm font-bold tracking-wide transition-all group ${tier.popular ? 'bg-primary text-[var(--btn-text)] hover:shadow-[0_0_20px_var(--primary-glow)] hover:opacity-90' : 'bg-[var(--bg-sidebar)] border border-[var(--border)] text-[var(--fg)] hover:border-primary/50'}`}
             >
-              {loadingTier === tier.id ? 'CONNECTING...' : 'INITIATE TRANSFER'}
+              {loadingTier === tier.id ? 'Processing...' : 'Buy'}
               {loadingTier !== tier.id && <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />}
             </button>
           </motion.div>

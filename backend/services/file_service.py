@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from models.file import File
 from werkzeug.utils import secure_filename
 
-UPLOAD_FOLDER = os.path.join("backend", "data", "uploads")
+UPLOAD_FOLDER = os.path.join("data", "uploads")
 
 class FileService:
     @staticmethod

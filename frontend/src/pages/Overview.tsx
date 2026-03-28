@@ -1,15 +1,21 @@
-import { Suspense, useState, useRef, memo, useEffect } from 'react'
+import { lazy, useState, useRef, memo, useEffect, Suspense } from 'react'
+const ActivityHelix = lazy(() => import('@/three/ActivityHelix').then(m => ({ default: m.ActivityHelix })))
 import { motion } from 'framer-motion'
-import { Canvas } from '@react-three/fiber'
-import { NeuralSphere } from '@/three/NeuralSphere'
-import { Shield, Zap, Lock, Globe, ArrowRight, Clock, ChevronRight, Activity } from 'lucide-react'
+import { Shield, Zap, Lock, Globe, ArrowRight, Clock, Activity, Unlock, ScanLine, Layers } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useStore } from '@/store/useStore'
 import { fireInitRipple } from '@/components/DashboardLayout'
-import { ThemeToggle } from '@/components/ThemeToggle'
 import { stegoApi } from '@/services/api'
+import { DecryptTitle } from '@/components/effects/DecryptTitle'
 
 const TRANSITION = { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }
+
+const FEATURES = [
+  { title: "Embed Data", desc: "Inject encrypted payloads seamlessly into covers", icon: Lock, link: "/embed", color: "text-cyan-400", border: "border-cyan-500/30", bg: "bg-cyan-500/10" },
+  { title: "Extract Data", desc: "Retrieve hidden intelligence from altered sources", icon: Unlock, link: "/extract", color: "text-purple-400", border: "border-purple-500/30", bg: "bg-purple-500/10" },
+  { title: "AI Scan", desc: "Neural network anomaly detection algorithms", icon: ScanLine, link: "/analyze", color: "text-orange-400", border: "border-orange-500/30", bg: "bg-orange-500/10" },
+  { title: "Batch Process", desc: "Industrial-scale mass embedding & extraction", icon: Layers, link: "/batch", color: "text-green-400", border: "border-green-500/30", bg: "bg-green-500/10" },
+]
 
 // ──────────────────────── Hyper Button ────────────────────────
 function HyperButton({ onClick }: { onClick: () => void }) {
@@ -168,7 +174,7 @@ export const Overview = memo(function Overview() {
   const theme = useStore(s => s.theme)
   const isLight = theme === 'light'
   
-  const [data, setData] = useState<{ analysis: any[]; files: any[]; activity: any[] }>({ analysis: [], files: [], activity: [] })
+  const [data, setData] = useState<{ analysis: any[]; files: any[]; activity: any[]; globalStats: any }>({ analysis: [], files: [], activity: [], globalStats: { total_scans: 0, threats_found: 0 } })
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
@@ -176,15 +182,17 @@ export const Overview = memo(function Overview() {
         const fetchDashboardData = async () => {
             setIsLoading(true)
             try {
-                const [filesRes, analysisRes, activityRes] = await Promise.all([
+                const [filesRes, analysisRes, activityRes, statsRes] = await Promise.all([
                     stegoApi.getFiles(),
                     stegoApi.getAnalysisList(),
-                    stegoApi.getActivity()
+                    stegoApi.getActivity(),
+                    stegoApi.getGlobalStats()
                 ])
                 setData({
                     files: filesRes.data.success ? filesRes.data.data : [],
                     analysis: analysisRes.data.success ? analysisRes.data.data : [],
-                    activity: activityRes.data.success ? activityRes.data.data : []
+                    activity: activityRes.data.success ? activityRes.data.data : [],
+                    globalStats: statsRes.data.success ? statsRes.data.data : { total_scans: 0, threats_found: 0 }
                 })
             } catch (err) {
                 console.error("Dashboard fetch failed:", err)
@@ -197,28 +205,13 @@ export const Overview = memo(function Overview() {
   }, [isAuthenticated, systemInitialized])
 
   // Compute stats
-  const totalScans = data.analysis.length
-  const threatsDetected = data.analysis.filter(a => a.verdict === 'DETECTED' || a.verdict === 'SUSPICIOUS').length
+  const totalScans = data.globalStats?.total_scans || 0
+  const threatsDetected = data.globalStats?.threats_found || 0
   const recentActivity = data.activity.slice(0, 5) // Now pulling from Unified DB logs
 
   return (
-    <div className="relative min-h-screen w-full overflow-y-auto bg-transparent will-change-scroll" style={{ zIndex: 3 }}>
-      {/* 3D Sphere */}
-      <div className={`absolute inset-0 pointer-events-none transition-all duration-700 ${isLight ? 'drop-shadow-[0_0_40px_rgba(0,184,196,0.3)]' : ''}`} style={{ zIndex: 4, transform: 'translateZ(0)' }}>
-        <Suspense fallback={null}>
-          <Canvas camera={{ position: [0, 0, 14], fov: 60 }}>
-            <ambientLight intensity={0.4} />
-            <pointLight position={[10, 10, 10]} intensity={1.6} color="#00f2ff" />
-            <NeuralSphere />
-          </Canvas>
-        </Suspense>
-      </div>
-
-      <div className="relative flex min-h-screen flex-col items-center justify-center px-4 text-center" style={{ zIndex: 5 }}>
-        
-        <div className="absolute top-6 right-6 z-50">
-          <ThemeToggle />
-        </div>
+    <div className="relative min-h-screen w-full bg-transparent" style={{ zIndex: 3 }}>
+      <div className={`relative ${isAuthenticated ? 'pt-24' : 'pt-28'} flex min-h-screen flex-col items-center justify-center px-4 text-center`} style={{ zIndex: 5 }}>
 
         <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -226,37 +219,31 @@ export const Overview = memo(function Overview() {
             className="mb-10 inline-flex items-center gap-3 rounded-full border border-primary/20 bg-primary/10 px-6 py-2.5 backdrop-blur-xl"
         >
           <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-          <span className="text-[10px] font-black tracking-[0.4em] uppercase text-primary">
-            Kernel Link Staged // v3.1 Obsidian
+          <span className="text-[10px] font-semibold tracking-wide text-primary">
+            v3.1 Obsidian — Production
           </span>
         </motion.div>
 
-        <div className="relative px-2">
-          <motion.h1
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ ...TRANSITION, delay: 0.25, duration: 0.8 }}
-            style={{
+
+        <div className="relative px-2" style={{
               fontFamily: 'Inter, sans-serif',
               fontWeight: 900,
               letterSpacing: '-0.04em',
               textShadow: '4px 4px 8px rgba(0,0,0,0.2)',
               color: 'var(--fg-title)'
-            }}
-            className="text-5xl sm:text-7xl md:text-9xl select-none"
-          >
-            DEEP<span style={{ color: 'var(--primary)', fontStyle: 'italic' }}>STEG</span>AI
-          </motion.h1>
+        }}>
+          <DecryptTitle text="DEEPSTEGAI" className="text-5xl sm:text-7xl md:text-9xl select-none" />
         </div>
 
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ ...TRANSITION, delay: 0.45 }}
-          className="mt-8 max-w-xl text-sm sm:text-base font-bold leading-relaxed uppercase tracking-widest text-[var(--fg)] text-shadow-lg"
+          className="mt-8 max-w-xl text-sm sm:text-base font-medium leading-relaxed tracking-wide text-[var(--fg)] text-shadow-lg opacity-80"
         >
           Advanced steganography intelligence suite powered by AI forensic analysis.
         </motion.p>
+
 
         <div className="mt-14 w-full max-w-6xl">
           {!systemInitialized ? (
@@ -271,94 +258,125 @@ export const Overview = memo(function Overview() {
                 >
                 {!isAuthenticated ? (
                     <>
-                    <Link to="/login" className="w-full sm:w-auto lg:cursor-none">
+                    <Link to="/login" className="w-full sm:w-auto">
                         <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        className="w-full sm:w-auto rounded-2xl bg-primary px-12 py-5 text-[10px] sm:text-xs font-black tracking-[0.4em] text-black shadow-[0_0_20px_rgba(0,242,255,0.3)] uppercase italic"
+                        className="w-full sm:w-auto rounded-2xl bg-primary px-12 py-5 text-sm font-bold tracking-wide text-[var(--btn-text)] shadow-[0_0_20px_rgba(0,242,255,0.3)]"
                         >
-                        Authorize Access (LOGIN)
+                        Sign In
                         </motion.button>
                     </Link>
-                    <Link to="/signup" className="w-full sm:w-auto lg:cursor-none">
+                    <Link to="/signup" className="w-full sm:w-auto">
                         <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        className="w-full sm:w-auto rounded-2xl border border-[var(--border)] bg-[var(--bg-sidebar)] px-12 py-5 text-[10px] sm:text-xs font-black tracking-[0.4em] text-[var(--fg)] uppercase italic"
+                        className="w-full sm:w-auto rounded-2xl border border-[var(--border)] bg-[var(--bg-sidebar)] px-12 py-5 text-sm font-bold tracking-wide text-[var(--fg)]"
                         >
-                        Create Protocol Profile (SIGNUP)
+                        Create Account
                         </motion.button>
                     </Link>
                     </>
                 ) : (
                     <>
-                    <Link to="/embed" className="w-full sm:w-auto lg:cursor-none">
-                        <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="w-full sm:w-auto rounded-2xl bg-primary px-10 py-5 text-[10px] sm:text-xs font-black tracking-[0.4em] text-black shadow-[0_0_20px_rgba(0,242,255,0.3)] uppercase"
-                        >
-                        Enter Embed Node
-                        </motion.button>
-                    </Link>
-                    <Link to="/analyze" className="w-full sm:w-auto lg:cursor-none">
-                        <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="w-full sm:w-auto rounded-2xl border border-[var(--border)] bg-[var(--bg-sidebar)] px-10 py-5 text-[10px] sm:text-xs font-black tracking-[0.4em] text-[var(--fg)] uppercase"
-                        >
-                        Scanner Access
-                        </motion.button>
-                    </Link>
+                    <style>{`
+                      @keyframes marquee {
+                        0% { transform: translateX(0); }
+                        100% { transform: translateX(-50%); }
+                      }
+                      .animate-marquee {
+                        animation: marquee 30s linear infinite;
+                      }
+                      .group:hover .animate-marquee {
+                        animation-play-state: paused;
+                      }
+                      .marquee-mask {
+                        mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+                        -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+                      }
+                    `}</style>
+                    <div className="w-full relative overflow-hidden flex group group/marquee py-4 mt-2 marquee-mask">
+                      <div className="flex gap-4 sm:gap-6 px-4 animate-marquee w-max">
+                         {[...FEATURES, ...FEATURES, ...FEATURES].map((feat, i) => (
+                           <Link key={i} to={feat.link} className="shrink-0 w-[240px] sm:w-[280px] transition-opacity duration-500 group-hover/marquee:opacity-40 hover:!opacity-100">
+                              <div className={`h-full relative p-5 rounded-3xl border ${feat.border} ${feat.bg} backdrop-blur-md overflow-hidden transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_30px_rgba(0,0,0,0.3)] hover:z-50 shadow-xl cursor-override`}>
+                                 <div className="flex items-center gap-3 mb-2">
+                                     <div className={`p-2.5 rounded-xl bg-black/40 ${feat.color}`}>
+                                         <feat.icon strokeWidth={2.5} className="w-5 h-5" />
+                                     </div>
+                                     <h3 className="text-[13px] font-black tracking-[0.1em] text-[var(--fg)]">{feat.title}</h3>
+                                 </div>
+                                 <p className="text-xs text-[var(--fg-dim)] font-medium leading-relaxed whitespace-normal">{feat.desc}</p>
+                              </div>
+                           </Link>
+                         ))}
+                      </div>
+                    </div>
                     </>
                 )}
                 </motion.div>
 
                 {/* Real-time Stats Section */}
+                {/* Fisheye Reverse Stats Marquee */}
                 {isAuthenticated && (
                 <motion.div
                     initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ ...TRANSITION, delay: 0.3 }}
-                    className="grid grid-cols-2 lg:grid-cols-4 gap-4 px-4"
+                    className="w-full relative overflow-hidden flex flex-col group group/stats-marquee py-8 mb-4 marquee-mask"
+                    style={{ perspective: '1200px' }}
                 >
-                    {[
-                        { 
-                            label: 'TOTAL_SCANS_LOGGED', 
-                            val: isLoading ? '...' : totalScans.toString(),
-                            icon: Activity,
-                            color: 'text-primary'
-                        },
-                        { 
-                            label: 'THREATS_ISOLATED', 
-                            val: isLoading ? '...' : threatsDetected.toString(),
-                            icon: Shield,
-                            color: threatsDetected > 0 ? 'text-red-500' : 'text-primary'
-                        },
-                        { 
-                            label: 'NEURAL_ACCURACY', 
-                            val: '99.98%', 
-                            icon: Zap,
-                            color: 'text-primary'
-                        },
-                        { 
-                            label: 'KERNEL_STATUS', 
-                            val: 'SYNCED', 
-                            icon: Globe,
-                            color: 'text-green-500'
-                        },
-                    ].map((s, i) => (
-                    <motion.div
-                        key={i}
-                        className={`rounded-2xl px-6 py-6 border transition-all duration-300 ${isLight ? 'bg-[#dff6ff] border-primary/20 shadow-lg' : 'bg-[var(--bg-card)] border-[var(--border)] shadow-[0_0_20px_rgba(0,0,0,0.2)]'}`}
-                    >
-                        <div className="flex items-center justify-between mb-3 text-[var(--fg-dim)]/30">
-                            <s.icon className="h-4 w-4" />
-                            <span className="text-[8px] font-black tracking-widest uppercase">{s.label}</span>
-                        </div>
-                        <div className={`text-4xl font-black italic tracking-tighter ${s.color} ${!isLight && s.color === 'text-primary' ? 'glow-text' : ''}`}>{s.val}</div>
-                    </motion.div>
-                    ))}
+                    <style>{`
+                      @keyframes marquee-reverse {
+                        0% { transform: translateX(-33.333%); }
+                        100% { transform: translateX(0); }
+                      }
+                      .animate-marquee-reverse {
+                        animation: marquee-reverse 20s linear infinite;
+                      }
+                      .fisheye-card {
+                        transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+                        transform-origin: center center;
+                      }
+                      /* Dim sibling cards to 40% */
+                      .group-hover\\/stats-marquee .fisheye-card {
+                        opacity: 0.4;
+                        transform: scale(0.95);
+                      }
+                      /* Zoom hovered card slightly */
+                      .group-hover\\/stats-marquee .fisheye-card:hover {
+                        opacity: 1 !important;
+                        transform: scale(1.03) !important;
+                        z-index: 50;
+                        box-shadow: 0 0 40px rgba(0, 242, 255, 0.25) !important;
+                      }
+                    `}</style>
+                    <div className="flex gap-4 sm:gap-6 px-2 animate-marquee-reverse w-max items-center" style={{ transformStyle: 'preserve-3d' }}>
+                        {(() => {
+                            const baseStats = [
+                                { label: 'Total Scans', val: isLoading ? '—' : totalScans.toString(), icon: Activity, color: 'text-primary' },
+                                { label: 'Threats Found', val: isLoading ? '—' : threatsDetected.toString(), icon: Shield, color: threatsDetected > 0 ? 'text-red-500' : 'text-primary' },
+                                { label: 'AI Accuracy', val: '99.98%', icon: Zap, color: 'text-primary' },
+                                { label: 'System Status', val: 'Online', icon: Globe, color: 'text-green-500' },
+                            ];
+                            const defaultShadowLight = '0 10px 30px -15px rgba(0,184,196,0.3)';
+                            const defaultShadowDark = '0 10px 30px -15px rgba(0,0,0,0.5)';
+                            
+                            return [...baseStats, ...baseStats, ...baseStats].map((s: any, i: number) => (
+                                <div
+                                    key={i}
+                                    className={`fisheye-card shrink-0 w-[240px] sm:w-[280px] rounded-3xl px-8 py-8 border ${isLight ? 'bg-[#dff6ff]/80 border-primary/20' : 'bg-[var(--bg-card)]/80 border-[var(--border)]'} backdrop-blur-xl cursor-override`}
+                                    style={{ '--default-shadow': isLight ? defaultShadowLight : defaultShadowDark } as any}
+                                >
+                                    <div className="flex items-center justify-between mb-4 text-[var(--fg-dim)]/50">
+                                        <s.icon className={`h-5 w-5 ${s.color}`} />
+                                        <span className="text-[10px] font-black tracking-widest uppercase">{s.label}</span>
+                                    </div>
+                                    <div className={`text-5xl font-black italic tracking-tighter ${s.color} ${!isLight && s.color === 'text-primary' ? 'glow-text' : ''}`}>{s.val}</div>
+                                </div>
+                            ))
+                        })()}
+                    </div>
                 </motion.div>
                 )}
 
@@ -373,68 +391,90 @@ export const Overview = memo(function Overview() {
                     <div className="flex items-center justify-between mb-6 px-2">
                         <div className="flex items-center gap-3">
                             <Clock className="h-4 w-4 text-primary" />
-                            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--fg)] italic">Neural Activity Log</h3>
+                            <h3 className="text-sm font-semibold tracking-wide text-[var(--fg)]">Recent Activity</h3>
                         </div>
                     </div>
 
-                    <div className={`rounded-3xl border ${isLight ? 'bg-white border-primary/10 shadow-xl' : 'bg-[var(--bg-card)] border-[var(--border)] shadow-2xl'} overflow-hidden min-h-[120px] relative`}>
-                        {isLoading ? (
-                            <div className="flex flex-col items-center justify-center py-20 opacity-20">
-                                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: "linear" }}>
-                                    <Activity className="h-10 w-10 text-primary" />
-                                </motion.div>
-                                <p className="text-[9px] font-black uppercase tracking-[0.3em] mt-6">Searching for active signals...</p>
-                            </div>
-                        ) : recentActivity.length > 0 ? (
-                            <div className="divide-y divide-[var(--border)]">
-                                {recentActivity.map((r) => (
-                                    <div 
-                                        key={r.id} 
-                                        className="w-full flex items-center justify-between p-5 hover:bg-primary/[0.03] transition-all group lg:cursor-none"
-                                    >
-                                        <div className="flex items-center gap-6 max-w-[70%]">
-                                            <div className={`h-10 w-10 shrink-0 rounded-xl flex items-center justify-center border transition-all ${isLight ? 'bg-primary/5 border-primary/20' : 'bg-[var(--bg)] border-[var(--border)]'} group-hover:border-primary/40`}>
-                                                <Activity className="h-4 w-4 text-[var(--fg-dim)] group-hover:text-primary" />
-                                            </div>
-                                            <div className="truncate">
-                                                <p className="text-xs font-black italic tracking-tight text-[var(--fg)] uppercase truncate">{r.action}</p>
-                                                <p className="text-[10px] text-[var(--fg-dim)]/60 font-medium truncate mt-0.5">{r.details}</p>
-                                                <p className="text-[8px] text-[var(--fg-dim)]/40 font-bold uppercase tracking-widest mt-1">UUID: {r.id.substring(0, 8)}... // STAMPed: {new Date(r.created_at).toLocaleTimeString()}</p>
-                                            </div>
+                    {isLoading ? (
+                        <div className={`p-6 rounded-[1.5rem] border ${isLight ? 'bg-white/60 border-primary/20 shadow-sm' : 'bg-[var(--bg-card)]/50 border-[var(--border)] shadow-md'} backdrop-blur-md`}>
+                            <div className="flex flex-col gap-6">
+                                {[1,2,3].map(i => (
+                                    <div key={i} className="flex items-center gap-6">
+                                        <div className="skeleton h-11 w-11 rounded-[14px] shrink-0" />
+                                        <div className="flex-1 space-y-3">
+                                            <div className="skeleton h-3 w-1/3 rounded" />
+                                            <div className="skeleton h-2 w-1/4 rounded" />
                                         </div>
                                     </div>
                                 ))}
                             </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center py-20 opacity-10">
-                                <Activity className="h-12 w-12 mx-auto mb-6" />
-                                <h3 className="text-sm font-black italic tracking-tight uppercase">No active telemetry data.</h3>
-                                <p className="text-[9px] font-bold uppercase tracking-[0.2em] mt-2">Initialize forensic scan to begin monitoring.</p>
-                            </div>
-                        )}
-                    </div>
+                        </div>
+                    ) : recentActivity.length > 0 ? (
+                        <Suspense fallback={
+                            <div className={`h-[420px] rounded-3xl animate-pulse ${isLight ? 'bg-primary/5' : 'bg-white/[0.02]'}`} />
+                        }>
+                            <ActivityHelix activities={recentActivity} isLight={isLight} />
+                        </Suspense>
+                    ) : (
+                        <div className={`flex flex-col items-center justify-center py-20 rounded-[1.5rem] border ${isLight ? 'bg-white/60 border-primary/20 shadow-sm' : 'bg-[var(--bg-card)]/50 border-[var(--border)] shadow-md'} backdrop-blur-md opacity-20`}>
+                            <Activity className="h-12 w-12 mx-auto mb-6" />
+                            <h3 className="text-sm font-black italic tracking-tight uppercase">No active telemetry data.</h3>
+                            <p className="text-[9px] font-bold uppercase tracking-[0.2em] mt-2">Initialize forensic scan to begin monitoring.</p>
+                        </div>
+                    )}
                 </motion.div>
                 )}
 
                 {/* Highlights (only shown if not authenticated or scrolled down) */}
                 {!isAuthenticated && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto pb-20">
-                    {highlights.map((h, i) => (
-                    <motion.div
-                        key={i}
-                        whileHover={{ y: -5 }}
-                        className="group flex gap-6 rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-8 text-left backdrop-blur-xl hover:bg-[var(--fg)]/5 transition-all shadow-xl"
+                  <div className="pb-24">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                        {highlights.map((h, i) => (
+                        <motion.div
+                            key={i}
+                            whileHover={{ y: -5 }}
+                            className="group flex gap-6 rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-8 text-left backdrop-blur-xl hover:bg-[var(--fg)]/5 transition-all shadow-xl"
+                        >
+                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--bg)] group-hover:border-primary/50 group-hover:bg-primary/10 transition-all shadow-sm">
+                            <h.icon className="h-7 w-7 text-[var(--fg-dim)] group-hover:text-primary transition-colors" />
+                            </div>
+                            <div>
+                            <h3 className="text-sm font-black italic tracking-tight text-[var(--fg)] uppercase tracking-wider">{h.title}</h3>
+                            <p className="mt-2 text-xs font-bold uppercase tracking-[0.15em] leading-relaxed text-[var(--fg-dim)]/60">{h.desc}</p>
+                            </div>
+                        </motion.div>
+                        ))}
+                    </div>
+
+                    {/* Integrated Navigation Bridge: High-Visibility Cyan Theme */}
+                    <motion.div 
+                      initial={{ opacity: 0, y: 15 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      className="mt-12 flex flex-col items-center gap-6"
                     >
-                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--bg)] group-hover:border-primary/50 group-hover:bg-primary/10 transition-all shadow-sm">
-                        <h.icon className="h-7 w-7 text-[var(--fg-dim)] group-hover:text-primary transition-colors" />
-                        </div>
-                        <div>
-                        <h3 className="text-sm font-black italic tracking-tight text-[var(--fg)] uppercase tracking-wider">{h.title}</h3>
-                        <p className="mt-2 text-xs font-bold uppercase tracking-[0.15em] leading-relaxed text-[var(--fg-dim)]/60">{h.desc}</p>
-                        </div>
+                      <div className={`w-px h-12 bg-gradient-to-b ${isLight ? 'from-cyan-500' : 'from-[#00f2ff]/50'} to-transparent`} />
+                      <Link 
+                        to="/about"
+                        className={`
+                          group relative px-10 py-4 rounded-2xl border-2 transition-all duration-300 overflow-hidden
+                          ${isLight ? 'border-cyan-500 bg-white hover:bg-cyan-50 shadow-[0_10px_30px_rgba(6,182,212,0.15)]' : 'border-[#00f2ff]/30 bg-[#00f2ff]/5 hover:bg-[#00f2ff]/10'}
+                        `}
+                      >
+                        <div className={`absolute inset-0 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ${isLight ? 'bg-cyan-500/10' : 'bg-[#00f2ff]/10'}`} />
+                        <span className={`
+                          relative z-10 font-black tracking-[0.3em] uppercase text-xs flex items-center gap-3 transition-colors
+                          ${isLight ? 'text-cyan-700 group-hover:text-cyan-800' : 'text-[#00f2ff]/80 group-hover:text-[#00f2ff]'}
+                        `}>
+                          Project Manifest
+                          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        </span>
+                      </Link>
+                      <p className={`text-[10px] font-mono uppercase tracking-[0.4em] ${isLight ? 'text-slate-500' : 'text-white/20'}`}>
+                        DeepStegAI _ Intelligence Protocol v3.1
+                      </p>
                     </motion.div>
-                    ))}
-                </div>
+                  </div>
                 )}
             </div>
           )}

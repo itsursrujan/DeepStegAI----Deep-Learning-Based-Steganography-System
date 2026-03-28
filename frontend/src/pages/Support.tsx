@@ -33,8 +33,8 @@ export const Support = memo(function Support() {
     return (
         <div className="h-full flex flex-col gap-4 max-w-4xl mx-auto overflow-y-auto pb-4">
             <div className="space-y-2">
-                <h2 className="text-xl font-black italic tracking-tighter uppercase text-[var(--fg)] glow-text leading-none">Intelligence Support</h2>
-                <p className="text-[9px] font-black tracking-[0.3em] text-primary/60 uppercase mt-1">Encrypted Communication Channel</p>
+                <h2 className="text-xl font-bold tracking-tight text-[var(--fg)] leading-none">Support</h2>
+                <p className="text-xs font-medium text-[var(--fg-dim)] mt-1">Send us a message and we'll get back to you within 24 hours</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -118,7 +118,7 @@ export const Support = memo(function Support() {
                             >
                                 <div className="space-y-3">
                                     <div className="space-y-2">
-                                        <label className="text-[8px] font-black text-primary uppercase tracking-[0.4em] ml-2">Operator Name</label>
+                                        <label className="text-[9px] font-semibold text-primary uppercase tracking-wide ml-2">Name</label>
                                         <div className="relative group">
                                             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--fg-dim)]/30 group-focus-within:text-primary transition-colors">
                                                 <User className="h-4 w-4" />
@@ -126,8 +126,8 @@ export const Support = memo(function Support() {
                                             <input 
                                                 required
                                                 type="text" 
-                                                placeholder="IDENTIFY YOURSELF"
-                                                className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-2xl py-3 pl-12 pr-6 text-sm font-bold tracking-wide focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-[var(--fg)] placeholder:text-[var(--fg-dim)]/20 uppercase"
+                                                placeholder="Your name"
+                                                className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-2xl py-3 pl-12 pr-6 text-sm focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-[var(--fg)] placeholder:text-[var(--fg-dim)]/50"
                                                 value={formData.name}
                                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                                             />
@@ -135,7 +135,7 @@ export const Support = memo(function Support() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[8px] font-black text-primary uppercase tracking-[0.4em] ml-2">Secure Email</label>
+                                        <label className="text-[9px] font-semibold text-primary uppercase tracking-wide ml-2">Email</label>
                                         <div className="relative group">
                                             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--fg-dim)]/30 group-focus-within:text-primary transition-colors">
                                                 <Mail className="h-4 w-4" />
@@ -143,8 +143,8 @@ export const Support = memo(function Support() {
                                             <input 
                                                 required
                                                 type="email" 
-                                                placeholder="ENDPOINT ADDRESS"
-                                                className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-2xl py-3 pl-12 pr-6 text-sm font-bold tracking-wide focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-[var(--fg)] placeholder:text-[var(--fg-dim)]/20 uppercase"
+                                                placeholder="Email address"
+                                                className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-2xl py-3 pl-12 pr-6 text-sm focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-[var(--fg)] placeholder:text-[var(--fg-dim)]/50"
                                                 value={formData.email}
                                                 onChange={e => setFormData({ ...formData, email: e.target.value })}
                                             />
@@ -152,7 +152,7 @@ export const Support = memo(function Support() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[8px] font-black text-primary uppercase tracking-[0.4em] ml-2">Protocol Details</label>
+                                        <label className="text-[9px] font-semibold text-primary uppercase tracking-wide ml-2">Message</label>
                                         <div className="relative group">
                                             <div className="absolute left-4 top-5 text-[var(--fg-dim)]/30 group-focus-within:text-primary transition-colors">
                                                 <MessageSquare className="h-4 w-4" />
@@ -160,8 +160,8 @@ export const Support = memo(function Support() {
                                             <textarea 
                                                 required
                                                 rows={4}
-                                                placeholder="DESCRIBE THE ISSUE OR QUERY"
-                                                className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-2xl py-3 pl-12 pr-6 text-sm font-bold tracking-wide focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-[var(--fg)] placeholder:text-[var(--fg-dim)]/20 uppercase resize-none font-sans"
+                                                placeholder="Describe your issue or question"
+                                                className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-2xl py-3 pl-12 pr-6 text-sm focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all text-[var(--fg)] placeholder:text-[var(--fg-dim)]/50 resize-none font-sans"
                                                 value={formData.message}
                                                 onChange={e => setFormData({ ...formData, message: e.target.value })}
                                             />
@@ -182,12 +182,12 @@ export const Support = memo(function Support() {
                                     {isSubmitting ? (
                                         <>
                                             <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} className="h-4 w-4 border-2 border-black border-t-transparent rounded-full" />
-                                            XMIT IN PROGRESS...
+                                            Sending...
                                         </>
                                     ) : (
                                         <>
                                             <Send className="h-4 w-4" />
-                                            Initiate Transmission
+                                            Send Message
                                         </>
                                     )}
                                 </button>

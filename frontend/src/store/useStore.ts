@@ -44,11 +44,11 @@ export const useStore = create<SystemState>((set) => ({
 
   setStatus: (status) => set((state) => ({
     status,
-    logs: [...state.logs, `[${new Date().toLocaleTimeString()}] SIGNAL_CHANGE → ${status}`]
+    logs: [...state.logs.slice(-49), `[${new Date().toLocaleTimeString()}] SIGNAL_CHANGE → ${status}`]
   })),
 
   addLog: (msg) => set((state) => ({
-    logs: [...state.logs, `[${new Date().toLocaleTimeString()}] ${msg.toUpperCase()}`]
+    logs: [...state.logs.slice(-49), `[${new Date().toLocaleTimeString()}] ${msg.toUpperCase()}`]
   })),
 
   incrementStat: (key) => set((state) => ({

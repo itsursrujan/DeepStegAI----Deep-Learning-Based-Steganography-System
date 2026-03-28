@@ -83,10 +83,10 @@ export function Extract() {
   }
 
   return (
-    <div className={`h-full flex flex-col gap-3 max-w-3xl mx-auto ${window.innerWidth > 768 ? 'cursor-none' : 'cursor-auto'}`}>
+    <div className={`h-full flex flex-col gap-3 max-w-3xl mx-auto`}>
       <div className="text-center px-2">
-        <h2 className="text-xl sm:text-2xl font-black italic tracking-tighter uppercase text-[var(--fg)] glow-text leading-none">Payload Decryption</h2>
-        <p className="text-[9px] font-bold tracking-[0.2em] uppercase mt-1 text-[var(--fg-dim)]">Steganographic Forensic Node</p>
+        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--fg)] leading-none">Extract Data</h2>
+        <p className="text-xs font-medium mt-1 text-[var(--fg-dim)]">Recover the hidden file from an image</p>
       </div>
 
       <div className="flex-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-3xl p-4 space-y-3 flex flex-col min-h-0 overflow-y-auto">
@@ -110,9 +110,9 @@ export function Extract() {
                 </motion.div>
             ) : (
                 <motion.div key="empty" className="text-center px-4">
-                    <Upload className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-4 text-[var(--fg-dim)]" />
-                    <p className="text-sm sm:text-base font-bold italic uppercase tracking-tighter text-[var(--fg-dim)]">Load Stego Image</p>
-                    <p className="text-[8px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.2em] mt-2 font-bold text-[var(--fg-dim)]/50 text-center">Industrial Carrier Recognition Active</p>
+                    <Upload className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-3 text-[var(--fg-dim)]" />
+                    <p className="text-sm font-medium text-[var(--fg-dim)]">Drop stego image here</p>
+                    <p className="text-[10px] text-[var(--fg-dim)]/50 mt-1">Supports PNG, BMP, TIFF</p>
                 </motion.div>
             )}
           </AnimatePresence>
@@ -122,15 +122,15 @@ export function Extract() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
              <div className="relative group">
                 <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--fg-dim)] group-focus-within:text-primary transition-colors" />
-                <input type="password" placeholder="MASTER_KEY"
-                    className="w-full bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-2xl py-3 pl-14 pr-6 text-xs font-bold tracking-[0.3em] focus:outline-none focus:border-primary/40 transition-all font-mono text-[var(--fg)] placeholder:text-[var(--fg-dim)]"
+                <input type="password" placeholder="Password"
+                    className="w-full bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-2xl py-3 pl-14 pr-6 text-sm focus:outline-none focus:border-primary/40 transition-all font-mono text-[var(--fg)] placeholder:text-[var(--fg-dim)]/60"
                     value={password} onChange={e => setPassword(e.target.value)}
                 />
             </div>
             <div className="relative group">
                 <Shield className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--fg-dim)] group-focus-within:text-primary transition-colors" />
-                <input type="text" placeholder="RECOVERY_TOKEN"
-                    className="w-full bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-2xl py-3 pl-14 pr-6 text-xs font-bold tracking-[0.3em] focus:outline-none focus:border-primary/40 transition-all font-mono text-[var(--fg)] placeholder:text-[var(--fg-dim)]"
+                <input type="text" placeholder="Recovery token (optional)"
+                    className="w-full bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-2xl py-3 pl-14 pr-6 text-sm focus:outline-none focus:border-primary/40 transition-all font-mono text-[var(--fg)] placeholder:text-[var(--fg-dim)]/60"
                     value={token} onChange={e => setToken(e.target.value)}
                 />
             </div>
@@ -147,8 +147,8 @@ export function Extract() {
                     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center gap-4 bg-primary/10 border border-primary/30 rounded-2xl p-6">
                         <CheckCircle className="h-10 w-10 text-primary" />
                         <div>
-                            <p className="text-sm font-black italic uppercase text-primary">Decryption Complete</p>
-                            <p className="text-[10px] text-[var(--fg-dim)] font-bold uppercase tracking-widest mt-1">Payload Extracted From Carrier</p>
+                            <p className="text-sm font-bold text-primary">Extraction Complete</p>
+                            <p className="text-xs text-[var(--fg-dim)] font-medium mt-1">File downloaded successfully.</p>
                         </div>
                     </motion.div>
                 ) : error ? (
@@ -162,16 +162,16 @@ export function Extract() {
                 ) : (
                     <div className="text-center opacity-10">
                          <FileDown className="h-10 w-10 mx-auto mb-2 text-[var(--fg)]" />
-                         <span className="text-[9px] font-black tracking-[0.4em] uppercase text-[var(--fg)]">Engine Initialized</span>
+                         <span className="text-[9px] font-medium tracking-wide text-[var(--fg)]">Ready</span>
                     </div>
                 )}
             </AnimatePresence>
         </div>
 
         <button disabled={!stego || isProcessing} onClick={handleExtract}
-          className="w-full bg-primary text-black font-bold tracking-[0.2em] sm:tracking-[0.4em] text-[10px] uppercase rounded-2xl py-3 shadow-[0_0_30px_var(--primary-glow)] hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-30 lg:cursor-none"
+          className="w-full bg-primary text-[var(--btn-text)] font-bold tracking-wide text-sm uppercase rounded-2xl py-3 shadow-[0_0_20px_var(--primary-glow)] hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-30"
         >
-          {isProcessing ? 'DECRYPTING...' : 'INITIALIZE RECOVERY'}
+          {isProcessing ? 'Extracting...' : 'Extract File'}
         </button>
       </div>
     </div>

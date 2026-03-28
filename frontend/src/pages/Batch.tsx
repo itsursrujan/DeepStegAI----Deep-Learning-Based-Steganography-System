@@ -102,18 +102,18 @@ export function Batch() {
   }
 
   return (
-    <div className={`h-full flex flex-col gap-2 max-w-7xl mx-auto overflow-hidden ${window.innerWidth > 768 ? 'cursor-none' : 'cursor-auto'}`}>
+    <div className={`h-full flex flex-col gap-2 max-w-7xl mx-auto overflow-hidden ${window.innerWidth > 768 ? 'cursor-override' : 'cursor-auto'}`}>
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-black italic tracking-tighter uppercase text-[var(--fg)] glow-text leading-none">Industrial Mass-Engine</h2>
-          <p className="text-[var(--fg-dim)]/80 text-[9px] font-bold tracking-[0.3em] uppercase mt-1 italic">Bulk Synthesis & Extraction Node</p>
+          <h2 className="text-xl font-black italic tracking-tighter uppercase text-[var(--fg)] glow-text leading-none">Batch Processing</h2>
+          <p className="text-[var(--fg-dim)]/80 text-[9px] font-bold tracking-[0.3em] uppercase mt-1 italic">Process Multiple Files At Once</p>
         </div>
         <div className="flex bg-[var(--bg-sidebar)] p-1.5 rounded-2xl border border-[var(--border)] gap-1">
           {(['hide', 'extract', 'scan'] as const).map(m => (
-            <button key={m} onClick={() => { setMode(m); setError(null); setIsSuccess(false); setBatchResults(null) }}
-              className={`px-5 py-3 rounded-xl text-[10px] font-black tracking-[0.3em] uppercase transition-all ${mode === m ? 'bg-primary text-black shadow-[0_0_20px_var(--primary-glow)]' : 'text-[var(--fg-dim)]/30 hover:text-[var(--fg-dim)]/60'}`}
+            <button key={m} onClick={() => { setMode(m); setError(null); setIsSuccess(false); setBatchResults(null); setFiles([]); setSecret(null); setPassword(''); }}
+              className={`px-5 py-3 rounded-xl text-[10px] font-black tracking-[0.3em] uppercase transition-all ${mode === m ? 'bg-primary text-[var(--btn-text)] shadow-[0_0_20px_var(--primary-glow)]' : 'text-[var(--fg-dim)]/30 hover:text-[var(--fg-dim)]/60'}`}
             >
-              {m === 'hide' ? 'Embed' : m === 'extract' ? 'Extract' : 'Deep_Scan'}
+              {m === 'hide' ? 'Embed' : m === 'extract' ? 'Extract' : 'AI Scan'}
             </button>
           ))}
         </div>
@@ -260,10 +260,10 @@ export function Batch() {
           <button 
             disabled={files.length === 0 || (mode === 'hide' && !secret) || isProcessing} 
             onClick={handleBatch}
-            style={{ color: '#000000' }}
-            className="w-full bg-primary disabled:bg-primary/20 font-black tracking-[0.2em] text-[13px] uppercase rounded-2xl py-3 shadow-[0_0_30px_var(--primary-glow)] hover:opacity-90 transition-all active:scale-[0.98] lg:cursor-none"
+            style={{ color: '#ffffff' }}
+            className="w-full bg-primary disabled:bg-primary/20 font-black tracking-[0.2em] text-[13px] uppercase rounded-2xl py-3 shadow-[0_0_30px_var(--primary-glow)] hover:opacity-90 transition-all active:scale-[0.98]"
           >
-            {isProcessing ? 'SYNCHRONIZING...' : 'INITIALIZE PROTOCOL'}
+            {isProcessing ? 'PROCESSING...' : 'START BATCH'}
           </button>
         </div>
       </div>

@@ -3,7 +3,7 @@ from pydantic import ValidationError
 from database.db import SessionLocal
 from models.user import User
 from schemas.user import UserSignUp, UserLogin
-from utils.auth import hash_password, verify_password, create_access_token, token_required
+from utils.auth import hash_password, verify_password, create_access_token, token_required, revoke_token
 from sqlalchemy.exc import IntegrityError
 import secrets
 import datetime
@@ -274,3 +274,20 @@ def reset_password():
         }), 500
     finally:
         db.close()
+
+
+@auth_bp.route('/logout', methods=['POST'])
+@token_required
+def logout():
+    """
+    Fix 3 — JWT Revocation on Logout:
+    Adds the current token's JTI to the in-memory denylist.
+    Future requests using the same token will immediately receive 401.
+    """
+    jti = getattr(request, 'token_jti', None)
+    if jti:
+        revoke_token(jti)
+    return jsonify({
+        "success": True,
+        "message": "Logged out successfully. Token has been invalidated."
+    }), 200
