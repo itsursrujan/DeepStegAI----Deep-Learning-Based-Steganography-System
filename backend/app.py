@@ -88,8 +88,8 @@ except Exception as e:
 
 MESSAGES_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'messages.json')
 
-# Apply standard CORS policy
-CORS(app, resources={r"/*": {"origins": "*"}}, expose_headers=["Content-Disposition", "content-disposition", "X-Filename", "X-Updated-Credits"])
+# Apply standard CORS policy with exposed headers for binary metadata
+CORS(app, resources={r"/*": {"origins": "*"}}, expose_headers=["Content-Disposition", "content-disposition", "X-Filename", "X-Updated-Credits", "X-Recovery-Token"])
 
 # Fix 2: Rate Limiter — Enforce REDIS for production concurrency safety.
 # Mandatory Redis config with retries and timeouts for stability.
@@ -570,7 +570,7 @@ def api_embed():
         response = send_file(
             img_buffer,
             mimetype='image/png',
-            as_attachment=True,
+            as_attachment=False, # Set to False so browser can 'Show' it in result area
             download_name='stego_image.png'
         )
         
