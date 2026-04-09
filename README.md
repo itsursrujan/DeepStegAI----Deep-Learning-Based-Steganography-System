@@ -1,3 +1,12 @@
+---
+title: DeepStegAI Backend
+emoji: 🛡️
+colorFrom: cyan
+colorTo: blue
+sdk: docker
+app_port: 7860
+---
+
 # DeepStegAI: Cinematic Intelligence Suite
 
 DeepStegAI is a secure information hiding (steganography) and AI-driven detection (steganalysis) platform.
