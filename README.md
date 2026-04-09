@@ -1,7 +1,7 @@
 ---
 title: DeepStegAI Backend
 emoji: 🛡️
-colorFrom: cyan
+colorFrom: blue
 colorTo: blue
 sdk: docker
 app_port: 7860
