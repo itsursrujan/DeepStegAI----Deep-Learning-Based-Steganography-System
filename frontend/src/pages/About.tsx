@@ -22,7 +22,7 @@ const TEAM = {
     {
       name: 'Dr. Rajashekarappa',
       role: 'Project Guide',
-      image: '/images/team/raj.jpeg',
+      image: '/images/team/raj.jpg',
       details: {
         title: "Professor, Dept. of Information Science & Engineering",
         expertise: ["Cryptanalysis & Security", "Image Encryption", "Network Security", "IoT Automation"],
@@ -31,7 +31,7 @@ const TEAM = {
     }
   ],
   engineering: [
-    { name: 'Sudarshan H J', role: 'Lead Architect', image: '/images/team/sudarshan.jpeg', position: 'object-top' },
+    { name: 'Sudarshan H J', role: 'Lead Architect', image: '/images/team/sudarshan.png', position: 'object-top' },
     { name: 'Aryan Giri', role: 'Design Support', image: '/images/team/aryan.jpeg' },
     { name: 'Srujan Aravalli', role: 'Frontend Engineer', image: '/images/team/srujan.jpeg' },
     { name: 'Dhruvaraj R', role: 'Operations Coordinator', image: '/images/team/dhruv.jpeg', position: 'object-top' }

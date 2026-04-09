@@ -11,9 +11,6 @@ import { useStore } from '@/store/useStore'
 function PowerBar({ progress, active }: { progress: number; active: boolean }) {
   // Weighted easing: fast start, slows near 90%
   const displayPct = Math.round(progress)
-  const flickerPct = active
-    ? Math.max(0, Math.min(99, displayPct + Math.floor(Math.random() * 4 - 1)))
-    : displayPct
 
   return (
     <div className="flex flex-col items-center gap-5">
@@ -37,7 +34,7 @@ function PowerBar({ progress, active }: { progress: number; active: boolean }) {
       </div>
       <div className="flex items-baseline gap-2">
         <span className="font-mono text-3xl font-black text-primary tracking-tighter tabular-nums" style={{ textShadow: '0 0 16px var(--primary-glow)' }}>
-          {active ? flickerPct : '—'}
+          {active ? displayPct : '—'}
         </span>
         {active && <span className="font-mono text-sm font-bold text-primary/60">%</span>}
         <span className="font-mono text-[10px] font-black text-[var(--fg-dim)] tracking-widest ml-2">
@@ -162,17 +159,18 @@ export function Embed() {
     try {
       const res = await stegoApi.embed(fd)
       clearInterval(timer); setProgress(100)
-      if (res.data.success && res.data.data) {
-        const d = res.data.data
-        setTimeout(() => {
-            setResult({
-              image: `data:image/png;base64,${d.image_data}`,
-              token: d.recovery_token || undefined,
-              visualization: d.visualization || undefined
-            })
-            setStatus('SECURE')
-        }, 400)
-      } else { setError('Protocol Mismatch.'); setStatus('READY') }
+      
+      const blob = res.data as Blob
+      const imageUrl = URL.createObjectURL(blob)
+      const token = res.headers['x-recovery-token']
+      
+      setTimeout(() => {
+          setResult({
+            image: imageUrl,
+            token: token || undefined
+          })
+          setStatus('SECURE')
+      }, 400)
     } catch (e: any) {
       clearInterval(timer)
       setError(e?.response?.data?.error || e?.message || 'Synthesis aborted.')
@@ -186,19 +184,25 @@ export function Embed() {
       const fd = new FormData();
       fd.append('cover', cover);
       
-      // Convert massive stego base64 to blob safely (fetch fails on URIs > 2MB in some browsers)
-      const b64Data = result.image.split(',')[1];
-      const byteCharacters = atob(b64Data);
-      const byteArrays = [];
-      for (let offset = 0; offset < byteCharacters.length; offset += 1024) {
-        const slice = byteCharacters.slice(offset, offset + 1024);
-        const byteNumbers = new Array(slice.length);
-        for (let i = 0; i < slice.length; i++) {
-          byteNumbers[i] = slice.charCodeAt(i);
+      let blob: Blob;
+      if (result.image.startsWith('blob:')) {
+        const res = await fetch(result.image);
+        blob = await res.blob();
+      } else {
+        // Fallback for legacy base64 if any remains
+        const b64Data = result.image.split(',')[1];
+        const byteCharacters = atob(b64Data);
+        const byteArrays = [];
+        for (let offset = 0; offset < byteCharacters.length; offset += 1024) {
+          const slice = byteCharacters.slice(offset, offset + 1024);
+          const byteNumbers = new Array(slice.length);
+          for (let i = 0; i < slice.length; i++) {
+            byteNumbers[i] = slice.charCodeAt(i);
+          }
+          byteArrays.push(new Uint8Array(byteNumbers));
         }
-        byteArrays.push(new Uint8Array(byteNumbers));
+        blob = new Blob(byteArrays, { type: 'image/png' });
       }
-      const blob = new Blob(byteArrays, { type: 'image/png' });
       
       fd.append('stego', new File([blob], 'stego.png', { type: 'image/png' }));
       

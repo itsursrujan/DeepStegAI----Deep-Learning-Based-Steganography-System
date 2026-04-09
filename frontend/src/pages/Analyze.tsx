@@ -35,9 +35,6 @@ class CanvasErrorBoundary extends Component<
 // ───────────────────────── Power Bar ─────────────────────────
 function PowerBar({ progress, active }: { progress: number; active: boolean }) {
   const displayPct = Math.round(progress)
-  const flickerPct = active
-    ? Math.max(0, Math.min(99, displayPct + Math.floor(Math.random() * 4 - 1)))
-    : displayPct
 
   return (
     <div className="flex flex-col items-center gap-3">
@@ -61,7 +58,7 @@ function PowerBar({ progress, active }: { progress: number; active: boolean }) {
       </div>
       <div className="flex items-baseline gap-1.5">
         <span className="font-mono text-xl font-black text-primary" style={{ textShadow: '0 0 12px var(--primary-glow)' }}>
-          {active ? flickerPct : '—'}
+          {active ? displayPct : '—'}
         </span>
         {active && <span className="font-mono text-xs font-bold text-primary/60">%</span>}
         <span className="font-mono text-[9px] font-black text-[var(--fg-dim)] tracking-widest ml-1">

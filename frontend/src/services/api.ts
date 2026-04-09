@@ -100,10 +100,17 @@ export const stegoApi = {
   verifyPayment: (data: any) => api.post('/razorpay/verify-payment', data),
 
   // --- Core ---
-  embed: (formData: FormData) =>
-    api.post('/embed', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+  embed: async (formData: FormData) => {
+    try {
+      return await api.post('/embed', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        responseType: 'blob',
+      })
+    } catch (err: any) {
+      const msg = await readBlobError(err)
+      throw { ...err, message: msg, response: { ...err.response, data: { error: msg } } }
+    }
+  },
 
   getCapacity: (formData: FormData) =>
     api.post('/capacity', formData, {

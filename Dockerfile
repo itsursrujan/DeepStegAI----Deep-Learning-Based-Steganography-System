@@ -3,7 +3,7 @@ FROM python:3.10-slim
 
 # Install system dependencies for OpenCV and PostgreSQL
 RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     libpq-dev \
     gcc \
@@ -28,5 +28,4 @@ ENV PORT=7860
 EXPOSE 7860
 
 # Start the application
-# We use -w 2 because HF has 16GB RAM and multiple CPU cores
-CMD ["gunicorn", "--timeout", "120", "-w", "2", "-b", "0.0.0.0:7860", "backend.app:app"]
+CMD ["gunicorn", "--timeout", "120", "-w", "1", "-b", "0.0.0.0:7860", "--chdir", "backend", "app:app"]

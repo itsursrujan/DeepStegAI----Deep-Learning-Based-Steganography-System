@@ -486,14 +486,15 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <main className="relative flex flex-col flex-1 min-w-0 overflow-hidden" style={{ zIndex: 10 }}>
             {/* Tool header */}
             {(isToolPage || window.innerWidth < 1024) && (
-              <header className="flex h-10 shrink-0 items-center justify-between px-3 lg:px-5 bg-[var(--bg-header)] backdrop-blur-2xl border-b border-[var(--border)]">
+          <header className="flex h-14 sm:h-12 shrink-0 items-center justify-between px-4 lg:px-6 bg-[var(--bg-header)] backdrop-blur-2xl border-b border-[var(--border)]">
                 <div className="flex items-center gap-4">
                   {/* Mobile Menu Toggle */}
                   <button 
                     onClick={() => setMobileMenuOpen(true)}
-                    className="p-2 -ml-2 text-white/60 hover:text-white lg:hidden"
+                    className="p-3 -ml-2 text-white/60 hover:text-white lg:hidden active:scale-90 transition-transform"
+                    aria-label="Open Menu"
                   >
-                    <Menu className="h-5 w-5" />
+                    <Menu className="h-6 w-6" />
                   </button>
 
                   <div className="flex items-center gap-3">

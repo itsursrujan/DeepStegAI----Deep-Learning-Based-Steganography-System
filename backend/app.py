@@ -5,14 +5,12 @@ import logging
 import bcrypt
 import io
 import json
-import torch
 import numpy as np
 import zipfile
 import markdown
 import filetype
 import base64
 import datetime
-import cv2
 import math
 from dotenv import load_dotenv
 from database.db import engine, Base
@@ -35,9 +33,7 @@ from stego_engine import embed_payload_into_image, extract_payload_from_image, i
 from crypto_utils import aes_encrypt, aes_decrypt, xor_encrypt_decrypt
 from adaptive_engine import embed_file_adaptive, extract_file_adaptive
 from protocol import package_payload, unpackage_payload
-from detection_engine import scan_image_for_signature
-from steganalysis_model import get_model
-from train_stego_model import predict_image
+# Deferred AI imports moved to load_ai_model
 from utils.auth import token_required, require_credits, admin_required
 from utils.email_utils import send_admin_notification, send_user_receipt
 from utils.activity import log_user_activity
@@ -168,14 +164,9 @@ def api_capacity():
         return jsonify({"error": str(e)}), 500
 
 
-# --- Global AI Model Loading ---
+# --- Initialized on demand in load_ai_model ---
 MODEL = None
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-# CRITICAL DEMO FIX: Prevent PyTorch from spawning threads equal to all CPU cores.
-# This ensures that multiple concurrent 40-user waitress backend requests 
-# do not crash or stall the OS by fighting for the same CPU cycles.
-torch.set_num_threads(1)
+DEVICE = None
 
 # GLOBAL AI EXECUTOR: Ensures true request queuing across the entire Flask application
 # instead of spawning a new pool per request. Protects against Docker OOM and OS stalls.
@@ -216,7 +207,13 @@ def get_calibrated_ai_score(image_pil, initial_ai_score, signature_detected):
     return ai_score
 
 def load_ai_model():
-    global MODEL
+    global MODEL, DEVICE
+    import torch
+    from steganalysis_model import get_model
+    
+    DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    torch.set_num_threads(1)
+    
     model_path = os.path.join(os.path.dirname(__file__), 'models', 'stego_model.pth')
     try:
         if os.path.exists(model_path):
@@ -231,7 +228,8 @@ def load_ai_model():
     except Exception as e:
         logger.error(f"Failed to load AI model: {e}", exc_info=True)
 
-load_ai_model()
+# Model loading is now deferred to the first /api/analyze request
+# load_ai_model()
 
 # --- Routes ---
 
@@ -564,22 +562,27 @@ def api_embed():
         finally:
             db.close()
 
-        # To return both Image and Token, we encode image to Base64 JSON
+        # Return Binary Image with Metadata in Headers
         img_buffer = io.BytesIO()
         stego_img.save(img_buffer, format="PNG")
-        img_b64 = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
+        img_buffer.seek(0)
         
-        return jsonify({
-            'success': True,
-            'data': {
-                'image_data': img_b64,
-                'filename': 'stego_image.png',
-                'recovery_token': recovery_token,
-                'method': method,
-                'credits': getattr(request, 'updated_credits', None)
-            },
-            'error': None
-        })
+        response = send_file(
+            img_buffer,
+            mimetype='image/png',
+            as_attachment=True,
+            download_name='stego_image.png'
+        )
+        
+        # Add metadata to headers
+        if recovery_token:
+            response.headers['X-Recovery-Token'] = recovery_token
+        
+        updated_credits = getattr(request, 'updated_credits', None)
+        if updated_credits is not None:
+            response.headers['X-Updated-Credits'] = str(updated_credits)
+            
+        return response
 
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
@@ -602,6 +605,7 @@ def api_extract():
         password = request.form.get('password', '')
         recovery_token = request.form.get('recovery_token', '')
         
+        from detection_engine import scan_image_for_signature
         stego_img = Image.open(stego_file).convert("RGB")
         
         # 1. Detect Signature
@@ -693,16 +697,10 @@ def api_analyze():
         # 3. AI Analysis: The 'Heavy Lifting'
         ai_score = 0.0
         ai_success = False
-        if MODEL:
-            try:
-                # Queue Protection: Reject requests if the queue is overloaded
-                if getattr(GLOBAL_AI_EXECUTOR, '_work_queue', None) and GLOBAL_AI_EXECUTOR._work_queue.qsize() > 10:
-                    return jsonify({
-                        "success": False,
-                        "data": None,
-                        "error": "Server is currently at maximum capacity. Please try again momentarily."
-                    }), 503
-
+                if not MODEL:
+                    load_ai_model()
+                
+                from train_stego_model import predict_image
                 # We run the AI prediction in the Global Thread Pool
                 future = GLOBAL_AI_EXECUTOR.submit(predict_image, MODEL, image_pil)
                 ai_score = float(future.result(timeout=30.0))
