@@ -3,6 +3,10 @@
     {
       "source": "/api/:path*",
       "destination": "https://deepstegai-v2-backend.onrender.com/api/:path*"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
     }
   ]
 }
