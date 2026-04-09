@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useStore } from '@/store/useStore'
+
 
 const ACID_CHARS = '0123456789ABCDEF!@#$%^&*()_+'
 const FONT_SIZE = 14
