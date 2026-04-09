@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://deepstegai-v2-backend.onrender.com/api/:path*"
+      "destination": "https://hjsudarshan-deepstegai-backend.hf.space/api/:path*"
     },
     {
       "source": "/((?!api/).*)",
