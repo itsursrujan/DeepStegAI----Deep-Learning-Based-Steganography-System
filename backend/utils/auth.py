@@ -87,7 +87,7 @@ def require_credits(cost_fixed=0, cost_per_unit=0, unit_field=None):
             except Exception:
                 user_id = user_id_raw
 
-            if email == "hjsudarshan18@gmail.com":
+            if email in ["aravalli813@gmail.com", "hjsudarshan18@gmail.com"]:
                 return f(*args, **kwargs)
 
             total_cost = cost_fixed
@@ -188,7 +188,12 @@ def token_required(f):
                     logging.getLogger("DeepStegAI").error(f"Redis Token Validation Error: {e}")
                     pass # Fail open if Redis drops entirely, or can fail closed depending on strictness.
 
-            request.user_id = payload.get("user_id")
+            uid = payload.get("user_id")
+            if uid:
+                try:
+                    request.user_id = uuid.UUID(uid)
+                except:
+                    request.user_id = uid
             request.user_email = payload.get("email")
             request.token_jti = jti  # Stash jti for logout endpoint to use
 
@@ -214,7 +219,7 @@ def admin_required(f):
             return jsonify({"message": "Authentication required for admin access"}), 401
 
         # Developer bypass
-        if email == "hjsudarshan18@gmail.com":
+        if email in ["aravalli813@gmail.com", "hjsudarshan18@gmail.com"]:
             return f(*args, **kwargs)
 
         from database.db import SessionLocal

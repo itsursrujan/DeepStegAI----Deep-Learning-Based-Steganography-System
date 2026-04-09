@@ -55,7 +55,9 @@ export const useStore = create<SystemState>((set) => ({
     stats: { ...state.stats, [key]: state.stats[key] + 1 }
   })),
 
-  setSystemInitialized: (val) => set({ systemInitialized: val }),
+  setSystemInitialized: (val) => {
+    set({ systemInitialized: val })
+  },
   
   setAuthenticated: (val) => set({ isAuthenticated: val }),
   
@@ -64,7 +66,10 @@ export const useStore = create<SystemState>((set) => ({
   logout: () => {
     localStorage.removeItem('access_token')
     sessionStorage.removeItem('access_token')
-    set({ isAuthenticated: false, user: null })
+    set({ isAuthenticated: false, user: null, systemInitialized: false })
+    import('@/services/api').then(({ stegoApi }) => {
+      stegoApi.logout().catch(() => {})
+    })
   },
 
   setLogin: (accessToken, user, remember) => {

@@ -97,11 +97,29 @@ def get_activity():
 
 @api_bp.route('/stats/global', methods=['GET'])
 def get_global_stats():
-    from models.analysis_result import AnalysisResult
+    from models.activity_log import ActivityLog
     db = SessionLocal()
     try:
-        total_scans = db.query(AnalysisResult).count()
-        threats_found = db.query(AnalysisResult).filter(AnalysisResult.verdict.in_(['DETECTED', 'SUSPICIOUS'])).count()
+        # Aggregate all types of forensic and analysis activity
+        logs = db.query(ActivityLog).filter(ActivityLog.action.in_(['SCAN', 'BATCH_SCAN', 'AI_SCAN', 'ANALYZE', 'FORENSIC_SCAN'])).all()
+        total_scans = len(logs)
+        
+        # Proper check of metadata_json for verdict flags
+        threats_found = 0
+        for l in logs:
+            meta = l.metadata_json or {}
+            verdict = meta.get('verdict')
+            
+            # Fallback: Parse from description string if metadata is missing (for older logs)
+            if not verdict and l.details:
+                if "DETECTED" in l.details.upper():
+                    verdict = "DETECTED"
+                elif "SUSPICIOUS" in l.details.upper():
+                    verdict = "SUSPICIOUS"
+            
+            if verdict and verdict.upper() in ['DETECTED', 'SUSPICIOUS']:
+                threats_found += 1
+        
         return jsonify({
             "success": True,
             "data": {

@@ -2,13 +2,13 @@ import numpy as np
 from PIL import Image
 from typing import Tuple
 
-# This is our unique signature. It helps us identify if an image was processed by our tool.
-# DSAI stands for DeepStegAI.
-MAGIC = b"DSAI"
+# DEEPSTEGAI_V1 Standard Signature
+MAGIC = b"DEEPSTEGAI_V1"
 
-# The header layout is:
-# 4 bytes (MAGIC) + 1 byte (Mode ID) + 4 bytes (Payload Length) = 9 bytes total
-HEADER_LEN = 4 + 1 + 4 
+# The header layout for extraction logic:
+# 13 bytes (MAGIC) + 1 byte (Proto) + 1 byte (Enc) + 2 bytes (Count) + 4 bytes (PayloadLen) + 2 bytes (FnameLen)
+# = 13 + 10 = 23 bytes total
+HEADER_LEN = 13 + 10 
 
 def bytes_to_bits(b: bytes) -> np.ndarray:
     """
@@ -73,11 +73,18 @@ def extract_payload_from_image(stego_img: Image.Image) -> Tuple[int, bytes, byte
         raise ValueError("This image doesn't contain a valid DeepStegAI header.")
     
     # Parse the header
-    mode_id = header_bytes[4] 
-    payload_len = int.from_bytes(header_bytes[5:9], "big")
+    # struct.pack(">BBHIH", proto_id, is_encrypted, file_count, len(final_payload), len(fname_bytes))
+    # Indices: 13 (Proto), 14 (Enc), 15 (Count), 17 (PayloadLen), 21 (FnameLen)
+    # But wait, it's easier to use the fixed offset or just extract the payload_len from the correct offset:
+    # MAGIC (13) + Proto (1) + Enc (1) + Count (2) = 17 bytes offset to PayloadLen
+    payload_len = int.from_bytes(header_bytes[17:21], "big")
+    fname_len = int.from_bytes(header_bytes[21:23], "big")
     
-    # Calculate total bits needed including the payload
-    total_bits = (HEADER_LEN + payload_len) * 8
+    # Calculate total bits needed including the payload AND checksum AND filename
+    # Structure: MAGIC + METADATA_FIXED + FILENAME + PAYLOAD + CHECKSUM(32)
+    total_len = HEADER_LEN + fname_len + payload_len + 32
+    total_bits = total_len * 8
+    
     if total_bits > len(flat):
         raise ValueError("Header says payload is larger than the image itself. File might be corrupted.")
     
@@ -85,35 +92,7 @@ def extract_payload_from_image(stego_img: Image.Image) -> Tuple[int, bytes, byte
     payload_bits = (flat[:total_bits] & 1).astype(np.uint8)
     
     # Convert back to bytes
-    if payload_bits.size % 8 != 0:
-        pad = 8 - (payload_bits.size % 8)
-        payload_bits = np.concatenate([payload_bits, np.zeros(pad, dtype=np.uint8)])
     payload_bytes = bits_to_bytes(payload_bits)
     
-    # Remove the header
-    data_block = payload_bytes[HEADER_LEN:HEADER_LEN+payload_len]
-    
-    signature = None
-    
-    # Check for Signed Modes (Bit 1 set)
-    # Mode 0: Plain
-    # Mode 1: Encrypted
-    # Mode 2: Plain + Signed
-    # Mode 3: Encrypted + Signed
-    
-    if mode_id & 2: # logic for signed
-        # Structure: [SigLen 4 bytes] [Signature] [Data]
-        if len(data_block) < 4:
-            raise ValueError("Payload too short for signature header.")
-            
-        sig_len = int.from_bytes(data_block[:4], 'big')
-        if len(data_block) < 4 + sig_len:
-             raise ValueError("Payload too short for signature body.")
-             
-        signature = data_block[4 : 4+sig_len]
-        data_block = data_block[4+sig_len :]
-        
-        # Mask out the signed bit so downstream logic sees 0 or 1
-        mode_id = mode_id & 1
-        
-    return mode_id, data_block, signature
+    # We return the whole block for protocol.py to handle
+    return 0, payload_bytes, None

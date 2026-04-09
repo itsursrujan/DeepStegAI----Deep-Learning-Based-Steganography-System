@@ -8,10 +8,11 @@ const TRANSITION = { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
 
 export function Admin() {
   const user = useStore(state => state.user)
+  const isAuthenticated = useStore(state => state.isAuthenticated)
   const [messages, setMessages] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  const isDeveloper = user?.email === 'hjsudarshan18@gmail.com'
+  const isDeveloper = ['aravalli813@gmail.com', 'hjsudarshan18@gmail.com'].includes(user?.email || '')
 
   useEffect(() => {
     if (isDeveloper) {
@@ -29,10 +30,22 @@ export function Admin() {
         fetchData()
         const interval = setInterval(fetchData, 10000)
         return () => clearInterval(interval)
-    } else {
+    } else if (user) {
         setIsLoading(false)
     }
-  }, [isDeveloper])
+  }, [isDeveloper, user])
+
+  // --- RE-HYDRATION SAFETY ---
+  // If we have a token but haven't fetched the user profile yet,
+  // show a neutral loading state instead of "Access Denied".
+  if (isAuthenticated && !user) {
+    return (
+        <div className="h-full flex flex-col items-center justify-center space-y-4">
+             <div className="h-12 w-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary animate-pulse">Synchronizing Clearance...</p>
+        </div>
+    );
+  }
 
   if (!isDeveloper) {
     return (
@@ -73,8 +86,6 @@ export function Admin() {
     )
   }
 
-  if (isLoading) return null;
-
   return (
     <div className="h-full flex flex-col gap-3 max-w-7xl mx-auto cursor-none">
       {/* Page header */}
@@ -97,10 +108,10 @@ export function Admin() {
           {/* Quick Stats Sidebar */}
           <div className="xl:col-span-1 grid grid-cols-2 xl:grid-cols-1 gap-3 min-h-0">
               {[
-                  { label: 'Active Tasks', val: '42' },
-                  { label: 'Neural Load', val: '12%' },
-                  { label: 'Encrypted Nodes', val: '891' },
-                  { label: 'Signal Strength', val: '-14dB' },
+                  { label: 'Total Files', val: '42' },
+                  { label: 'System Health', val: 'Stable' },
+                  { label: 'Active Users', val: '128' },
+                  { label: 'Success Rate', val: '99%' },
               ].map((s, i) => (
                   <motion.div 
                     initial={{ opacity: 0, y: 10 }}
@@ -126,8 +137,8 @@ export function Admin() {
                             <Mail className="h-6 w-6 text-primary" />
                           </div>
                           <div>
-                            <h3 className="text-xl font-black italic tracking-tighter uppercase text-[var(--fg)] tracking-[0.2em]">Intercepted Comms Hub</h3>
-                            <p className="text-[10px] text-[var(--fg-dim)]/40 font-bold uppercase tracking-widest mt-1">Authorized Audit Log</p>
+                            <h3 className="text-xl font-black italic tracking-tighter uppercase text-[var(--fg)] tracking-[0.2em]">Live Message Logs</h3>
+                            <p className="text-[10px] text-[var(--fg-dim)]/40 font-bold uppercase tracking-widest mt-1">Recent Activity Feed</p>
                           </div>
                       </div>
                       <div className="px-5 py-2 bg-[var(--bg)] rounded-full border border-[var(--border)] text-[10px] font-black tracking-widest text-[var(--fg)] uppercase italic">
@@ -136,8 +147,13 @@ export function Admin() {
                   </div>
                   
                   <div className="flex-1 overflow-y-auto divide-y divide-[var(--border)]">
-                      <AnimatePresence>
-                          {messages.length > 0 ? messages.map((msg, i) => (
+                      <AnimatePresence mode="wait">
+                          {isLoading ? (
+                              <div className="h-full flex flex-col items-center justify-center p-20 space-y-4">
+                                  <div className="h-8 w-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+                                  <p className="text-[9px] font-black tracking-widest text-primary uppercase animate-pulse">Scanning Intercepts...</p>
+                              </div>
+                          ) : messages.length > 0 ? messages.map((msg, i) => (
                               <motion.div 
                                   initial={{ opacity: 0, x: -10 }}
                                   animate={{ opacity: 1, x: 0 }}

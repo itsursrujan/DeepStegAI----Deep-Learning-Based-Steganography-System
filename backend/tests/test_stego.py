@@ -30,18 +30,33 @@ def test_image_capacity(dummy_image):
     assert image_capacity_bits(dummy_image) == 30000
 
 def test_embed_and_extract_payload(dummy_image):
-    payload = b"Top Secret Payload 12345"
-    # Construct proper header: MAGIC + Mode(1 byte) + Length(4 bytes)
-    header = MAGIC + bytes([0]) + len(payload).to_bytes(4, "big")
-    full_data = header + payload
-    
-    stego_img = embed_payload_into_image(dummy_image, full_data)
-    
-    # Extract
-    mode_id, ext_payload, signature = extract_payload_from_image(stego_img)
+    """
+    Round-trip test using the canonical DEEPSTEGAI_V1 protocol.
+    Uses a larger image (500x500) so capacity is sufficient.
+    """
+    import sys, os
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from protocol import package_payload, unpackage_payload
+    from PIL import Image as PILImage
+
+    # Use a bigger image because 100x100 is too small for the full DEEPSTEGAI_V1 block
+    cover = PILImage.new("RGB", (500, 500), color="blue")
+    secret = b"Top Secret Payload 12345"
+
+    # Build a proper V1 protocol block
+    full_payload = package_payload([{"name": "secret.txt", "data": secret}], "LSB")
+
+    stego_img = embed_payload_into_image(cover, full_payload)
+
+    # Extract the full V1 block
+    mode_id, raw_block, signature = extract_payload_from_image(stego_img)
     assert mode_id == 0
-    assert ext_payload == payload
     assert signature is None
+
+    # Unpackage using the canonical protocol  
+    results, is_bundle = unpackage_payload(raw_block)
+    assert not is_bundle
+    assert results[0]["data"] == secret
 
 def test_embed_too_large_payload(dummy_image):
     # Capacity is 30000 bits = 3750 bytes

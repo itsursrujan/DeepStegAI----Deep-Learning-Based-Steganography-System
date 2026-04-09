@@ -21,7 +21,7 @@ def run_services():
         print(f"Error: Could not find python virtual environment at {python_exe}")
         sys.exit(1)
 
-    print("🚀 Starting DeepStegAI Suite...")
+    print("Starting DeepStegAI Suite...")
 
     # 1. Start Backend
     print("  [1/2] Launching Backend API (Port 5000)...")
@@ -42,9 +42,9 @@ def run_services():
         shell=True # Needed for npx on Windows
     )
 
-    print("\n✅ Both services are starting!")
-    print("  ➜ Frontend: http://localhost:5173")
-    print("  ➜ Backend:  http://127.0.0.1:5000")
+    print("\nBoth services are starting!")
+    print("  Frontend: http://localhost:5173")
+    print("  Backend:  http://127.0.0.1:5000")
     print("\nPress Ctrl+C to stop both services.\n")
 
     try:
@@ -58,7 +58,7 @@ def run_services():
                 print("Error: Frontend process exited unexpectedly.")
                 break
     except KeyboardInterrupt:
-        print("\n🛑 Stopping DeepStegAI Suite...")
+        print("\nStopping DeepStegAI Suite...")
     finally:
         # Gracefully terminate both processes
         backend_process.terminate()

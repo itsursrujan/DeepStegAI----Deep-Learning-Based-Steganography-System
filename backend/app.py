@@ -12,6 +12,8 @@ import markdown
 import filetype
 import base64
 import datetime
+import cv2
+import math
 from dotenv import load_dotenv
 from database.db import engine, Base
 from routes.auth import auth_bp
@@ -29,15 +31,18 @@ import concurrent.futures
 # --- Modular Imports ---
 
 # --- Modular Imports from Parent ---
+from stego_engine import embed_payload_into_image, extract_payload_from_image, image_capacity_bits, bits_to_bytes, bytes_to_bits
 from crypto_utils import aes_encrypt, aes_decrypt, xor_encrypt_decrypt
-from stego_engine import embed_payload_into_image, extract_payload_from_image, image_capacity_bits, MAGIC, bits_to_bytes
-from adaptive_engine import embed_file_adaptive, extract_file_adaptive, MAGIC_ADAPTIVE
+from adaptive_engine import embed_file_adaptive, extract_file_adaptive
+from protocol import package_payload, unpackage_payload
 from detection_engine import scan_image_for_signature
 from steganalysis_model import get_model
 from train_stego_model import predict_image
 from utils.auth import token_required, require_credits, admin_required
 from utils.email_utils import send_admin_notification, send_user_receipt
 from utils.activity import log_user_activity
+from utils.heatmap_utils import generate_difference_heatmap
+from models.gradcam import generate_gradcam
 
 # --- Service Imports ---
 from database.db import SessionLocal
@@ -53,10 +58,11 @@ logging.basicConfig(
 logger = logging.getLogger("DeepStegAI")
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", "deepstegai_secure_key_2024")
+app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024 # 500 MB limit
+app.secret_key = os.environ.get("FLASK_SECRET_KEY") or os.urandom(24)
 
 # Admin access is now restricted by verified developer email
-DEVELOPER_EMAIL = "hjsudarshan18@gmail.com"
+DEVELOPER_EMAILS = [e.strip() for e in os.environ.get("ADMIN_EMAILS", "aravalli813@gmail.com,hjsudarshan18@gmail.com").split(',') if e.strip()]
 
 # Load environment variables
 load_dotenv()
@@ -119,8 +125,47 @@ def validate_uploaded_image(file_storage):
 # Increase file upload limit to 100MB for batch processing
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 
-# Ensure data dir exists
 os.makedirs(os.path.join(os.path.dirname(__file__), '..', 'data'), exist_ok=True)
+
+SECURITY_LIMIT_RATIO = 0.35
+
+def calculate_max_payload(cover_size_bytes: int) -> int:
+    """Calculate the strict 35% maximum payload."""
+    return math.floor(cover_size_bytes * SECURITY_LIMIT_RATIO)
+
+@app.route('/api/capacity', methods=['POST'])
+@limiter.limit("60 per minute")
+def api_capacity():
+    """Single source of truth for payload capacity calculation."""
+    try:
+        if 'cover' not in request.files:
+            return jsonify({"error": "Cover image is required"}), 400
+            
+        cover = request.files['cover']
+        protocol = request.form.get('protocol', 'LSB')
+        
+        # Determine actual file size
+        cover.seek(0, 2)
+        cover_bytes = cover.tell()
+        cover.seek(0)
+        
+        max_payload_bytes = calculate_max_payload(cover_bytes)
+        max_payload_mb = round(max_payload_bytes / (1024 * 1024), 2)
+        
+        return jsonify({
+            "success": True,
+            "data": {
+                "protocol": protocol,
+                "cover_size_bytes": cover_bytes,
+                "max_payload_bytes": max_payload_bytes,
+                "max_payload_mb": max_payload_mb,
+                "security_policy": "Strict 35% Enforcement"
+            },
+            "error": None
+        })
+    except Exception as e:
+        logger.error(f"Capacity calculation error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 # --- Global AI Model Loading ---
@@ -131,6 +176,10 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # This ensures that multiple concurrent 40-user waitress backend requests 
 # do not crash or stall the OS by fighting for the same CPU cycles.
 torch.set_num_threads(1)
+
+# GLOBAL AI EXECUTOR: Ensures true request queuing across the entire Flask application
+# instead of spawning a new pool per request. Protects against Docker OOM and OS stalls.
+GLOBAL_AI_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=3)
 
 def get_calibrated_ai_score(image_pil, initial_ai_score, signature_detected):
     """
@@ -144,9 +193,13 @@ def get_calibrated_ai_score(image_pil, initial_ai_score, signature_detected):
             # Read header to find payload size
             arr = np.array(image_pil)
             flat = arr.flatten()
-            header_bits = (flat[:72] & 1).astype(np.uint8)
+            # Extract enough bits for fixed metadata: 13 (Sig) + 10 (MetadataFix) = 23 bytes = 184 bits
+            header_bits = (flat[:184] & 1).astype(np.uint8)
             header_bytes = bits_to_bytes(header_bits)
-            payload_len = int.from_bytes(header_bytes[5:9], "big")
+            
+            # Metadata structure: Proto(1), Enc(1), Count(2), PLen(4)... Starts at offset 13
+            # Payload length is at bytes 17:21
+            payload_len = int.from_bytes(header_bytes[17:21], "big")
             
             # Calculate density
             cap = image_capacity_bits(image_pil)
@@ -195,7 +248,7 @@ def api_batch():
             if 'covers' not in request.files or 'secret' not in request.files:
                  return jsonify({'error': 'Missing files for batch hide'}), 400
             
-            method = request.form.get('method', 'lsb')
+            method = request.form.get('method', 'lsb').lower()
             covers = request.files.getlist('covers')
             if len(covers) > 50:
                 return jsonify({'error': 'Batch limit exceeded: maximum 50 covers.'}), 400
@@ -215,17 +268,13 @@ def api_batch():
                         c_img = Image.open(cover).convert("RGB")
                         
                         if method == 'adaptive':
-                            stego, token = embed_file_adaptive(c_img, secret_bytes, secret.filename, password)
+                            payload = package_payload([{'name': secret.filename, 'data': secret_bytes}], 'ADAPTIVE', password)
+                            stego, token = embed_file_adaptive(c_img, payload, "", password)
                             summary_lines.append(f"[+] {cover.filename}: Embedded (Adaptive). Recovery Token: {token}")
                         else:
                             # Standard LSB
-                            payload = secret_bytes
-                            mode_byte = 1 if password else 0
-                            if password:
-                                payload, _ = aes_encrypt(secret_bytes, password)
-                            
-                            header = MAGIC + bytes([mode_byte]) + len(payload).to_bytes(4, "big")
-                            stego = embed_payload_into_image(c_img, header + payload)
+                            payload = package_payload([{'name': secret.filename, 'data': secret_bytes}], 'LSB', password)
+                            stego = embed_payload_into_image(c_img, payload)
                             summary_lines.append(f"[+] {cover.filename}: Embedded (Standard LSB)")
 
                         img_byte_arr = io.BytesIO()
@@ -278,85 +327,61 @@ def api_batch():
                      last_error = "Unknown"
                      
                      try:
-                         # 1. Load Image
                          s_img = Image.open(stego_file).convert("RGB")
                          scan_res = scan_image_for_signature(s_img)
-                         
-                         # REMOVED: Early exit on signature. We now try extraction regardless 
-                         # in case the signature was slightly mangled but the data is there.
-                         
                          summary_lines.append(f"[*] Analyzing {stego_file.filename} (Scan hint: {scan_res['message']})")
                          
-                         # 2. Key Trial Loop (Try every key against EVERY engine)
                          for key in candidate_keys:
                              try:
-                                 content = b""
-                                 final_fname = ""
+                                 raw_block = b""
                                  
-                                 # ENGINE 1: Try Adaptive
                                  try:
-                                     f_name, f_data, _ = extract_file_adaptive(s_img, password=key)
-                                     content, final_fname = f_data, f_name
+                                     _, raw_block, _ = extract_file_adaptive(s_img, password=key)
                                  except:
                                      if len(key) >= 16:
                                          try:
-                                             f_name, f_data, _ = extract_file_adaptive(s_img, recovery_token=key)
-                                             content, final_fname = f_data, f_name
-                                         except: pass
+                                             _, raw_block, _ = extract_file_adaptive(s_img, recovery_token=key)
+                                         except:
+                                             pass
                                  
-                                 # ENGINE 2: Try LSB (if Adaptive didn't work)
-                                 if not content:
+                                 if not raw_block:
                                      try:
-                                         mode_id, payload, _ = extract_payload_from_image(s_img)
-                                         is_encrypted = (mode_id & 1) == 1
-                                         if is_encrypted:
-                                             try:
-                                                 content = aes_decrypt(payload, key, is_token=False)
-                                             except:
-                                                 content = aes_decrypt(payload, key, is_token=True)
-                                         else:
-                                             content = payload # Plain LSB
-                                         
-                                         kind = filetype.guess(content)
-                                         ext = kind.extension if kind else 'bin'
-                                         final_fname = f"extracted_{os.path.splitext(stego_file.filename)[0]}.{ext}"
-                                     except: pass
-
-                                 if content:
-                                     zip_path = f"{i}_{final_fname}"
-                                     zf.writestr(zip_path, content)
-                                     summary_lines.append(f"  [+] Success using key: '{key[:5]}...'")
-                                     processed_success += 1
-                                     success_for_this_file = True
-                                     break 
+                                         _, raw_block, _ = extract_payload_from_image(s_img)
+                                     except:
+                                         pass
                                  
+                                 if raw_block:
+                                     try:
+                                         is_tok = len(key) >= 16 and "-" in key
+                                         res_files, is_bundle_val = unpackage_payload(
+                                             raw_block,
+                                             password=None if is_tok else key,
+                                             recovery_token=key if is_tok else None
+                                         )
+                                         if is_bundle_val:
+                                             for rf in res_files:
+                                                 zf.writestr(f"{i}_{rf['name']}", rf['data'])
+                                         else:
+                                             zf.writestr(f"{i}_{res_files[0]['name']}", res_files[0]['data'])
+                                         summary_lines.append(f"  [+] Success using key: '{key[:5]}...'")
+                                         processed_success += 1
+                                         success_for_this_file = True
+                                         break
+                                     except:
+                                         pass
                              except Exception as e:
                                  last_error = str(e)
-                                 continue 
-                                 
-                         # 3. Fallback: Try Plain LSB without any key if everything else failed
-                         if not success_for_this_file:
-                             try:
-                                 mode_id, payload, _ = extract_payload_from_image(s_img)
-                                 if not (mode_id & 1):
-                                     kind = filetype.guess(payload)
-                                     ext = kind.extension if kind else 'bin'
-                                     f_name = f"extracted_{os.path.splitext(stego_file.filename)[0]}.{ext}"
-                                     zf.writestr(f"{i}_{f_name}", payload)
-                                     summary_lines.append("  [+] Success (Plain LSB, no key needed)")
-                                     processed_success += 1
-                                     success_for_this_file = True
-                             except: pass
-
+                                 continue
+                         
                          if not success_for_this_file:
                              summary_lines.append(f"  [-] Failed. Last tried key error hint: {last_error}")
                              
                      except Exception as e:
-                        summary_lines.append(f"  [-] Critical Error: {str(e)}")
-                        logger.error(f"Batch extractor critical failure: {e}")
-                
+                         summary_lines.append(f"  [-] Critical Error: {str(e)}")
+                         logger.error(f"Batch extractor critical failure: {e}")
+                 
                  zf.writestr("DEEPSTEGAI_BATCH_REPORT.txt", "\n".join(summary_lines))
-            
+             
              if processed_success == 0:
                  return jsonify({'error': 'No files extracted. Ensure your keys list contains the correct items.', 'details': summary_lines}), 400
                  
@@ -366,6 +391,7 @@ def api_batch():
         return jsonify({'error': 'Invalid mode'}), 400
         
     except Exception as e:
+        logger.error(f"Batch processing error: {e}")
         return jsonify({'error': str(e)}), 500
 
 # --- Contact & Admin Routes ---
@@ -471,41 +497,61 @@ def api_embed():
         
         cover_file = request.files['cover']
         validate_uploaded_image(cover_file)
-        secret_file = request.files['secret']
-        method = request.form.get('method', 'LSB') # LSB or Adaptive
+        
+        # Security Policy: Strict 35% Payload Limit Implementation
+        cover_file.seek(0, 2)
+        cover_size = cover_file.tell()
+        cover_file.seek(0)
+        
+        secret_files = request.files.getlist('secret')
+        if not secret_files:
+            return jsonify({'error': 'Missing secret file'}), 400
+            
+        total_secret_size = sum(len(f.read()) for f in secret_files)
+        for f in secret_files: f.seek(0)
+        
+        max_secure_payload = calculate_max_payload(cover_size)
+        
+        if total_secret_size > max_secure_payload:
+            return jsonify({
+                "error": "Strict Security Policy: Payload exceeds 35% of the cover image's original file size."
+            }), 400
+
+        method = request.form.get('method', 'LSB').upper() # LSB or ADAPTIVE
         password = request.form.get('password', '')
 
-        if not password and method == 'Adaptive':
+        if not password and method == 'ADAPTIVE':
              return jsonify({'error': 'Password is required for Adaptive Edge method'}), 400
         
         cover_img = Image.open(cover_file).convert("RGB")
-        secret_bytes = secret_file.read()
-        recovery_token = None
+        
+        # Convert Multi-file to list of dicts for protocol handler
+        files_to_package = []
+        for f in secret_files:
+            f.seek(0)
+            files_to_package.append({'name': f.filename, 'data': f.read()})
+            
+        # Standardized DEEPSTEGAI_V1 packaging
+        full_stego_payload = package_payload(files_to_package, method, password)
 
+        recovery_token = None
         stego_img = None
 
-        if method == 'Adaptive':
-            # Adaptive Edge 
-            stego_img, token = embed_file_adaptive(cover_img, secret_bytes, secret_file.filename, password)
+        if method == 'ADAPTIVE':
+            # Adaptive Edge Protocol automatically handles the internal encryption if password passed
+            stego_img, token = embed_file_adaptive(cover_img, full_stego_payload, "payload.bin", password)
             recovery_token = token 
         else:
             # Standard LSB
-            payload_bytes = secret_bytes
-            
-            if password:
-                # Use updated aes_encrypt that returns token
-                encrypted_blob, token = aes_encrypt(secret_bytes, password)
-                payload_bytes = encrypted_blob
-                recovery_token = token
-            
-            mode_byte = 1 if password else 0
-            header = MAGIC + bytes([mode_byte]) + len(payload_bytes).to_bytes(4, "big")
-            full_payload = header + payload_bytes
-            
-            if len(full_payload) * 8 > image_capacity_bits(cover_img):
+            # Calculate total bits: Signature + Metadata + Payload + Checksum
+            if len(full_stego_payload) * 8 > image_capacity_bits(cover_img):
                  return jsonify({'error': 'File too large for this cover image'}), 400
 
-            stego_img = embed_payload_into_image(cover_img, full_payload)
+            stego_img = embed_payload_into_image(cover_img, full_stego_payload)
+            # For LSB, we might need to derive a token if password was used
+            if password:
+                from crypto_utils import derive_key
+                recovery_token = derive_key(password).decode('utf-8')
 
         # Database Persistence
         db = SessionLocal()
@@ -535,9 +581,11 @@ def api_embed():
             'error': None
         })
 
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
     except Exception as e:
         logger.error(f"Embedding error: {e}", exc_info=True)
-        return jsonify({'error': "Internal server error during embedding processing."}), 500
+        return jsonify({'error': f"Internal server error: {str(e)}"}), 500
 
 @app.route('/api/extract', methods=['POST'])
 @limiter.limit("10 per minute")
@@ -559,46 +607,44 @@ def api_extract():
         # 1. Detect Signature
         scan_res = scan_image_for_signature(stego_img)
         
-        filename = "extracted_data.bin"
-        content = b""
+        raw_extracted_block = b""
         
+        # 2. Extract from engine
         if scan_res["detected"] and "Adaptive" in scan_res["message"]:
-            # Adaptive extract
-            if not password and not recovery_token:
-                 return jsonify({'error': 'Password or Recovery Token required for Adaptive Edge extraction'}), 401
             try:
-                fname, data, _ = extract_file_adaptive(stego_img, password=password, recovery_token=recovery_token)
-                filename = fname
-                content = data
+                _, data, token = extract_file_adaptive(stego_img, password=password, recovery_token=recovery_token)
+                raw_extracted_block = data
             except ValueError as ve:
-                return jsonify({'error': f"Extraction Failed: {str(ve)}"}), 403
-                
+                return jsonify({'error': str(ve)}), 403
         elif scan_res["detected"]:
-            # LSB extract
-            mode_id, payload, _ = extract_payload_from_image(stego_img)
-            is_encrypted = mode_id & 1
-            
-            content = payload
-            if is_encrypted:
-                try:
-                    if recovery_token:
-                        # Use Token
-                        content = aes_decrypt(payload, recovery_token, is_token=True)
-                    elif password:
-                        # Use Password
-                        content = aes_decrypt(payload, password, is_token=False)
-                    else:
-                        return jsonify({'error': 'Password OR Recovery Token required'}), 401
-                except Exception as e:
-                     return jsonify({'error': f'Decryption failed. Details: {str(e)}'}), 403
-            
-            # Attempt to guess extension
-            kind = filetype.guess(content)
-            if kind:
-                filename = f"extracted_file.{kind.extension}"
-
+            try:
+                # LSB uses extract_payload_from_image which now returns the whole block
+                _, raw_extracted_block, _ = extract_payload_from_image(stego_img)
+            except Exception as e:
+                return jsonify({'error': str(e)}), 403
         else:
             return jsonify({'error': 'No steganography signature found'}), 404
+
+        # 3. Standardized Protocol Unpackaging
+        try:
+            results, is_bundle = unpackage_payload(raw_extracted_block, password, recovery_token)
+            
+            if is_bundle:
+                # Re-zip for download if it was a bundle
+                zip_buffer = io.BytesIO()
+                with zipfile.ZipFile(zip_buffer, "w") as zf:
+                    for f in results:
+                        zf.writestr(f['name'], f['data'])
+                content = zip_buffer.getvalue()
+                filename = "deepsteg_bundle.zip"
+                final_mimetype = "application/zip"
+            else:
+                filename = results[0]['name']
+                content = results[0]['data']
+                kind = filetype.guess(content)
+                final_mimetype = kind.mime if kind else 'application/octet-stream'
+        except Exception as e:
+            return jsonify({'error': str(e)}), 400
 
         # Log Activity (File tracking Removed for Stateless)
         db = SessionLocal()
@@ -612,7 +658,7 @@ def api_extract():
             io.BytesIO(content),
             as_attachment=True,
             download_name=filename,
-            mimetype='application/octet-stream'
+            mimetype=final_mimetype
         )
 
     except Exception as e:
@@ -644,15 +690,23 @@ def api_analyze():
         if "magic_bytes" in sig_res:
              del sig_res["magic_bytes"]
         
-        # 3. AI Analysis
+        # 3. AI Analysis: The 'Heavy Lifting'
         ai_score = 0.0
         ai_success = False
         if MODEL:
             try:
-                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                    future = executor.submit(predict_image, MODEL, image_pil)
-                    ai_score = float(future.result(timeout=30.0))
-                    ai_success = True
+                # Queue Protection: Reject requests if the queue is overloaded
+                if getattr(GLOBAL_AI_EXECUTOR, '_work_queue', None) and GLOBAL_AI_EXECUTOR._work_queue.qsize() > 10:
+                    return jsonify({
+                        "success": False,
+                        "data": None,
+                        "error": "Server is currently at maximum capacity. Please try again momentarily."
+                    }), 503
+
+                # We run the AI prediction in the Global Thread Pool
+                future = GLOBAL_AI_EXECUTOR.submit(predict_image, MODEL, image_pil)
+                ai_score = float(future.result(timeout=30.0))
+                ai_success = True
             except concurrent.futures.TimeoutError:
                 logger.error("AI scanning timed out (exceeded 30s)")
                 return jsonify({
@@ -702,12 +756,22 @@ def api_analyze():
 
         # 7. Database Persistence
         db = SessionLocal()
-        file_id = "N/A" # File storage is disabled
         try:
-            # File persistence removed. AnalysisResult might fail if file_id FK is strict, 
-            # so we only log the activity to abide strictly by stateless mandates.
-            log_user_activity(db, request.user_id, "SCAN", f"Analyzed {img_file.filename} -> {verdict}", {"score": ai_score, "verdict": verdict})
+            # Create persistent file metadata record (stateless storage, but stateful history)
+            db_file = FileService.create_record(db, request.user_id, img_file.filename, "cover")
+            file_id = str(db_file.id)
+            
+            # Save standardized analysis result
+            AnalysisService.save_analysis(db, db_file.id, verdict, ai_score, analysis_details)
+            
+            # Log high-level activity
+            log_user_activity(db, request.user_id, "SCAN", f"Analyzed {img_file.filename} -> {verdict}", {
+                "score": ai_score, 
+                "verdict": verdict, 
+                "file_id": file_id
+            })
         except Exception as db_err:
+            file_id = "N/A"
             logger.error(f"Persistence error: {db_err}")
         finally:
             db.close()
@@ -787,40 +851,130 @@ def api_batch_analyze():
                     verdict = "SUSPICIOUS"
 
                 # 4. Database Persistence
-                db_file = FileService.save_file(db, request.user_id, file_bytes, f.filename, "cover")
-                AnalysisService.save_analysis(db, db_file.id, verdict, ai_score, {
-                    "ai_score": ai_score,
-                    "method": "batch_scan",
-                    "extra": {"heuristic": scan["message"]}
-                })
+                try:
+                    db_file = FileService.create_record(db, request.user_id, f.filename, "cover")
+                    AnalysisService.save_analysis(db, db_file.id, verdict, ai_score, {
+                        "ai_score": ai_score,
+                        "method": "batch_scan",
+                        "extra": {"heuristic": scan["message"]}
+                    })
+                    log_user_activity(db, request.user_id, "BATCH_SCAN", f"Analyzed {f.filename} -> {verdict}", {
+                        "ai_score": ai_score,
+                        "verdict": verdict,
+                        "method": "batch_scan",
+                        "file_id": str(db_file.id)
+                    })
+                except Exception as inner_db_err:
+                    logger.error(f"Failed to persist batch item {f.filename}: {inner_db_err}")
 
                 results.append({
-                    'id': str(db_file.id),
+                    'id': 'N/A',
                     'filename': f.filename,
-                    'ai_score': round(float(ai_score) * 100, 2),
+                    'ai_score': ai_score,
                     'verdict': verdict,
-                    'details': {'heuristic': scan['message']}
+                    'heuristic': scan["message"]
                 })
             except Exception as e:
-                logger.error(f"Error in batch scan for {f.filename}: {e}")
+                logger.error(f"Error analyzing batch file {f.filename}: {e}")
                 results.append({'filename': f.filename, 'error': str(e)})
 
-        db.commit()
-    except Exception as e:
-        db.rollback()
-        return jsonify({"success": False, "data": None, "error": f"Batch process failed: {str(e)}"}), 500
+        return jsonify({
+            'success': True,
+            'data': results,
+            'credits': getattr(request, 'updated_credits', None)
+        })
     finally:
         db.close()
+
+# --- Heatmap Endpoints ---
+
+@app.route('/api/heatmap/difference', methods=['POST'])
+@token_required
+def api_heatmap_difference():
+    try:
+        if 'cover' not in request.files or 'stego' not in request.files:
+            return jsonify({'error': 'Missing cover or stego image'}), 400
+        
+        cover_file = request.files['cover']
+        stego_file = request.files['stego']
+        
+        # Read as numpy arrays for OpenCV
+        cover_np = cv2.imdecode(np.frombuffer(cover_file.read(), np.uint8), cv2.IMREAD_COLOR)
+        stego_np = cv2.imdecode(np.frombuffer(stego_file.read(), np.uint8), cv2.IMREAD_COLOR)
+        
+        if cover_np is None or stego_np is None:
+            return jsonify({'success': False, 'error': 'Invalid image format'}), 400
             
-    return jsonify({
-        "success": True,
-        "data": {
-            "results": results,
-            "credits": getattr(request, 'updated_credits', None)
-        },
-        "error": None
-    })
+        heatmap_b64 = generate_difference_heatmap(cover_np, stego_np)
+        
+        return jsonify({
+            "success": True,
+            "heatmap_b64": heatmap_b64,
+            "colormap": "HOT"
+        })
+    except Exception as e:
+        logger.error(f"Difference heatmap error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/heatmap/gradcam', methods=['POST'])
+@token_required
+def api_heatmap_gradcam():
+    try:
+        if 'image' not in request.files:
+            return jsonify({'success': False, 'error': 'Missing image file'}), 400
+
+        if not MODEL:
+            return jsonify({'success': False, 'error': 'AI Model not loaded'}), 503
+
+        img_file = request.files['image']
+        image_pil = Image.open(img_file).convert("RGB")
+
+        from torchvision import transforms
+        transform = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ])
+
+        img_tensor = transform(image_pil).unsqueeze(0).to(DEVICE)
+
+        # Run Grad-CAM in a thread pool to avoid blocking the WSGI worker
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(generate_gradcam, MODEL, img_tensor)
+            try:
+                result = future.result(timeout=30.0)
+            except concurrent.futures.TimeoutError:
+                logger.error("Grad-CAM timed out (exceeded 30s)")
+                return jsonify({'success': False, 'error': 'Grad-CAM timed out. Please try again.'}), 503
+
+        heatmap_b64, pred_class, confidence = result
+
+        # FIX: Handle flat/zero CAM gracefully — return None so frontend shows "no signal" state
+        # This happens on clean images where model finds no meaningful activations after thresholding
+        if heatmap_b64 is None:
+            logger.info(f"Grad-CAM returned flat CAM for class={pred_class}, conf={confidence:.3f}")
+            return jsonify({
+                "success": True,
+                "heatmap_b64": None,
+                "prediction": "STEGO" if pred_class == 1 else "CLEAN",
+                "confidence": float(confidence),
+                "message": "No significant activations detected — image appears clean."
+            })
+
+        return jsonify({
+            "success": True,
+            "heatmap_b64": heatmap_b64,
+            "prediction": "STEGO" if pred_class == 1 else "CLEAN",
+            "confidence": float(confidence)
+        })
+
+    except Exception as e:
+        logger.error(f"Grad-CAM error: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
     # Threaded=True enables concurrency for batch operations
-    app.run(debug=True, host='127.0.0.1', port=5000, use_reloader=False, threaded=True)
+    load_ai_model()
+    # use_reloader=False and debug=False enforce production readiness
+    debug_mode = os.environ.get("FLASK_DEBUG", "False").lower() == "true"
+    app.run(debug=debug_mode, host='127.0.0.1', port=5000, use_reloader=debug_mode, threaded=True)

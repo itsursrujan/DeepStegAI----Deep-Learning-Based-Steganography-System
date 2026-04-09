@@ -16,12 +16,12 @@ const NeuralSphere = lazy(() => import('@/three/NeuralSphere').then(m => ({ defa
 
 
 const navItems = [
-  { path: '/', label: 'Overview', icon: Activity },
-  { path: '/embed', label: 'Embed Data', icon: Upload },
-  { path: '/extract', label: 'Extract Data', icon: Download },
-  { path: '/analyze', label: 'AI Detection', icon: ShieldCheck },
-  { path: '/batch', label: 'Batch Operations', icon: Layers },
-  { path: '/admin', label: 'Admin Panel', icon: LockIcon },
+  { path: '/', label: 'Dashboard', icon: Activity },
+  { path: '/embed', label: 'Hide Message', icon: Upload },
+  { path: '/extract', label: 'Find Hidden Data', icon: Download },
+  { path: '/analyze', label: 'AI Image Scanner', icon: ShieldCheck },
+  { path: '/batch', label: 'Multi-File Actions', icon: Layers },
+  { path: '/admin', label: 'Admin Center', icon: LockIcon },
   { path: '/pricing', label: 'Top-Up Credits', icon: Zap },
   { path: '/support', label: 'Support', icon: HelpCircle },
   { path: '/about', label: 'About Us', icon: Users },
@@ -259,16 +259,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     }
   }, [status, getStatusStyle])
 
-  // Filter nav items: only "hjsudarshan18@gmail.com" can see the Admin Panel
+  // Filter nav items: only "aravalli813@gmail.com" can see the Admin Panel
   // and they don't need the Support section as they are the operator
   const filteredNavItems = navItems.filter(item => {
+    const isSuperAdmin = ['aravalli813@gmail.com', 'hjsudarshan18@gmail.com'].includes(user?.email || '');
     if (item.path === '/admin') {
-      return user?.email === 'hjsudarshan18@gmail.com'
+      return isSuperAdmin;
     }
     if (item.path === '/support' || item.path === '/pricing') {
-      return user?.email !== 'hjsudarshan18@gmail.com'
+      return !isSuperAdmin;
     }
-    return true
+    return true;
   })
 
   return (
@@ -399,13 +400,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                       <span className="text-[10px] font-semibold tracking-wide uppercase opacity-60">Credits</span>
                     </div>
                     <span className={`text-xs font-mono font-bold ${user.credits < 10 ? 'text-red-500' : 'text-primary'}`}>
-                      {user?.email === 'hjsudarshan18@gmail.com' ? '∞' : user.credits}
+                      {['aravalli813@gmail.com', 'hjsudarshan18@gmail.com'].includes(user?.email || '') ? '∞' : user.credits}
                     </span>
                   </div>
                   <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
                     <motion.div 
                       initial={{ width: 0 }}
-                      animate={{ width: user?.email === 'hjsudarshan18@gmail.com' ? '100%' : `${Math.min(100, (user.credits / 50) * 100)}%` }}
+                      animate={{ width: ['aravalli813@gmail.com', 'hjsudarshan18@gmail.com'].includes(user?.email || '') ? '100%' : `${Math.min(100, (user.credits / 50) * 100)}%` }}
                       className={`h-full ${user.credits < 10 ? 'bg-red-500' : 'bg-primary'}`}
                     />
                   </div>
@@ -509,7 +510,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                     <div className={`flex items-center gap-2 px-2 py-0.5 rounded-md border ${user.credits < 10 ? 'bg-red-500/10 border-red-500/30' : 'bg-primary/5 border-primary/20'}`}>
                       <Zap className={`h-2.5 w-2.5 ${user.credits < 10 ? 'text-red-500' : 'text-primary'}`} />
                       <span className={`text-[10px] font-mono font-bold ${user.credits < 10 ? 'text-red-500' : 'text-primary'}`}>
-                        {user?.email === 'hjsudarshan18@gmail.com' ? 'INF' : user.credits}
+                        {['aravalli813@gmail.com', 'hjsudarshan18@gmail.com'].includes(user?.email || '') ? 'INF' : user.credits}
                       </span>
                     </div>
                   )}

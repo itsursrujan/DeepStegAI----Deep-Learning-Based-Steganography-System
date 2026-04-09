@@ -15,7 +15,7 @@ def send_admin_notification(entry):
     smtp_port = int(os.environ.get("SMTP_PORT", "587"))
     smtp_user = os.environ.get("SMTP_USER", "").strip()
     smtp_pass = os.environ.get("SMTP_PASS", "").replace(" ", "").strip()
-    notify_email = os.environ.get("NOTIFY_EMAIL", "hjsudarshan18@gmail.com").strip()
+    notify_email = os.environ.get("NOTIFY_EMAIL", "aravalli813@gmail.com").strip()
     use_mock = os.environ.get("USE_MOCK_EMAIL", "False").lower() == "true"
 
     if use_mock:
@@ -167,7 +167,7 @@ def send_user_receipt(entry):
                 <p>Hello {entry.get('name', 'Operator')},</p>
                 <p>We have successfully received your inquiry in the DeepStegAI Support Stream.</p>
                 <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #00f2ff;">
-                    <p style="font-size: 14px; opacity: 0.8;">"Our neural engines are processing your request. Administrator <strong>SUDARSHAN</strong> has been notified and will respond shortly."</p>
+                    <p style="font-size: 14px; opacity: 0.8;">"Our neural engines are processing your request. Administrator <strong>ARAVALLI</strong> has been notified and will respond shortly."</p>
                 </div>
                 <p><strong>Reference ID:</strong> #{entry.get('id')}</p>
                 <p style="font-size: 10px; margin-top: 30px; opacity: 0.5;">

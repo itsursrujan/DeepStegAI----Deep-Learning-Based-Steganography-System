@@ -46,12 +46,25 @@ export function Pricing() {
         name: 'DeepStegAI',
         description: 'Neural Credits Top-up',
         order_id: order.order_id,
-        handler: async function () {
-             addLog('Payment authorized. Awaiting network confirmation...')
-             setTimeout(() => {
-                 fetchUser()
-                 addLog(`Successfully recharged credits balance!`)
-             }, 3500)
+        handler: async function (response: any) {
+             addLog('Payment authorized. Synchronizing with neural network...')
+             try {
+                 const verifyRes = await stegoApi.verifyPayment({
+                     razorpay_order_id: response.razorpay_order_id,
+                     razorpay_payment_id: response.razorpay_payment_id,
+                     razorpay_signature: response.razorpay_signature,
+                     credits: TIERS.find(t => t.id === amount)?.tokens || 0
+                 });
+                 
+                 if (verifyRes.data.success) {
+                     addLog(`Successfully recharged credits balance!`)
+                     fetchUser()
+                 } else {
+                     addLog('Payment verification failed on server.')
+                 }
+             } catch (err: any) {
+                 addLog(`Verification error: ${err.message}`)
+             }
         },
         prefill: {
           email: user?.email || '',
@@ -81,7 +94,7 @@ export function Pricing() {
         <p className="text-xs font-bold uppercase tracking-[0.3em] text-[var(--fg-dim)]/60">Acquire additional Neural Credits to bypass firewall limits.</p>
       </div>
 
-      {user?.email === 'hjsudarshan18@gmail.com' ? (
+      {((import.meta as any).env.VITE_ADMIN_EMAILS || 'aravalli813@gmail.com,hjsudarshan18@gmail.com').split(',').includes(user?.email || '') ? (
         <div className="w-full max-w-2xl bg-[var(--bg-card)] border border-primary/30 rounded-3xl p-10 text-center shadow-[0_0_40px_var(--primary-glow)]">
           <div className="mx-auto w-16 h-16 bg-primary/10 border border-primary/20 rounded-full flex items-center justify-center mb-6">
             <ShieldCheck className="h-8 w-8 text-primary" />

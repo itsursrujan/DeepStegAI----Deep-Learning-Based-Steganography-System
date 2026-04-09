@@ -41,4 +41,5 @@ class AnalysisService:
     @staticmethod
     def get_user_analyses(db: Session, user_id: uuid.UUID):
         from models.file import File
-        return db.query(AnalysisResult).join(File).filter(File.user_id == user_id).order_by(AnalysisResult.created_at.desc()).all()
+        # Explicit join for cross-database engine compatibility
+        return db.query(AnalysisResult).join(File, AnalysisResult.file_id == File.id).filter(File.user_id == user_id).order_by(AnalysisResult.created_at.desc()).all()

@@ -21,26 +21,30 @@ def scan_image_for_signature(img: Image.Image) -> dict:
         flat = arr.flatten()
         
         # Safety check: is the image big enough to even have a header?
-        if len(flat) < 32:
+        if len(flat) < 104:
             return {"detected": False, "error": "Image is too small to contain data."}
             
-        # Extract the first 32 bits (4 bytes * 8 bits)
-        header_bits = (flat[:32] & 1).astype(np.uint8)
+        # Extract the first 104 bits (13 bytes * 8 bits) for V1
+        header_bits = (flat[:104] & 1).astype(np.uint8)
         header_bytes = bits_to_bytes(header_bits)
         
         # Compare with our known signatures
         if header_bytes.startswith(MAGIC):
+            # For V1, the 14th byte (index 13) is the proto_id (0 for LSB, 1 for Adaptive)
+            # But we might only have extracted 104 bits. 
+            # I'll check a bit more if possible, but for now just use the signature.
+            
+            # Re-read 120 bits to get the proto byte too
+            full_header_bits = (flat[:120] & 1).astype(np.uint8)
+            full_header_bytes = bits_to_bytes(full_header_bits)
+            proto_id = full_header_bytes[13] if len(full_header_bytes) > 13 else 0
+            
+            method_name = "Standard LSB" if proto_id == 0 else "Adaptive Edge"
+            
             return {
                 "detected": True,
                 "confidence": "100%",
-                "message": "DeepStegAI Signature Found (Standard LSB)",
-                "magic_bytes": header_bytes.hex()
-            }
-        elif header_bytes.startswith(b"ADPT") or header_bytes.startswith(b"ADPS"):
-            return {
-                "detected": True,
-                "confidence": "100%",
-                "message": "DeepStegAI Signature Found (Adaptive Edge)",
+                "message": f"DeepStegAI Signature Found ({method_name})",
                 "magic_bytes": header_bytes.hex()
             }
         else:

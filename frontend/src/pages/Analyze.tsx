@@ -1,9 +1,10 @@
-import { useState, useCallback, Suspense, useEffect, memo, Component } from 'react'
+import { useState, useCallback, Suspense, memo, Component, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Canvas } from '@react-three/fiber'
 import { Scanner3D } from '@/three/Scanner3D'
-import { Search, Activity, BarChart, X } from 'lucide-react'
+import { Search, Activity, BarChart, X, Brain, Info } from 'lucide-react'
+import HeatmapViewer from '@/components/HeatmapViewer'
 import { stegoApi } from '@/services/api'
 import { useStore } from '@/store/useStore'
 
@@ -80,24 +81,28 @@ export const Analyze = memo(function Analyze() {
   const [result, setResult] = useState<any | null>(null)
   const [showRing, setShowRing] = useState(false)
   const setStatus = useStore(state => state.setStatus)
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 1024)
 
+  // Cleanup object URLs to prevent memory leaks
   useEffect(() => {
-    const h = () => setIsDesktop(window.innerWidth > 1024)
-    window.addEventListener('resize', h)
-    return () => window.removeEventListener('resize', h)
-  }, [])
+    return () => {
+      if (preview) URL.revokeObjectURL(preview)
+    }
+  }, [preview])
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
+    if (isScanning) return;
     const file = acceptedFiles[0]
     setImage(file)
-    setPreview(URL.createObjectURL(file))
+    if (preview) URL.revokeObjectURL(preview)
+    const newPreview = URL.createObjectURL(file)
+    setPreview(newPreview)
     setResult(null); setProgress(0); setShowRing(false)
-  }, [])
+  }, [preview])
 
   const { getRootProps, getInputProps } = useDropzone({ onDrop, accept: { 'image/*': [] }, multiple: false })
 
   const handleClear = () => {
+    if (preview) URL.revokeObjectURL(preview)
     setImage(null)
     setPreview(null)
     setResult(null)
@@ -114,15 +119,15 @@ export const Analyze = memo(function Analyze() {
 
     setIsScanning(true); setStatus('ANALYZING'); setProgress(0); setShowRing(false)
     
-    // Weighted progress: 3-5s neural scan simulation
+    // Smoother scan progress
     const timer = setInterval(() => {
         setProgress(p => {
-          if (p < 55) return p + (2.0 + Math.random() * 1.5)   // fast start
-          if (p < 80) return p + (0.5 + Math.random() * 0.5)   // decel
-          if (p < 93) return p + (0.15 + Math.random() * 0.2)  // crawl
+          if (p < 45) return p + (Math.random() * 3 + 1.5)
+          if (p < 80) return p + (Math.random() * 1 + 0.5)
+          if (p < 98) return p + (Math.random() * 0.1)
           return p
         })
-    }, 100)
+    }, 120)
 
     const formData = new FormData()
     formData.append('image', image)
@@ -148,12 +153,31 @@ export const Analyze = memo(function Analyze() {
     }
   }
 
+  const fetchGradCam = async () => {
+    if (!image) throw new Error("Missing image");
+    const fd = new FormData();
+    fd.append('image', image);
+    const response = await stegoApi.getGradCamHeatmap(fd);
+
+    if (!response.data.success) {
+      throw new Error(response.data.error || "Explainability synthesis failed");
+    }
+
+    // FIX: Handle flat CAM / clean image — backend returns success:true but heatmap_b64:null
+    if (!response.data.heatmap_b64) {
+      throw new Error("__NO_SIGNAL__");
+    }
+
+    return "data:image/png;base64," + response.data.heatmap_b64;
+  };
+
+
   return (
-    <div className={`h-full flex flex-col gap-2 max-w-7xl mx-auto ${isDesktop ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+    <div className="h-full flex flex-col gap-2 max-w-7xl mx-auto overflow-y-auto pr-2 custom-scrollbar">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between w-full">
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--fg)] leading-none">AI Scan</h2>
-              <p className="text-xs font-medium mt-1 text-[var(--fg-dim)]">Detect hidden data in an image</p>
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--fg)] leading-none">AI Scanner</h2>
+              <p className="text-xs font-medium mt-1 text-[var(--fg-dim)]">Check if an image has hidden data</p>
             </div>
             {preview && (
               <motion.button
@@ -162,12 +186,12 @@ export const Analyze = memo(function Analyze() {
                 onClick={handleClear}
                 className="mt-4 sm:mt-0 px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-xs font-semibold text-red-400 hover:bg-red-500/20 transition-all flex items-center justify-center gap-2"
               >
-                <Search className="h-3 w-3 rotate-45" /> Reset Scanner Node
+                <Search className="h-3 w-3 rotate-45" /> Reset Scanner
               </motion.button>
             )}
         </div>
 
-      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-5 gap-3 overflow-y-auto md:overflow-hidden pb-4 md:pb-0 pt-2">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-3 pb-4 pt-2">
         {/* LEFT PANEL (60%) */}
         <div className="md:col-span-3 flex flex-col gap-6 min-h-0 order-2 md:order-1">
           {!preview && (
@@ -280,7 +304,7 @@ export const Analyze = memo(function Analyze() {
                     ? 'bg-[#00FF9C]/10 border-[#00FF9C]/30 text-[#00FF9C] shadow-[0_0_20px_rgba(0,255,156,0.1)]'
                     : 'bg-[#FF3B3B]/10 border-[#FF3B3B]/30 text-[#FF3B3B] shadow-[0_0_20px_rgba(255,59,59,0.2)]'
                   }`}>
-                      {result.verdict !== 'CLEAN' ? 'Hidden Data Found' : 'No Hidden Data'}
+                      {result.verdict !== 'CLEAN' ? 'Hidden Secret Found' : 'No Secret Found'}
                   </div>
                 </div>
 
@@ -314,13 +338,13 @@ export const Analyze = memo(function Analyze() {
                 <div className="space-y-4">
                   <div className="glass-panel rounded-3xl p-4 bg-[var(--bg-sidebar)]">
                     <h4 className="text-[10px] font-black tracking-[0.4em] text-[var(--fg-dim)]/30 uppercase mb-6 flex items-center gap-2 italic">
-                      <Activity className="h-4 w-4 text-primary" /> System Node
+                      <Activity className="h-4 w-4 text-primary" /> System Status
                     </h4>
                     <div className="space-y-4">
                       {[
                     { label: 'AI Engine', val: 'V4.2_ONLINE', color: 'text-primary' },
-                        { label: 'Status', val: 'Optimal', color: 'text-[#00FF9C]' },
-                        { label: 'Threat DB', val: 'Synced', color: 'text-primary' },
+                        { label: 'Status', val: 'Online', color: 'text-[#00FF9C]' },
+                        { label: 'Monitoring', val: 'Active', color: 'text-primary' },
                       ].map((item, idx) => (
                         <div key={idx} className="flex justify-between items-center text-[10px] pb-3 border-b border-[var(--border)] last:border-0 last:pb-0">
                            <span className="font-bold uppercase tracking-widest text-[var(--fg-dim)]/70">{item.label}</span>
@@ -343,6 +367,51 @@ export const Analyze = memo(function Analyze() {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* 🧠 Model Explainability Section */}
+      <AnimatePresence>
+        {result && (
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="mt-12 pt-12 border-t border-white/10 space-y-8 pb-20"
+          >
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-blue-500/10 rounded-xl border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
+                    <Brain className="w-6 h-6 text-blue-400 animate-pulse" />
+                  </div>
+                  <h2 className="text-3xl font-black italic tracking-tighter text-fg uppercase">Model Explainability</h2>
+                </div>
+                <p className="text-sm text-fg-dim font-medium max-w-2xl leading-relaxed">
+                  Utilize <span className="text-blue-400 font-bold">Grad-CAM (Gradient-weighted Class Activation Mapping)</span> to visualize which regions 
+                  of the image the AI model focused on to make its decision. Higher intensity areas indicate high suspicious neural activity.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5 backdrop-blur-md">
+                <div className="p-2 bg-purple-500/10 rounded-lg">
+                  <Info className="w-4 h-4 text-purple-400" />
+                </div>
+                <p className="text-[10px] text-fg-dim/80 font-bold uppercase tracking-[0.1em] leading-tight max-w-[180px]">
+                  Powered by custom StegoCNN Backpropagation Analysis.
+                </p>
+              </div>
+            </div>
+
+            <div className="max-w-4xl mx-auto">
+              {preview && (
+                <HeatmapViewer 
+                  baseImage={preview} 
+                  fetchHeatmap={fetchGradCam} 
+                />
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 })

@@ -12,12 +12,15 @@ from steganalysis_model import StegoCNN
 # --- Helper: Simple LSB Embedding for Training Data Generation ---
 def embed_lsb_random(img_pil):
     """
-    Embeds random noise into the LSBs of an image to create a 'Stego' sample.
+    Synthetic Data Generation:
+    This 'fakes' a stego image by flipping the Least Significant Bit (LSB) of pixels.
+    This gives the AI examples of what hidden data 'looks' like at the pixel level.
     """
     arr = np.array(img_pil.convert("RGB"))
+    # Create random binary noise (0 or 1)
     noise = np.random.randint(0, 2, arr.shape, dtype=np.uint8)
     
-    # Mask out LSB and add noise
+    # Clear the last bit (& 0xFE) and add our noise (| noise)
     stego_arr = (arr & 0xFE) | noise
     return Image.fromarray(stego_arr)
 
@@ -113,24 +116,27 @@ def train_model(image_dir, epochs=5):
 
 def predict_image(model, img_input):
     """
-    Predicts if an image is Clean or Stego using the trained model.
-    img_input can be a path string OR a PIL Image object.
+    Inference Logic:
+    Takes an unknown image and runs it through the trained AI 'Detective'.
+    Returns a probability score (0.0 to 1.0) of how likely it is to be 'Stego'.
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.eval()
+    model.eval() # Important: Tells the AI we are 'testing', not 'learning'.
     
     if isinstance(img_input, str):
         img = Image.open(img_input).convert("RGB")
     else:
         img = img_input.convert("RGB")
         
-    img = img.resize((256, 256))
+    img = img.resize((256, 256)) # Standardize size for the neural network
+    
+    # Convert image to a mathematical 'Tensor' (Decimal numbers instead of Integers)
     img_arr = np.array(img).transpose(2, 0, 1) / 255.0
     img_tensor = torch.FloatTensor(img_arr).unsqueeze(0).to(device)
     
-    with torch.no_grad():
+    with torch.no_grad(): # Disable gradient tracking to save memory/speed
         outputs = model(img_tensor)
-        probs = F.softmax(outputs, dim=1)
-        score_stego = probs[0][1].item()
+        probs = F.softmax(outputs, dim=1) # Convert brain signals to percentages
+        score_stego = probs[0][1].item() # Extract the 'Stego' probability
         
-    return score_stego # Probability of being Stego
+    return score_stego # Final score (e.g., 0.85 means 85% chance of hidden data)

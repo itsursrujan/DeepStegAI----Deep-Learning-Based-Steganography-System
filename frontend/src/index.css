@@ -118,6 +118,14 @@ input, textarea, select {
   letter-spacing: 0.05em;
 }
 
+/* Hide native browser password reveal/clear buttons */
+input::-ms-reveal,
+input::-ms-clear,
+input::-webkit-contacts-auto-fill-button,
+input::-webkit-credentials-auto-fill-button {
+  display: none !important;
+}
+
 /* ─── Noise overlay ─── */
 /* z-index kept below text layers so it never degrades type rendering */
 .noise-overlay {

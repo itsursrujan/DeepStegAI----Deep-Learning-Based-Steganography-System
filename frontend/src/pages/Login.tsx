@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Lock, Mail, ArrowRight, ShieldCheck, AlertTriangle } from 'lucide-react'
+import { Lock, Mail, ArrowRight, ShieldCheck, AlertTriangle, Eye, EyeOff } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { stegoApi } from '@/services/api'
 import { useStore } from '@/store/useStore'
@@ -8,6 +8,7 @@ import { useStore } from '@/store/useStore'
 export function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [remember, setRemember] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -150,13 +151,20 @@ export function Login() {
           <div className="relative group">
             <ShieldCheck className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--fg-dim)] group-focus-within:text-primary transition-colors" />
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Password"
               required
-              className="w-full bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-2xl py-4 pl-14 pr-6 text-sm focus:outline-none focus:border-primary/40 transition-all font-mono text-[var(--fg)] placeholder:text-[var(--fg-dim)]/60"
+              className="w-full bg-[var(--bg-sidebar)] border border-[var(--border)] rounded-2xl py-4 pl-14 pr-14 text-sm focus:outline-none focus:border-primary/40 transition-all font-mono text-[var(--fg)] placeholder:text-[var(--fg-dim)]/60"
               value={password}
               onChange={e => setPassword(e.target.value)}
             />
+            <button 
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-5 top-1/2 -translate-y-1/2 text-[var(--fg-dim)] hover:text-primary transition-colors"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
 
           <div className="flex items-center justify-between px-2">

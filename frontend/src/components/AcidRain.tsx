@@ -8,7 +8,7 @@ const FPS = 24
 
 export function AcidRain() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const theme = useStore(s => s.theme)
+
 
   useEffect(() => {
     const canvas = canvasRef.current

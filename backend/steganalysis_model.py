@@ -5,13 +5,14 @@ import numpy as np
 
 class SRMConv2d(nn.Module):
     """
-    A specialized Convolutional Layer that uses fixed SRM (Spatial Rich Models) kernels.
-    This layer acts as a High-Pass Filter to suppress image content and reveal 
-    steganographic noise residuals.
+    SRM (Spatial Rich Model) Layer:
+    This is a specialized preprocessing layer that uses fixed High-Pass Filters.
+    Its job is to 'strip away' the image content (like colors and shapes) and 
+    highlight the 'noise residuals' where hidden data (steganography) usually leaves traces.
     """
     def __init__(self):
         super(SRMConv2d, self).__init__()
-        self.channels = 3  # RGB
+        self.channels = 3  # Standard RGB channels
         
         # Define 3 basic high-pass filters (SRM kernels)
         # 1. KV Kernel (Residuals)
@@ -35,7 +36,8 @@ class SRMConv2d(nn.Module):
                        [0, -2, 4, -2, 0],
                        [0, 1, -2, 1, 0]], dtype=np.float32)
 
-        # Normalize kernels
+        # Normalize kernels: This ensures the filters don't artificially brighten 
+        # or darken the noise map, keeping the mathematical values stable.
         k1 = k1 / 4.0
         k2 = k2 / 12.0
         k3 = k3 / 4.0
@@ -68,23 +70,17 @@ class SRMConv2d(nn.Module):
         self.weight = nn.Parameter(weight.repeat(3, 1, 1, 1), requires_grad=False)
         
     def forward(self, x):
-        # x shape: (Batch, 3, H, W)
-        # Output shape: (Batch, 9, H, W)
-        # Groups=3 means:
-        # Input Channel 0 (R) goes to Output Channels 0-2 (Filters k1,k2,k3)
-        # Input Channel 1 (G) goes to Output Channels 3-5
-        # Input Channel 2 (B) goes to Output Channels 6-8
+        # The forward pass: 
+        # 1. Takes the original image 'x' (Batch, 3, H, W)
+        # 2. Applies the 3 SRM filters to each color channel.
+        # 3. Returns a 'Noise Map' with 9 channels.
         return F.conv2d(x, self.weight, padding=2, groups=3)
 
 class StegoCNN(nn.Module):
     """
-    A lightweight Deep Learning model for Steganalysis.
-    Architecture:
-    1. SRM High-Pass Filter (Fixed) -> Extracts noise
-    2. Conv Block 1
-    3. Conv Block 2
-    4. Global Average Pooling
-    5. Dense Classifier
+    StegoCNN: The AI Detective.
+    This model is trained to look at noise maps and decide if the noise looks
+    'natural' or if it looks 'artificial' (indicating hidden data).
     """
     def __init__(self):
         super(StegoCNN, self).__init__()
@@ -122,12 +118,13 @@ class StegoCNN(nn.Module):
             nn.AdaptiveAvgPool2d((1, 1)) # Global Average Pooling -> (Batch, 128, 1, 1)
         )
         
-        # 3. Classification
+        # 3. Final Decision Logic (Classification)
+        # We take the 128 learned patterns and condense them into a final answer.
         self.fc = nn.Sequential(
             nn.Linear(128, 64),
             nn.ReLU(),
-            nn.Dropout(0.5),
-            nn.Linear(64, 2) # Output: [Clean_Score, Stego_Score]
+            nn.Dropout(0.5), # Randomly ignore half the data to prevent 'memorizing' samples.
+            nn.Linear(64, 2) # Output: [Probability_Clean, Probability_Stego]
         )
         
     def forward(self, x):

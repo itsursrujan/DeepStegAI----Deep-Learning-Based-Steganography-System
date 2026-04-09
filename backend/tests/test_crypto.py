@@ -30,7 +30,7 @@ def test_aes_decryption_failure_wrong_password():
     wrong_password = "BatteryStaple"
     encrypted_data, _ = aes_encrypt(data, password)
     
-    with pytest.raises(ValueError, match="Decryption failed"):
+    with pytest.raises(ValueError, match="Incorrect Password|InvalidToken|decryption"):  # noqa
         aes_decrypt(encrypted_data, wrong_password, is_token=False)
 
 def test_xor_fallback():

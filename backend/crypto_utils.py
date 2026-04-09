@@ -69,8 +69,8 @@ def aes_decrypt(data: bytes, key_input: str, is_token: bool = False) -> bytes:
                 
             fernet = Fernet(f_key)
             return fernet.decrypt(data)
-        except Exception as e:
-            raise ValueError(f"Decryption failed. Details: {e}")
+        except Exception:
+            raise ValueError("Incorrect Password")
     else:
         return xor_encrypt_decrypt(data, key_input)
 

@@ -45,9 +45,28 @@ api.interceptors.response.use(
     // Handle 402 Insufficient Credits
     if (error.response?.status === 402) {
       const msg = error.response?.data?.message || "Insufficient Neural Credits for this operation."
-      // Optionally trigger a global alert or notification here
       console.warn('CREDIT_EXHAUSTION:', msg)
     }
+
+    // --- Added Retry & Failure Recovery Logic ---
+    const config = error.config;
+    // Do not retry if it's explicitly disabled or missing config
+    if (config) {
+      if (typeof config.retryCount === 'undefined') {
+        config.retryCount = 0;
+      }
+      
+      // Retry up to 2 times for 500+ Internal Errors, 502 Bad Gateway, 503 Overload, or Network Drops
+      const isRetryableError = !error.response || (error.response.status >= 500);
+      if (isRetryableError && config.retryCount < 2) {
+        config.retryCount += 1;
+        const delay = config.retryCount * 2000; // Exponential backoff (2s, 4s)
+        console.warn(`[Network] Retrying request (${config.retryCount}/2) in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return api(config);
+      }
+    }
+
     return Promise.reject(error)
   }
 )
@@ -74,13 +93,20 @@ export const stegoApi = {
   getCurrentUser: () => api.get('/auth/me'),
   forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
   resetPassword: (data: any) => api.post('/auth/reset-password', data),
+  logout: () => api.post('/auth/logout'),
 
   // --- Payment ---
   createRazorpayOrder: (amount_inr: number) => api.post('/razorpay/create-order', { amount_inr }),
+  verifyPayment: (data: any) => api.post('/razorpay/verify-payment', data),
 
   // --- Core ---
   embed: (formData: FormData) =>
     api.post('/embed', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+
+  getCapacity: (formData: FormData) =>
+    api.post('/capacity', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
 
@@ -128,7 +154,17 @@ export const stegoApi = {
   getFiles: () => api.get('/files'),
   getCredits: () => api.get('/credits'),
   getActivity: () => api.get('/activity'),
-  getGlobalStats: () => api.get('/stats/global')
+  getGlobalStats: () => api.get('/stats/global'),
+
+  // --- Heatmap ---
+  getDifferenceHeatmap: (formData: FormData) =>
+    api.post('/heatmap/difference', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  getGradCamHeatmap: (formData: FormData) =>
+    api.post('/heatmap/gradcam', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
 }
 
 export default api

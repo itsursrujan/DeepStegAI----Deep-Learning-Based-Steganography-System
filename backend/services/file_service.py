@@ -39,5 +39,20 @@ class FileService:
         return db_file
 
     @staticmethod
+    def create_record(db: Session, user_id: uuid.UUID, filename: str, file_type: str) -> File:
+        """Records file metadata only (no disk save)."""
+        db_file = File(
+            user_id=user_id,
+            filename=filename,
+            file_path="VIRTUAL://",
+            file_type=file_type,
+            status="active"
+        )
+        db.add(db_file)
+        db.commit()
+        db.refresh(db_file)
+        return db_file
+
+    @staticmethod
     def get_user_files(db: Session, user_id: uuid.UUID):
         return db.query(File).filter(File.user_id == user_id).all()

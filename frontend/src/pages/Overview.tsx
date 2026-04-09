@@ -11,10 +11,10 @@ import { DecryptTitle } from '@/components/effects/DecryptTitle'
 const TRANSITION = { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }
 
 const FEATURES = [
-  { title: "Embed Data", desc: "Inject encrypted payloads seamlessly into covers", icon: Lock, link: "/embed", color: "text-cyan-400", border: "border-cyan-500/30", bg: "bg-cyan-500/10" },
-  { title: "Extract Data", desc: "Retrieve hidden intelligence from altered sources", icon: Unlock, link: "/extract", color: "text-purple-400", border: "border-purple-500/30", bg: "bg-purple-500/10" },
-  { title: "AI Scan", desc: "Neural network anomaly detection algorithms", icon: ScanLine, link: "/analyze", color: "text-orange-400", border: "border-orange-500/30", bg: "bg-orange-500/10" },
-  { title: "Batch Process", desc: "Industrial-scale mass embedding & extraction", icon: Layers, link: "/batch", color: "text-green-400", border: "border-green-500/30", bg: "bg-green-500/10" },
+  { title: "Hide Message", desc: "Securely hide secret text or files inside an image", icon: Lock, link: "/embed", color: "text-cyan-400", border: "border-cyan-500/30", bg: "bg-cyan-500/10" },
+  { title: "Find Message", desc: "Recover hidden information from an image", icon: Unlock, link: "/extract", color: "text-purple-400", border: "border-purple-500/30", bg: "bg-purple-500/10" },
+  { title: "AI Scanner", desc: "Smart detection to find hidden secrets in images", icon: ScanLine, link: "/analyze", color: "text-orange-400", border: "border-orange-500/30", bg: "bg-orange-500/10" },
+  { title: "Bulk Action", desc: "Hide or find data in many images at once", icon: Layers, link: "/batch", color: "text-green-400", border: "border-green-500/30", bg: "bg-green-500/10" },
 ]
 
 // ──────────────────────── Hyper Button ────────────────────────
@@ -160,10 +160,10 @@ function HyperButton({ onClick }: { onClick: () => void }) {
 
 // ─────────────────────── Feature Cards ───────────────────────
 const highlights = [
-  { icon: Shield, title: 'AI Forensic Engine', desc: 'Secure neural steganography auditing.' },
-  { icon: Lock, title: 'Adaptive Edge', desc: 'Noise-integrated data preservation.' },
-  { icon: Zap, title: 'Kinetic Synthesis', desc: 'Instant heavy-duty encryption cycles.' },
-  { icon: Globe, title: 'Global Node', desc: 'Unified industrial command shell.' },
+  { icon: Shield, title: 'AI Scanner', desc: 'Securely check images for hidden data.' },
+  { icon: Lock, title: 'Secure Hiding', desc: 'Hide data that stays invisible to others.' },
+  { icon: Zap, title: 'Fast Results', desc: 'Instant encryption and processing.' },
+  { icon: Globe, title: 'Works Everywhere', desc: 'Unified dashboard for all your needs.' },
 ]
 
 // ─────────────────────── Page ───────────────────────
@@ -173,33 +173,51 @@ export const Overview = memo(function Overview() {
   const isAuthenticated = useStore(s => s.isAuthenticated)
   const theme = useStore(s => s.theme)
   const isLight = theme === 'light'
-  
+
+  // Auto-initialize if authenticated
+  useEffect(() => {
+    if (isAuthenticated && !systemInitialized) {
+      setSystemInitialized(true)
+    }
+  }, [isAuthenticated, systemInitialized, setSystemInitialized])
+
   const [data, setData] = useState<{ analysis: any[]; files: any[]; activity: any[]; globalStats: any }>({ analysis: [], files: [], activity: [], globalStats: { total_scans: 0, threats_found: 0 } })
   const [isLoading, setIsLoading] = useState(false)
 
+  const fetchDashboardData = async (isBackground = false) => {
+    if (!isBackground) setIsLoading(true)
+    try {
+        const [filesRes, analysisRes, activityRes, statsRes] = await Promise.all([
+            stegoApi.getFiles(),
+            stegoApi.getAnalysisList(),
+            stegoApi.getActivity(),
+            stegoApi.getGlobalStats()
+        ])
+        setData({
+            files: filesRes.data.success ? filesRes.data.data : [],
+            analysis: analysisRes.data.success ? analysisRes.data.data : [],
+            activity: activityRes.data.success ? activityRes.data.data : [],
+            globalStats: statsRes.data.success ? statsRes.data.data : { total_scans: 0, threats_found: 0 }
+        })
+    } catch (err) {
+        console.error("Dashboard fetch failed:", err)
+    } finally {
+        if (!isBackground) setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    let interval: any;
+    if (isAuthenticated && systemInitialized) {
+        interval = setInterval(() => {
+            fetchDashboardData(true); // Background refresh (no loader)
+        }, 10000);
+    }
+    return () => clearInterval(interval);
+  }, [isAuthenticated, systemInitialized]);
+
   useEffect(() => {
     if (isAuthenticated && systemInitialized) {
-        const fetchDashboardData = async () => {
-            setIsLoading(true)
-            try {
-                const [filesRes, analysisRes, activityRes, statsRes] = await Promise.all([
-                    stegoApi.getFiles(),
-                    stegoApi.getAnalysisList(),
-                    stegoApi.getActivity(),
-                    stegoApi.getGlobalStats()
-                ])
-                setData({
-                    files: filesRes.data.success ? filesRes.data.data : [],
-                    analysis: analysisRes.data.success ? analysisRes.data.data : [],
-                    activity: activityRes.data.success ? activityRes.data.data : [],
-                    globalStats: statsRes.data.success ? statsRes.data.data : { total_scans: 0, threats_found: 0 }
-                })
-            } catch (err) {
-                console.error("Dashboard fetch failed:", err)
-            } finally {
-                setIsLoading(false)
-            }
-        }
         fetchDashboardData()
     }
   }, [isAuthenticated, systemInitialized])

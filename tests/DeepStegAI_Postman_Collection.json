@@ -1,0 +1,475 @@
+{
+  "info": {
+    "name": "DeepStegAI v2 — Production API Collection",
+    "description": "Complete Postman collection for all DeepStegAI API endpoints.\nUsage: Import into Postman, set environment variables, run collection.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "2.0.0"
+  },
+  "variable": [
+    {"key": "base_url", "value": "http://localhost:5000", "type": "string"},
+    {"key": "auth_token", "value": "", "type": "string"},
+    {"key": "test_email", "value": "pm_test@deepsteg.io", "type": "string"},
+    {"key": "test_password", "value": "PostmanTest123!", "type": "string"}
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{"key": "token", "value": "{{auth_token}}", "type": "string"}]
+  },
+  "item": [
+    {
+      "name": "00 — Health & Status",
+      "item": [
+        {
+          "name": "GET /api/health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{base_url}}/api/health", "host": ["{{base_url}}"], "path": ["api","health"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Returns ok', () => pm.expect(pm.response.json().status).to.eql('ok'));"
+          ]}}]
+        },
+        {
+          "name": "GET /api/stats/global",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {"raw": "{{base_url}}/api/stats/global", "host": ["{{base_url}}"], "path": ["api","stats","global"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const d = pm.response.json().data;",
+            "pm.test('Has total_scans', () => pm.expect(d).to.have.property('total_scans'));",
+            "pm.test('Has threats_found', () => pm.expect(d).to.have.property('threats_found'));"
+          ]}}]
+        }
+      ]
+    },
+    {
+      "name": "01 — Authentication",
+      "item": [
+        {
+          "name": "POST /api/auth/register",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"email\":\"{{test_email}}\",\"password\":\"{{test_password}}\",\"name\":\"PM Tester\"}"},
+            "url": {"raw": "{{base_url}}/api/auth/register", "host": ["{{base_url}}"], "path": ["api","auth","register"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Status 200 or 409', () => pm.expect(pm.response.code).to.be.oneOf([200, 409, 201]));"
+          ]}}]
+        },
+        {
+          "name": "POST /api/auth/login",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"email\":\"{{test_email}}\",\"password\":\"{{test_password}}\"}"},
+            "url": {"raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api","auth","login"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const json = pm.response.json();",
+            "pm.test('Has token', () => pm.expect(json.data.access_token).to.be.a('string'));",
+            "pm.environment.set('auth_token', json.data.access_token);"
+          ]}}]
+        },
+        {
+          "name": "POST /api/auth/login — Wrong Password",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"email\":\"{{test_email}}\",\"password\":\"WRONGPASSWORD\"}"},
+            "url": {"raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api","auth","login"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Status 401/400', () => pm.expect(pm.response.code).to.be.oneOf([400,401,422]));"
+          ]}}]
+        },
+        {
+          "name": "POST /api/auth/logout",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{auth_token}}"}],
+            "url": {"raw": "{{base_url}}/api/auth/logout", "host": ["{{base_url}}"], "path": ["api","auth","logout"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Status 200/204', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+          ]}}]
+        }
+      ]
+    },
+    {
+      "name": "02 — Capacity Check",
+      "item": [
+        {
+          "name": "POST /api/capacity — Valid Image",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {"mode": "formdata", "formdata": [{"key": "cover", "type": "file", "src": "/path/to/test_cover.png"}]},
+            "url": {"raw": "{{base_url}}/api/capacity", "host": ["{{base_url}}"], "path": ["api","capacity"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const d = pm.response.json().data;",
+            "pm.test('Has max_payload_bytes', () => pm.expect(d.max_payload_bytes).to.be.a('number'));",
+            "pm.test('35% rule: payload < cover * 0.36', () => {",
+            "  pm.expect(d.max_payload_bytes).to.be.at.most(d.cover_size_bytes * 0.36);",
+            "});",
+            "pm.test('Security policy label present', () => pm.expect(d.security_policy).to.include('35%'));"
+          ]}}]
+        },
+        {
+          "name": "POST /api/capacity — Missing Cover",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {"mode": "formdata", "formdata": []},
+            "url": {"raw": "{{base_url}}/api/capacity", "host": ["{{base_url}}"], "path": ["api","capacity"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Status 400', () => pm.response.to.have.status(400));"
+          ]}}]
+        }
+      ]
+    },
+    {
+      "name": "03 — Embed",
+      "item": [
+        {
+          "name": "POST /api/embed — LSB",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{auth_token}}"}],
+            "body": {"mode": "formdata", "formdata": [
+              {"key": "cover", "type": "file", "src": "/path/to/test_cover.png"},
+              {"key": "secret", "type": "file", "src": "/path/to/secret.txt"},
+              {"key": "method", "value": "LSB", "type": "text"}
+            ]},
+            "url": {"raw": "{{base_url}}/api/embed", "host": ["{{base_url}}"], "path": ["api","embed"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const d = pm.response.json().data;",
+            "pm.test('Has image_data', () => pm.expect(d.image_data).to.be.a('string'));",
+            "pm.test('base64 is valid', () => {",
+            "  try { atob(d.image_data); pm.expect(true).to.be.true; }",
+            "  catch(e) { pm.expect(false, 'Invalid base64').to.be.true; }",
+            "});",
+            "pm.environment.set('last_stego_b64', d.image_data);",
+            "if (d.recovery_token) pm.environment.set('recovery_token', d.recovery_token);"
+          ]}}]
+        },
+        {
+          "name": "POST /api/embed — ADAPTIVE (with password)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{auth_token}}"}],
+            "body": {"mode": "formdata", "formdata": [
+              {"key": "cover", "type": "file", "src": "/path/to/test_cover.png"},
+              {"key": "secret", "type": "file", "src": "/path/to/secret.txt"},
+              {"key": "method", "value": "ADAPTIVE", "type": "text"},
+              {"key": "password", "value": "PostmanAdaptivePass!", "type": "text"}
+            ]},
+            "url": {"raw": "{{base_url}}/api/embed", "host": ["{{base_url}}"], "path": ["api","embed"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Has recovery_token', () => pm.expect(pm.response.json().data.recovery_token).to.be.a('string'));"
+          ]}}]
+        },
+        {
+          "name": "POST /api/embed — ADAPTIVE no password (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{auth_token}}"}],
+            "body": {"mode": "formdata", "formdata": [
+              {"key": "cover", "type": "file", "src": "/path/to/test_cover.png"},
+              {"key": "secret", "type": "file", "src": "/path/to/secret.txt"},
+              {"key": "method", "value": "ADAPTIVE", "type": "text"}
+            ]},
+            "url": {"raw": "{{base_url}}/api/embed", "host": ["{{base_url}}"], "path": ["api","embed"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Status 400', () => pm.response.to.have.status(400));",
+            "pm.test('Error mentions password', () => pm.expect(pm.response.json().error.toLowerCase()).to.include('password'));"
+          ]}}]
+        },
+        {
+          "name": "POST /api/embed — No Auth (expect 401)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {"mode": "formdata", "formdata": []},
+            "url": {"raw": "{{base_url}}/api/embed", "host": ["{{base_url}}"], "path": ["api","embed"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Status 401', () => pm.response.to.have.status(401));"
+          ]}}]
+        }
+      ]
+    },
+    {
+      "name": "04 — Extract",
+      "item": [
+        {
+          "name": "POST /api/extract — From Stego PNG",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{auth_token}}"}],
+            "body": {"mode": "formdata", "formdata": [
+              {"key": "stego", "type": "file", "src": "/path/to/stego_output.png"}
+            ]},
+            "url": {"raw": "{{base_url}}/api/extract", "host": ["{{base_url}}"], "path": ["api","extract"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Response has content', () => pm.expect(pm.response.responseSize).to.be.greaterThan(0));"
+          ]}}]
+        },
+        {
+          "name": "POST /api/extract — Clean Image (expect 404)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{auth_token}}"}],
+            "body": {"mode": "formdata", "formdata": [
+              {"key": "stego", "type": "file", "src": "/path/to/clean_image.png"}
+            ]},
+            "url": {"raw": "{{base_url}}/api/extract", "host": ["{{base_url}}"], "path": ["api","extract"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Status 404', () => pm.response.to.have.status(404));"
+          ]}}]
+        },
+        {
+          "name": "POST /api/extract — Wrong Password (expect 403/400)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{auth_token}}"}],
+            "body": {"mode": "formdata", "formdata": [
+              {"key": "stego", "type": "file", "src": "/path/to/encrypted_stego.png"},
+              {"key": "password", "value": "WRONG_PASSWORD_HERE", "type": "text"}
+            ]},
+            "url": {"raw": "{{base_url}}/api/extract", "host": ["{{base_url}}"], "path": ["api","extract"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Rejected with 400/403', () => pm.expect(pm.response.code).to.be.oneOf([400,403]));"
+          ]}}]
+        }
+      ]
+    },
+    {
+      "name": "05 — Analyze (Steganalysis)",
+      "item": [
+        {
+          "name": "POST /api/analyze — Clean Image",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{auth_token}}"}],
+            "body": {"mode": "formdata", "formdata": [
+              {"key": "image", "type": "file", "src": "/path/to/clean_image.png"}
+            ]},
+            "url": {"raw": "{{base_url}}/api/analyze", "host": ["{{base_url}}"], "path": ["api","analyze"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const d = pm.response.json().data;",
+            "pm.test('Has verdict', () => pm.expect(['CLEAN','SUSPICIOUS','DETECTED']).to.include(d.verdict));",
+            "pm.test('AI score 0-1', () => { pm.expect(d.ai_score).to.be.gte(0); pm.expect(d.ai_score).to.be.lte(1); });",
+            "pm.test('Has file_id', () => pm.expect(d.file_id).to.be.a('string'));"
+          ]}}]
+        },
+        {
+          "name": "POST /api/analyze — Missing Image (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{auth_token}}"}],
+            "body": {"mode": "formdata", "formdata": []},
+            "url": {"raw": "{{base_url}}/api/analyze", "host": ["{{base_url}}"], "path": ["api","analyze"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Status 400', () => pm.response.to.have.status(400));"
+          ]}}]
+        }
+      ]
+    },
+    {
+      "name": "06 — Batch Operations",
+      "item": [
+        {
+          "name": "POST /api/batch — Hide Mode",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{auth_token}}"}],
+            "body": {"mode": "formdata", "formdata": [
+              {"key": "mode", "value": "hide", "type": "text"},
+              {"key": "method", "value": "lsb", "type": "text"},
+              {"key": "covers", "type": "file", "src": "/path/to/cover1.png"},
+              {"key": "covers", "type": "file", "src": "/path/to/cover2.png"},
+              {"key": "secret", "type": "file", "src": "/path/to/secret.txt"}
+            ]},
+            "url": {"raw": "{{base_url}}/api/batch", "host": ["{{base_url}}"], "path": ["api","batch"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Content-Type is zip', () => pm.expect(pm.response.headers.get('content-type')).to.include('zip'));"
+          ]}}]
+        },
+        {
+          "name": "POST /api/batch_analyze — Multiple Images",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{auth_token}}"}],
+            "body": {"mode": "formdata", "formdata": [
+              {"key": "images", "type": "file", "src": "/path/to/image1.png"},
+              {"key": "images", "type": "file", "src": "/path/to/image2.png"}
+            ]},
+            "url": {"raw": "{{base_url}}/api/batch_analyze", "host": ["{{base_url}}"], "path": ["api","batch_analyze"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const d = pm.response.json().data;",
+            "pm.test('Returns array', () => pm.expect(d).to.be.an('array'));",
+            "d.forEach((item, i) => {",
+            "  if (!item.error) {",
+            "    pm.test(`Item ${i} has verdict`, () => pm.expect(['CLEAN','SUSPICIOUS','DETECTED']).to.include(item.verdict));",
+            "  }",
+            "});"
+          ]}}]
+        }
+      ]
+    },
+    {
+      "name": "07 — User Data",
+      "item": [
+        {
+          "name": "GET /api/credits",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{auth_token}}"}],
+            "url": {"raw": "{{base_url}}/api/credits", "host": ["{{base_url}}"], "path": ["api","credits"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const d = pm.response.json().data;",
+            "pm.test('Credits is number', () => pm.expect(d.credits).to.be.a('number'));",
+            "pm.test('Has transactions', () => pm.expect(d.transactions).to.be.an('array'));"
+          ]}}]
+        },
+        {
+          "name": "GET /api/activity",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{auth_token}}"}],
+            "url": {"raw": "{{base_url}}/api/activity", "host": ["{{base_url}}"], "path": ["api","activity"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Data is array', () => pm.expect(pm.response.json().data).to.be.an('array'));"
+          ]}}]
+        },
+        {
+          "name": "GET /api/analysis",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{auth_token}}"}],
+            "url": {"raw": "{{base_url}}/api/analysis", "host": ["{{base_url}}"], "path": ["api","analysis"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Data is array', () => pm.expect(pm.response.json().data).to.be.an('array'));"
+          ]}}]
+        }
+      ]
+    },
+    {
+      "name": "08 — Security Tests",
+      "item": [
+        {
+          "name": "JWT Algorithm=none Attack",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJ1c2VyX2lkIjoiYWRtaW4ifQ."}],
+            "url": {"raw": "{{base_url}}/api/files", "host": ["{{base_url}}"], "path": ["api","files"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Status 401 — alg=none rejected', () => pm.response.to.have.status(401));"
+          ]}}]
+        },
+        {
+          "name": "SQL Injection in Login",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\"email\":\"' OR '1'='1\",\"password\":\"anything\"}"},
+            "url": {"raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api","auth","login"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Not 200 (injection blocked)', () => pm.expect(pm.response.code).to.not.equal(200));",
+            "pm.test('No DB error leaked', () => pm.expect(pm.response.text()).to.not.include('psycopg2'));"
+          ]}}]
+        },
+        {
+          "name": "File Format Bypass — ELF as PNG",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{auth_token}}"}],
+            "body": {"mode": "formdata", "formdata": [
+              {"key": "cover", "src": "/path/to/elf_fake.png", "type": "file"},
+              {"key": "secret", "src": "/path/to/secret.txt", "type": "file"},
+              {"key": "method", "value": "LSB", "type": "text"}
+            ]},
+            "url": {"raw": "{{base_url}}/api/embed", "host": ["{{base_url}}"], "path": ["api","embed"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Status 400 — format bypass rejected', () => pm.response.to.have.status(400));"
+          ]}}]
+        }
+      ]
+    },
+    {
+      "name": "09 — Heatmap Endpoints",
+      "item": [
+        {
+          "name": "POST /api/heatmap/difference",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{auth_token}}"}],
+            "body": {"mode": "formdata", "formdata": [
+              {"key": "cover", "type": "file", "src": "/path/to/cover.png"},
+              {"key": "stego", "type": "file", "src": "/path/to/stego.png"}
+            ]},
+            "url": {"raw": "{{base_url}}/api/heatmap/difference", "host": ["{{base_url}}"], "path": ["api","heatmap","difference"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Has heatmap_b64', () => pm.expect(pm.response.json().heatmap_b64).to.be.a('string'));"
+          ]}}]
+        },
+        {
+          "name": "POST /api/heatmap/gradcam",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{auth_token}}"}],
+            "body": {"mode": "formdata", "formdata": [
+              {"key": "image", "type": "file", "src": "/path/to/test_image.png"}
+            ]},
+            "url": {"raw": "{{base_url}}/api/heatmap/gradcam", "host": ["{{base_url}}"], "path": ["api","heatmap","gradcam"]}
+          },
+          "event": [{"listen": "test", "script": {"exec": [
+            "pm.test('Status 200 or 503', () => pm.expect(pm.response.code).to.be.oneOf([200,503]));",
+            "if (pm.response.code === 200) {",
+            "  const d = pm.response.json();",
+            "  pm.test('Has prediction', () => pm.expect(['CLEAN','STEGO']).to.include(d.prediction));",
+            "  pm.test('Confidence 0-1', () => { pm.expect(d.confidence).to.be.gte(0); pm.expect(d.confidence).to.be.lte(1); });",
+            "}"
+          ]}}]
+        }
+      ]
+    }
+  ]
+}
