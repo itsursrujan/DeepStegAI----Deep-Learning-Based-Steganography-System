@@ -28,4 +28,4 @@ ENV PORT=7860
 EXPOSE 7860
 
 # Start the application
-CMD ["gunicorn", "--timeout", "120", "-w", "1", "-b", "0.0.0.0:7860", "--chdir", "backend", "app:app"]
+CMD ["gunicorn", "--timeout", "120", "-w", "1", "-b", "0.0.0.0:7860", "app:app"]
