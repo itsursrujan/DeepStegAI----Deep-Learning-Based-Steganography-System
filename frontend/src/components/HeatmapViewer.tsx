@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Loader2, Layers, Image as ImageIcon, Eye, AlertCircle } from "lucide-react";
+import { Loader2, Layers, Image as ImageIcon, Eye } from "lucide-react";
 
 interface Props {
   baseImage: string;
@@ -9,14 +9,12 @@ interface Props {
 const HeatmapViewer: React.FC<Props> = ({ baseImage, fetchHeatmap }) => {
   const [activeTab, setActiveTab] = useState<"original" | "heatmap" | "overlay">("original");
   const [heatmap, setHeatmap] = useState<string | null>(null);
-  // FIX: default opacity 0.4 per spec (not 0.5)
   const [opacity, setOpacity] = useState(0.4);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Track whether backend returned a flat/null CAM (clean image, no signal)
   const [noSignal, setNoSignal] = useState(false);
 
-  // FIX: Reset heatmap cache when image or fetch fn changes — prevents stale overlays
+  // Reset heatmap cache when image or fetch fn changes — prevents stale overlays
   useEffect(() => {
     setHeatmap(null);
     setError(null);
@@ -25,7 +23,6 @@ const HeatmapViewer: React.FC<Props> = ({ baseImage, fetchHeatmap }) => {
   }, [fetchHeatmap, baseImage]);
 
   const loadHeatmap = async () => {
-    // Guard: don't reload when already loaded or in flight
     if (heatmap || loading) return;
 
     setLoading(true);
@@ -34,7 +31,6 @@ const HeatmapViewer: React.FC<Props> = ({ baseImage, fetchHeatmap }) => {
 
     try {
       const data = await fetchHeatmap();
-      // Backend returns "data:image/png;base64,..." or null/empty on flat CAM
       if (!data || data === "data:image/png;base64,") {
         setNoSignal(true);
       } else {
@@ -42,8 +38,6 @@ const HeatmapViewer: React.FC<Props> = ({ baseImage, fetchHeatmap }) => {
       }
     } catch (err: any) {
       console.error("Failed to fetch heatmap:", err);
-      // FIX: __NO_SIGNAL__ is a sentinel from fetchGradCam when backend returns null heatmap_b64
-      // Treat it as a "clean image / no activations" state, not a real error
       if (err?.message === "__NO_SIGNAL__") {
         setNoSignal(true);
       } else {
@@ -105,27 +99,22 @@ const HeatmapViewer: React.FC<Props> = ({ baseImage, fetchHeatmap }) => {
       </div>
 
       {/*
-        ─── Main Preview Area ────────────────────────────────────────────────────
-        FIX (Issue 5): Overlay alignment — the container is `position: relative`.
-        Base image is normal flow. Heatmap sits `position: absolute; top:0; left:0;
-        width:100%; height:100%; object-fit:contain` so it perfectly aligns with
-        the base image regardless of resolution difference.
+        ─── Main Preview Area ──────────────────────────────────────────────────
+        FIX: Removed max-h-[500px] so the full image is ALWAYS visible.
+        Container is position:relative. Base image is normal flow (height auto).
+        Heatmap overlay is position:absolute covering 100% so it perfectly aligns.
         ──────────────────────────────────────────────────────────────────────── */}
-      <div
-        className="relative w-full rounded-xl overflow-hidden bg-black/40 border border-white/5 flex items-start justify-center"
-      >
-        {/* Base Image — visible in original & overlay tabs; hidden in pure heatmap */}
+      <div className="relative w-full rounded-xl overflow-hidden bg-black/40 border border-white/5">
+        {/* Base Image — always full height, never cropped */}
         <img
           src={baseImage}
           alt="Base analysis"
-          style={{ display: "block", width: "100%", height: "auto", objectFit: "contain", objectPosition: "top" }}
-          className={`transition-opacity duration-500 ${
+          className={`block w-full h-auto object-contain transition-opacity duration-500 ${
             activeTab === "heatmap" ? "opacity-0" : "opacity-100"
           }`}
         />
 
-        {/* FIX (Issue 5): Heatmap overlay — absolutely positioned, object-fit:contain
-            opacity:0.4 in overlay mode per spec, 1.0 in pure heatmap mode */}
+        {/* Heatmap overlay — absolutely positioned, perfectly aligned with base image */}
         {heatmap && (
           <img
             src={heatmap}
@@ -136,13 +125,11 @@ const HeatmapViewer: React.FC<Props> = ({ baseImage, fetchHeatmap }) => {
               left: 0,
               width: "100%",
               height: "100%",
-              objectFit: "contain",
+              objectFit: "fill",
               opacity:
                 activeTab === "overlay" ? opacity :
                 activeTab === "heatmap" ? 1 :
                 0,
-              // FIX: "normal" blend mode — "screen" washed out colors and caused
-              // visual artefacts that masked real heatmap signal
               mixBlendMode: "normal",
               transition: "opacity 0.4s ease",
               pointerEvents: "none",
@@ -159,8 +146,6 @@ const HeatmapViewer: React.FC<Props> = ({ baseImage, fetchHeatmap }) => {
             </p>
           </div>
         )}
-
-        {/* No-Signal State: just show the original image cleanly, no overlay message */}
 
         {/* Error State */}
         {error && !loading && (
