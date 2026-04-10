@@ -12,16 +12,12 @@ def generate_difference_heatmap(cover_np, stego_np):
     - Intensity clamped to [0, 180] to prevent over-sensitivity on clean images
     - Proper float32 normalization before colormap
     """
-    # Downscale if > 1024px to keep processing fast
+    # Dynamic Aspect Ratio Alignment
     h, w = cover_np.shape[:2]
-    if max(h, w) > 1024:
-        scale = 1024 / max(h, w)
-        cover_np = cv2.resize(cover_np, (int(w * scale), int(h * scale)))
-        stego_np = cv2.resize(stego_np, (int(w * scale), int(h * scale)))
-
+    
     # Ensure same dimensions (safety guard)
     if cover_np.shape != stego_np.shape:
-        stego_np = cv2.resize(stego_np, (cover_np.shape[1], cover_np.shape[0]))
+        stego_np = cv2.resize(stego_np, (w, h))
 
     # Convert to float32 grayscale for precision
     cover_gray = cv2.cvtColor(cover_np, cv2.COLOR_BGR2GRAY).astype(np.float32)
@@ -30,19 +26,10 @@ def generate_difference_heatmap(cover_np, stego_np):
     # Compute absolute difference
     diff = np.abs(cover_gray - stego_gray)
 
-    # FIX 1: Gaussian blur to reduce single-pixel noise spikes
-    diff = cv2.GaussianBlur(diff, (5, 5), 0)
+    # FIX: Gaussian blur to smooth the signal without suppressing evidence
+    diff = cv2.GaussianBlur(diff, (3, 3), 0)
 
-    # FIX 2: Statistical thresholding — suppress noise below mean + 2*std
-    # This ensures clean images with only random noise produce a mostly dark heatmap
-    threshold = np.mean(diff) + 2.0 * np.std(diff)
-    diff[diff < threshold] = 0
-
-    # FIX 3: Clamp to [0, 180] to prevent tiny LSB changes from hitting
-    # full saturation, which causes false high-intensity on clean images
-    diff = np.clip(diff, 0, 180)
-
-    # FIX 4: Normalize to [0, 255] for colormap application
+    # FIX: Standard High-Contrast Normalization (No Suppression)
     if diff.max() > 0:
         diff_norm = (diff / diff.max() * 255).astype(np.uint8)
     else:

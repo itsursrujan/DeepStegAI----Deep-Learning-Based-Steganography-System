@@ -59,6 +59,27 @@ logging.basicConfig(
 logger = logging.getLogger("DeepStegAI")
 
 app = Flask(__name__)
+
+def auto_migrate_db():
+    print("Initiating automatic database schema alignment...")
+    db = SessionLocal()
+    try:
+        from sqlalchemy import text
+        # Safely inject missing columns for production updates without destroying data
+        db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS otp_code VARCHAR"))
+        db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS otp_expiry TIMESTAMP"))
+        db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE"))
+        db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR"))
+        db.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expiry TIMESTAMP"))
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"Skipped schema alignment (tables might not exist yet): {e}")
+    finally:
+        db.close()
+
+# Execute hot-migrations explicitly for Docker deployments
+auto_migrate_db()
 app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024 # 500 MB limit
 app.secret_key = os.environ.get("FLASK_SECRET_KEY") or os.urandom(24)
 
@@ -133,6 +154,11 @@ SECURITY_LIMIT_RATIO = 0.35
 def calculate_max_payload(cover_size_bytes: int) -> int:
     """Calculate the strict 35% maximum payload."""
     return math.floor(cover_size_bytes * SECURITY_LIMIT_RATIO)
+
+@app.route('/')
+def health_root():
+    """Root health check for Hugging Face verification."""
+    return jsonify({"status": "SYSTEM_ONLINE", "environment": "HuggingFace_Production"}), 200
 
 @app.route('/api/capacity', methods=['POST'])
 @limiter.limit("60 per minute")
@@ -213,30 +239,32 @@ def get_calibrated_ai_score(image_pil, initial_ai_score, signature_detected):
 
 def load_ai_model():
     global MODEL, DEVICE
+    import gc
     from steganalysis_model import get_model
     
-    DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # 1. Aggressive pre-load cleanup
+    gc.collect()
+    
+    DEVICE = torch.device("cpu") # Force CPU for stability on free tier
     torch.set_num_threads(1)
     
     model_path = os.path.join(os.path.dirname(__file__), 'models', 'stego_model.pth')
     try:
         if os.path.exists(model_path):
             file_size = os.path.getsize(model_path)
-            logger.info(f"AI Model file found: {model_path} ({file_size/1024/1024:.2f} MB)")
-            
-            if file_size < 10000:
-                logger.error("DANGER: AI Model file is unusually small. It might be a Git LFS pointer instead of the actual weights!")
-            
-            logger.info(f"Loading AI Model onto {DEVICE}...")
-            model = get_model().to(DEVICE)
-            model.load_state_dict(torch.load(model_path, map_location=DEVICE))
-            model.eval()
-            MODEL = model
-            logger.info("AI Model loaded successfully.")
+            logger.info(f"Loading Neural Engine ({file_size/1024/1024:.2f} MB)...")
+            MODEL = get_model().to(DEVICE)
+            state_dict = torch.load(model_path, map_location=DEVICE)
+            MODEL.load_state_dict(state_dict)
+            MODEL.eval()
+            del state_dict
+            gc.collect()
+            logger.info("Neural Engine active.")
         else:
-            logger.warning(f"AI Model file {model_path} not found. AI features disabled.")
+            logger.warning(f"Neural Engine weights missing at {model_path}. AI features disabled.")
     except Exception as e:
-        logger.error(f"Failed to load AI model: {e}", exc_info=True)
+        logger.error(f"Neural Engine initialization failed: {e}")
+        gc.collect()
 
 # Model loading is now deferred to the first /api/analyze request
 # load_ai_model()
@@ -711,11 +739,18 @@ def api_analyze():
             if not MODEL:
                 load_ai_model()
             
+            if not MODEL:
+                return jsonify({"success": False, "error": "AI Engine missing"}), 503
+
             from train_stego_model import predict_image
             # We run the AI prediction in the Global Thread Pool
-            future = GLOBAL_AI_EXECUTOR.submit(predict_image, MODEL, image_pil)
-            ai_score = float(future.result(timeout=30.0))
+            import torch
+            with torch.no_grad():
+                future = GLOBAL_AI_EXECUTOR.submit(predict_image, MODEL, image_pil)
+                ai_score = float(future.result(timeout=30.0))
             ai_success = True
+            import gc
+            gc.collect()
         except concurrent.futures.TimeoutError:
             logger.error("AI scanning timed out (exceeded 30s)")
             return jsonify({
@@ -729,24 +764,26 @@ def api_analyze():
         # 4. Confidence Calibration
         ai_score = float(get_calibrated_ai_score(image_pil, ai_score, sig_res.get("detected", False)))
         
-        # 5. Verdict Logic (Optimized to reduce false positives for AI-generated images)
+        # 5. Verdict Logic (Restored to High-Sensitivity Perfection)
         verdict = "CLEAN"
         if sig_res.get("detected"):
             # A signature is a definitive 100% match
             verdict = "DETECTED"
-        elif ai_score > 0.85:
-            # High threshold for suspicious images without a signature
+        elif ai_score > 0.75:
+            # High AI confidence => DETECTED
+            verdict = "DETECTED"
+        elif ai_score > 0.60:
+            # Medium AI confidence => SUSPICIOUS
             verdict = "SUSPICIOUS"
-        elif ai_score > 0.65:
-            # Low probability of stego, likely AI-noise or high-frequency artifacts
-            # We keep it as CLEAN but record the score in details
-            verdict = "CLEAN"
             
         description = sig_res.get("message", "No hidden data detected.")
         if verdict == "SUSPICIOUS":
-            description = f"Anomalies detected (Confidence: {ai_score*100:.1f}%)"
+            description = f"Potential Hidden Data Found (Neural Confidence: {ai_score*100:.1f}%)"
         elif verdict == "DETECTED":
-             description = f"CONFIRMED Steganography: {description}"
+            if not sig_res.get("detected"):
+                 description = f"Neural Signature Confirmed (Confidence: {ai_score*100:.1f}%)"
+            else:
+                 description = f"CONFIRMED Steganography: {description}"
         else:
             # Clean
             if ai_score > 0.5:
@@ -938,7 +975,11 @@ def api_heatmap_gradcam():
                 return jsonify({'success': False, 'error': 'AI Model could not be initialized'}), 503
 
         img_file = request.files['image']
-        image_pil = Image.open(img_file).convert("RGB")
+        img_bytes = img_file.read()
+        image_pil = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+
+        # Decode original image as numpy (BGR) for Canny edge detection
+        original_np = cv2.imdecode(np.frombuffer(img_bytes, np.uint8), cv2.IMREAD_COLOR)
 
         transform = transforms.Compose([
             transforms.Resize((224, 224)),
@@ -949,33 +990,44 @@ def api_heatmap_gradcam():
         img_tensor = transform(image_pil).unsqueeze(0).to(DEVICE)
 
         # Run Grad-CAM in a thread pool to avoid blocking the WSGI worker
+        import torch
+        import gc
+        # Grad-CAM requires gradients, so we DO NOT use torch.no_grad() here.
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(generate_gradcam, MODEL, img_tensor)
+            future = executor.submit(
+                generate_gradcam,
+                MODEL,
+                img_tensor,
+                original_size=image_pil.size,
+                original_image_np=original_np
+            )
             try:
-                result = future.result(timeout=30.0)
+                result = future.result(timeout=45.0)
             except concurrent.futures.TimeoutError:
-                logger.error("Grad-CAM timed out (exceeded 30s)")
-                return jsonify({'success': False, 'error': 'Grad-CAM timed out. Please try again.'}), 503
+                logger.error("Grad-CAM timed out (exceeded 45s)")
+                return jsonify({'success': False, 'error': 'Neural Analysis timed out. Our servers are at capacity.'}), 503
 
+        gc.collect()
         heatmap_b64, pred_class, confidence = result
 
-        # FIX: Handle flat/zero CAM gracefully — return None so frontend shows "no signal" state
-        # This happens on clean images where model finds no meaningful activations after thresholding
+        logger.info(f"Grad-CAM generated for class={pred_class}, conf={confidence:.3f}")
+
+        # Clean image: return null heatmap so frontend shows 'No Activations' state
         if heatmap_b64 is None:
-            logger.info(f"Grad-CAM returned flat CAM for class={pred_class}, conf={confidence:.3f}")
             return jsonify({
                 "success": True,
                 "heatmap_b64": None,
-                "prediction": "STEGO" if pred_class == 1 else "CLEAN",
+                "prediction": "CLEAN",
                 "confidence": float(confidence),
-                "message": "No significant activations detected — image appears clean."
+                "message": "No significant neural activations detected. Image appears clean."
             })
 
         return jsonify({
             "success": True,
             "heatmap_b64": heatmap_b64,
             "prediction": "STEGO" if pred_class == 1 else "CLEAN",
-            "confidence": float(confidence)
+            "confidence": float(confidence),
+            "message": "Neural Scrutiny Active — Hybrid Edge + Activation Analysis complete."
         })
 
     except Exception as e:
@@ -985,6 +1037,8 @@ def api_heatmap_gradcam():
 if __name__ == '__main__':
     # Threaded=True enables concurrency for batch operations
     load_ai_model()
-    # use_reloader=False and debug=False enforce production readiness
-    debug_mode = os.environ.get("FLASK_DEBUG", "False").lower() == "true"
-    app.run(debug=debug_mode, host='127.0.0.1', port=5000, use_reloader=debug_mode, threaded=True)
+    # use_reloader=False    # DeepStegAI is explicitly initialized for containerized cloud deployment or local testing
+    port = int(os.environ.get('PORT', 7860))
+    
+    # Enable threaded=True for better concurrent request handling
+    app.run(debug=True, port=port, host="0.0.0.0", threaded=True)

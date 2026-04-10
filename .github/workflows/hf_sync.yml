@@ -14,7 +14,14 @@ jobs:
         with:
           fetch-depth: 0
           lfs: true
-      - name: Push to hub
+      - name: Push backend to hub
         env:
           HF_TOKEN: ${{ secrets.DeepStegAI }}
-        run: git push --force https://hjsudarshan:$HF_TOKEN@huggingface.co/spaces/hjsudarshan/deepstegai-backend main
+        run: |
+          cd backend
+          git init
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add .
+          git commit -m "Auto-deploy backend to Hugging Face"
+          git push --force https://hjsudarshan:$HF_TOKEN@huggingface.co/spaces/hjsudarshan/deepstegai-backend master:main
