@@ -14,8 +14,6 @@ const Admin    = lazy(() => import('./pages/Admin').then(m => ({ default: m.Admi
 const Support  = lazy(() => import('./pages/Support').then(m => ({ default: m.Support })))
 const About    = lazy(() => import('./pages/About').then(m => ({ default: m.About })))
 const Pricing  = lazy(() => import('./pages/Pricing').then(m => ({ default: m.Pricing })))
-const Login    = lazy(() => import('./pages/Auth').then(m => ({ default: m.Auth })))
-const Signup   = lazy(() => import('./pages/Auth').then(m => ({ default: m.Auth })))
 const Auth     = lazy(() => import('./pages/Auth').then(m => ({ default: m.Auth })))
 
 import { useStore } from './store/useStore'
