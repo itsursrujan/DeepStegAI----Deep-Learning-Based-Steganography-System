@@ -158,6 +158,12 @@ export const Analyze = memo(function Analyze() {
 
   const fetchGradCam = async () => {
     if (!image) throw new Error("Missing image");
+
+    // If the scan verdict is CLEAN, there is no hidden data — show nothing.
+    if (result && result.verdict === 'CLEAN') {
+      throw new Error("__NO_SIGNAL__");
+    }
+
     const fd = new FormData();
     fd.append('image', image);
     const response = await stegoApi.getGradCamHeatmap(fd);
@@ -166,7 +172,7 @@ export const Analyze = memo(function Analyze() {
       throw new Error(response.data.error || "Explainability synthesis failed");
     }
 
-    // FIX: Handle flat CAM / clean image — backend returns success:true but heatmap_b64:null
+    // Backend returns null heatmap_b64 when it determines the image is clean
     if (!response.data.heatmap_b64) {
       throw new Error("__NO_SIGNAL__");
     }
