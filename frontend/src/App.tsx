@@ -16,14 +16,12 @@ const About    = lazy(() => import('./pages/About').then(m => ({ default: m.Abou
 const Pricing  = lazy(() => import('./pages/Pricing').then(m => ({ default: m.Pricing })))
 const Login    = lazy(() => import('./pages/Login').then(m => ({ default: m.Login })))
 const Signup   = lazy(() => import('./pages/Signup').then(m => ({ default: m.Signup })))
-const ForgotPassword = lazy(() => import('./pages/ForgotPassword').then(m => ({ default: m.ForgotPassword })))
-const ResetPassword  = lazy(() => import('./pages/ResetPassword').then(m => ({ default: m.ResetPassword })))
 
 import { useStore } from './store/useStore'
 import { Navigate } from 'react-router-dom'
 
 const TRANSITION = { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }
-const TOOL_PATHS = ['/embed', '/extract', '/analyze', '/batch', '/admin', '/support', '/pricing', '/login', '/signup', '/forgot-password', '/reset-password']
+const TOOL_PATHS = ['/embed', '/extract', '/analyze', '/batch', '/admin', '/support', '/pricing', '/login', '/signup']
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useStore(s => s.isAuthenticated)
@@ -51,8 +49,6 @@ function AnimatedRoutes() {
             <Route path="/about" element={<About />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
             
             {/* Protected Routes */}
             <Route path="/embed"   element={<ProtectedRoute><Embed /></ProtectedRoute>} />
