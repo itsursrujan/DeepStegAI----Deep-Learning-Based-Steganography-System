@@ -149,6 +149,8 @@ Thumbs.db
 
 # Project Specific
 data/
+# AI Models (Allow stego_model.pth but block others if needed)
+!models/stego_model.pth
 *.pth
 *.h5
 *.onnx

@@ -25,6 +25,10 @@ from flask_limiter.util import get_remote_address
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 import concurrent.futures
+import torch
+import cv2
+import torchvision
+from torchvision import transforms
 
 # --- Modular Imports ---
 
@@ -39,6 +43,7 @@ from utils.email_utils import send_admin_notification, send_user_receipt
 from utils.activity import log_user_activity
 from utils.heatmap_utils import generate_difference_heatmap
 from models.gradcam import generate_gradcam
+from detection_engine import scan_image_for_signature
 
 # --- Service Imports ---
 from database.db import SessionLocal
@@ -86,7 +91,7 @@ try:
 except Exception as e:
     logger.error(f"Failed to initialize database: {e}")
 
-MESSAGES_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'messages.json')
+MESSAGES_FILE = os.path.join(os.path.dirname(__file__), 'data', 'messages.json')
 
 # Apply standard CORS policy with exposed headers for binary metadata
 CORS(app, resources={r"/*": {"origins": "*"}}, expose_headers=["Content-Disposition", "content-disposition", "X-Filename", "X-Updated-Credits", "X-Recovery-Token"])
@@ -121,7 +126,7 @@ def validate_uploaded_image(file_storage):
 # Increase file upload limit to 100MB for batch processing
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 
-os.makedirs(os.path.join(os.path.dirname(__file__), '..', 'data'), exist_ok=True)
+os.makedirs(os.path.join(os.path.dirname(__file__), 'data'), exist_ok=True)
 
 SECURITY_LIMIT_RATIO = 0.35
 
@@ -170,7 +175,7 @@ DEVICE = None
 
 # GLOBAL AI EXECUTOR: Ensures true request queuing across the entire Flask application
 # instead of spawning a new pool per request. Protects against Docker OOM and OS stalls.
-GLOBAL_AI_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=3)
+GLOBAL_AI_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 def get_calibrated_ai_score(image_pil, initial_ai_score, signature_detected):
     """
@@ -208,7 +213,6 @@ def get_calibrated_ai_score(image_pil, initial_ai_score, signature_detected):
 
 def load_ai_model():
     global MODEL, DEVICE
-    import torch
     from steganalysis_model import get_model
     
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -217,7 +221,13 @@ def load_ai_model():
     model_path = os.path.join(os.path.dirname(__file__), 'models', 'stego_model.pth')
     try:
         if os.path.exists(model_path):
-            logger.info(f"Loading AI Model from {model_path} on {DEVICE}...")
+            file_size = os.path.getsize(model_path)
+            logger.info(f"AI Model file found: {model_path} ({file_size/1024/1024:.2f} MB)")
+            
+            if file_size < 10000:
+                logger.error("DANGER: AI Model file is unusually small. It might be a Git LFS pointer instead of the actual weights!")
+            
+            logger.info(f"Loading AI Model onto {DEVICE}...")
             model = get_model().to(DEVICE)
             model.load_state_dict(torch.load(model_path, map_location=DEVICE))
             model.eval()
@@ -697,23 +707,24 @@ def api_analyze():
         # 3. AI Analysis: The 'Heavy Lifting'
         ai_score = 0.0
         ai_success = False
-                if not MODEL:
-                    load_ai_model()
-                
-                from train_stego_model import predict_image
-                # We run the AI prediction in the Global Thread Pool
-                future = GLOBAL_AI_EXECUTOR.submit(predict_image, MODEL, image_pil)
-                ai_score = float(future.result(timeout=30.0))
-                ai_success = True
-            except concurrent.futures.TimeoutError:
-                logger.error("AI scanning timed out (exceeded 30s)")
-                return jsonify({
-                    "success": False,
-                    "data": None,
-                    "error": "AI scan timed out due to high server load. Please try again later."
-                }), 503
-            except Exception as e:
-                logger.error(f"AI classification error: {e}")
+        try:
+            if not MODEL:
+                load_ai_model()
+            
+            from train_stego_model import predict_image
+            # We run the AI prediction in the Global Thread Pool
+            future = GLOBAL_AI_EXECUTOR.submit(predict_image, MODEL, image_pil)
+            ai_score = float(future.result(timeout=30.0))
+            ai_success = True
+        except concurrent.futures.TimeoutError:
+            logger.error("AI scanning timed out (exceeded 30s)")
+            return jsonify({
+                "success": False,
+                "data": None,
+                "error": "AI scan timed out due to high server load. Please try again later."
+            }), 503
+        except Exception as e:
+            logger.error(f"AI classification error: {e}")
         
         # 4. Confidence Calibration
         ai_score = float(get_calibrated_ai_score(image_pil, ai_score, sig_res.get("detected", False)))
@@ -922,12 +933,13 @@ def api_heatmap_gradcam():
             return jsonify({'success': False, 'error': 'Missing image file'}), 400
 
         if not MODEL:
-            return jsonify({'success': False, 'error': 'AI Model not loaded'}), 503
+            load_ai_model()
+            if not MODEL:
+                return jsonify({'success': False, 'error': 'AI Model could not be initialized'}), 503
 
         img_file = request.files['image']
         image_pil = Image.open(img_file).convert("RGB")
 
-        from torchvision import transforms
         transform = transforms.Compose([
             transforms.Resize((224, 224)),
             transforms.ToTensor(),

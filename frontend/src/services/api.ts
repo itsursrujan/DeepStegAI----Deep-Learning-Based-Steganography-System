@@ -89,6 +89,7 @@ export const stegoApi = {
   // --- Auth ---
   login: (data: any) => api.post('/auth/login', data),
   signup: (data: any) => api.post('/auth/signup', data),
+  googleAuth: (data: { google_token: string }) => api.post('/auth/google', data),
   verifyEmail: (data: any) => api.post('/auth/verify-email', data),
   getCurrentUser: () => api.get('/auth/me'),
   forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
