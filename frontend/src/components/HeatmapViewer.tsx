@@ -112,13 +112,14 @@ const HeatmapViewer: React.FC<Props> = ({ baseImage, fetchHeatmap }) => {
         the base image regardless of resolution difference.
         ──────────────────────────────────────────────────────────────────────── */}
       <div
-        className="relative w-full rounded-xl overflow-hidden bg-black/40 border border-white/5 min-h-[300px] max-h-[500px] flex items-center justify-center"
+        className="relative w-full rounded-xl overflow-hidden bg-black/40 border border-white/5 flex items-start justify-center"
       >
         {/* Base Image — visible in original & overlay tabs; hidden in pure heatmap */}
         <img
           src={baseImage}
           alt="Base analysis"
-          className={`w-full h-auto object-contain transition-opacity duration-500 ${
+          style={{ display: "block", width: "100%", height: "auto", objectFit: "contain", objectPosition: "top" }}
+          className={`transition-opacity duration-500 ${
             activeTab === "heatmap" ? "opacity-0" : "opacity-100"
           }`}
         />
@@ -159,19 +160,7 @@ const HeatmapViewer: React.FC<Props> = ({ baseImage, fetchHeatmap }) => {
           </div>
         )}
 
-        {/* No-Signal State (flat CAM — clean image, model found nothing above threshold) */}
-        {noSignal && !loading && (
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center gap-4 z-20 p-6 text-center">
-            <div className="p-3 bg-green-500/10 rounded-xl border border-green-500/20">
-              <AlertCircle className="w-8 h-8 text-green-400" />
-            </div>
-            <p className="text-green-400 font-bold text-sm tracking-wide">No Significant Activations</p>
-            <p className="text-fg-dim/70 text-xs font-medium max-w-xs leading-relaxed">
-              The model found no high-confidence stego patterns. This image appears clean —
-              heatmap intensity was suppressed below detection threshold.
-            </p>
-          </div>
-        )}
+        {/* No-Signal State: just show the original image cleanly, no overlay message */}
 
         {/* Error State */}
         {error && !loading && (
