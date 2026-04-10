@@ -24,4 +24,4 @@ jobs:
           git config user.email "github-actions@github.com"
           git add .
           git commit -m "Auto-deploy backend to Hugging Face"
-          git push --force https://hjsudarshan:$HF_TOKEN@huggingface.co/spaces/hjsudarshan/deepstegai-backend master:main
+          git push --force https://hjsudarshan:$HF_TOKEN@huggingface.co/spaces/hjsudarshan/deepstegai-backend HEAD:main
