@@ -24,14 +24,17 @@ export function Auth() {
         addLog(`User ${loginData.user.email} authenticated via Google Secure SSO.`)
         navigate('/')
       } catch (err: any) {
-        setError(err.response?.data?.error || 'Google Identity Verification failed. Please try again.')
-        addLog('Google authentication failure.')
+        const status = err.response?.status
+        const detail = err.response?.data?.error || err.message
+        setError(`Security Check Failed (Status: ${status || 'Unknown'}). Detail: ${detail}`)
+        addLog(`Google verification failure: ${detail}`)
       } finally {
         setIsSubmitting(false)
       }
     },
-    onError: () => {
-      setError('Google Login was cancelled or encountered a network error.')
+    onError: (errorResponse) => {
+      console.error("Google Login Error:", errorResponse)
+      setError(`Google Identity Gateway Error. Please ensure you have authorized https://deepstegai.vercel.app in the Cloud Console.`)
     }
   })
 
