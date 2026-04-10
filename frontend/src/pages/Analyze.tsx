@@ -7,6 +7,7 @@ import { Search, Activity, BarChart, X, Brain, Info } from 'lucide-react'
 import HeatmapViewer from '@/components/HeatmapViewer'
 import { stegoApi } from '@/services/api'
 import { useStore } from '@/store/useStore'
+import { toast } from '@/components/Toaster'
 
 // Error Boundary to prevent Canvas crashes from blanking the whole page
 class CanvasErrorBoundary extends Component<
@@ -144,9 +145,14 @@ export const Analyze = memo(function Analyze() {
           setShowRing(true)
           setTimeout(() => setShowRing(false), 2000)
       }, 600)
-    } catch (err) {
+    } catch (err: any) {
       clearInterval(timer); setStatus('READY')
       setIsScanning(false)
+      toast({
+        title: "ANALYSIS FAILED",
+        description: err.message || "An error occurred during AI analysis. Please try again.",
+        type: "error"
+      })
     }
   }
 
