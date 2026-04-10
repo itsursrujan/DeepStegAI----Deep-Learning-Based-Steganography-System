@@ -98,23 +98,18 @@ const HeatmapViewer: React.FC<Props> = ({ baseImage, fetchHeatmap }) => {
         </div>
       </div>
 
-      {/*
-        ─── Main Preview Area ──────────────────────────────────────────────────
-        FIX: Removed max-h-[500px] so the full image is ALWAYS visible.
-        Container is position:relative. Base image is normal flow (height auto).
-        Heatmap overlay is position:absolute covering 100% so it perfectly aligns.
-        ──────────────────────────────────────────────────────────────────────── */}
-      <div className="relative w-full rounded-xl overflow-hidden bg-black/40 border border-white/5">
-        {/* Base Image — always full height, never cropped */}
+      {/* Main Preview Area: NO overflow-hidden on the container — image defines height */}
+      <div className="relative w-full rounded-xl bg-black/40 border border-white/5">
+        {/* Base Image — full height, never cropped. rounded-xl on img for clipping. */}
         <img
           src={baseImage}
           alt="Base analysis"
-          className={`block w-full h-auto object-contain transition-opacity duration-500 ${
+          className={`block w-full h-auto rounded-xl transition-opacity duration-500 ${
             activeTab === "heatmap" ? "opacity-0" : "opacity-100"
           }`}
         />
 
-        {/* Heatmap overlay — absolutely positioned, perfectly aligned with base image */}
+        {/* Heatmap overlay — absolutely positioned, same size as the base image */}
         {heatmap && (
           <img
             src={heatmap}
@@ -126,6 +121,7 @@ const HeatmapViewer: React.FC<Props> = ({ baseImage, fetchHeatmap }) => {
               width: "100%",
               height: "100%",
               objectFit: "fill",
+              borderRadius: "0.75rem",
               opacity:
                 activeTab === "overlay" ? opacity :
                 activeTab === "heatmap" ? 1 :
