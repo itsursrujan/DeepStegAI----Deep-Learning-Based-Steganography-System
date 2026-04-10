@@ -6,13 +6,21 @@ import { AcidRain } from '@/components/AcidRain'
 import { DecryptTitle } from '@/components/effects/DecryptTitle'
 import { useStore } from '@/store/useStore'
 
+// Team Image Imports
+import varshaImg from '/images/team/varsha.jpeg'
+import rajImg from '/images/team/raj.jpg'
+import sudarshanImg from '/images/team/sudarshan.png'
+import aryanImg from '/images/team/aryan.jpeg'
+import srujanImg from '/images/team/srujan.jpeg'
+import dhruvImg from '/images/team/dhruv.jpeg'
+
 // ─── DATA ───
 const TEAM = {
   leadership: [
     {
       name: 'Dr. Varsha Jadhav',
       role: 'Project Coordinator',
-      image: '/images/team/varsha.jpeg',
+      image: varshaImg,
       details: {
         title: "Assistant Professor, Dept. of Information Science & Engineering",
         expertise: ["Medical Image Analysis", "Deep Learning (CNNs)", "Cybersecurity Systems", "Machine Learning"],
@@ -22,7 +30,7 @@ const TEAM = {
     {
       name: 'Dr. Rajashekarappa',
       role: 'Project Guide',
-      image: '/images/team/raj.jpg',
+      image: rajImg,
       details: {
         title: "Professor, Dept. of Information Science & Engineering",
         expertise: ["Cryptanalysis & Security", "Image Encryption", "Network Security", "IoT Automation"],
@@ -31,10 +39,10 @@ const TEAM = {
     }
   ],
   engineering: [
-    { name: 'Sudarshan H J', role: 'Lead Architect', image: '/images/team/sudarshan.png', position: 'object-top' },
-    { name: 'Aryan Giri', role: 'Design Support', image: '/images/team/aryan.jpeg' },
-    { name: 'Srujan Aravalli', role: 'Frontend Engineer', image: '/images/team/srujan.jpeg' },
-    { name: 'Dhruvaraj R', role: 'Operations Coordinator', image: '/images/team/dhruv.jpeg', position: 'object-top' }
+    { name: 'Sudarshan H J', role: 'Lead Architect', image: sudarshanImg, position: 'object-top' },
+    { name: 'Aryan Giri', role: 'Design Support', image: aryanImg },
+    { name: 'Srujan Aravalli', role: 'Frontend Engineer', image: srujanImg },
+    { name: 'Dhruvaraj R', role: 'Operations Coordinator', image: dhruvImg, position: 'object-top' }
   ]
 }
 
