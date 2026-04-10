@@ -78,7 +78,13 @@ export function Signup() {
         throw new Error(res.data.error || 'Registration failed')
       }
       
-      if (res.data.data?.requires_verification) {
+      const signupData = res.data.data
+      if (signupData?.access_token) {
+        // Auto-login: backend returned a JWT immediately
+        setLogin(signupData.access_token, signupData.user, false)
+        addLog(`New protocol profile created and authenticated for ${email}.`)
+        navigate('/')
+      } else if (signupData?.requires_verification) {
         setRequiresOTP(true)
         addLog(`Verification required for ${email}. OTP sent.`)
       } else {
