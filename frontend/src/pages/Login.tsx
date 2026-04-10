@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Lock, Mail, ArrowRight, ShieldCheck, AlertTriangle, Eye, EyeOff } from 'lucide-react'
+import { Lock, ArrowRight, ShieldCheck, AlertTriangle } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useGoogleLogin } from '@react-oauth/google'
 import { stegoApi } from '@/services/api'
