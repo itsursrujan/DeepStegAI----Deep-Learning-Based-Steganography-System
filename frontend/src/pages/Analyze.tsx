@@ -166,6 +166,16 @@ export const Analyze = memo(function Analyze() {
 
     const fd = new FormData();
     fd.append('image', image);
+
+    // Detect embedding method from scan result so the heatmap can be method-aware.
+    // LSB fills pixels sequentially from top → needs top-weighted heatmap mask.
+    // Adaptive spreads by texture complexity → full-frame heatmap.
+    const description = (result?.details?.extra?.description || '').toLowerCase();
+    const heuristic = result?.details?.extra?.heuristic || {};
+    const isLSB = description.includes('lsb') || description.includes('standard') ||
+                  String(heuristic?.protocol_name || '').toLowerCase().includes('lsb');
+    fd.append('method', isLSB ? 'lsb' : 'adaptive');
+
     const response = await stegoApi.getGradCamHeatmap(fd);
 
     if (!response.data.success) {
