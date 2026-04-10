@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Lock, Mail, ArrowRight, ShieldCheck, AlertTriangle, Eye, EyeOff } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -17,6 +17,11 @@ export function Login() {
   
   const navigate = useNavigate()
   const { setLogin, addLog } = useStore()
+
+  // Eagerly awaken the Neon serverless DB in the background
+  useEffect(() => {
+    stegoApi.checkHealth().catch(() => {});
+  }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()

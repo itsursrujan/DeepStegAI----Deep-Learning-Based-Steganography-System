@@ -162,6 +162,7 @@ export const stegoApi = {
   getCredits: () => api.get('/credits'),
   getActivity: () => api.get('/activity'),
   getGlobalStats: () => api.get('/stats/global'),
+  checkHealth: () => api.get('/health'),
 
   // --- Heatmap ---
   getDifferenceHeatmap: (formData: FormData) =>

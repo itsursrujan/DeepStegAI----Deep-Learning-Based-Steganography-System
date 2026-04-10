@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request
+from sqlalchemy import text
 from utils.auth import token_required
 from database.db import SessionLocal
 from services.file_service import FileService
@@ -9,7 +10,15 @@ api_bp = Blueprint('api', __name__)
 
 @api_bp.route('/health', methods=['GET'])
 def health_check():
-    return jsonify({"status": "ok"}), 200
+    db = SessionLocal()
+    try:
+        # Pre-warm the serverless database connection
+        db.execute(text("SELECT 1"))
+        return jsonify({"status": "ok", "db": "connected"}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "db": str(e)}), 500
+    finally:
+        db.close()
 
 @api_bp.route('/files', methods=['GET'])
 @token_required
