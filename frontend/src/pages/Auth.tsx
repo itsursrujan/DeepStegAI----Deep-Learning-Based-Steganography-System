@@ -1,42 +1,43 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, ShieldCheck, UserPlus, AlertTriangle } from 'lucide-react'
+import { Lock, ArrowRight, ShieldCheck, AlertTriangle, Shield } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useGoogleLogin } from '@react-oauth/google'
 import { stegoApi } from '@/services/api'
 import { useStore } from '@/store/useStore'
 
-export function Signup() {
+export function Auth() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
   
   const navigate = useNavigate()
   const { setLogin, addLog } = useStore()
 
-  const signupWithGoogle = useGoogleLogin({
+  const loginWithGoogle = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       setIsSubmitting(true)
       setError(null)
       try {
         const res = await stegoApi.googleAuth({ google_token: tokenResponse.access_token })
         const loginData = res.data.data
-        setLogin(loginData.access_token, loginData.user, false)
-        addLog(`User ${loginData.user.email} securely registered and authenticated via Google.`)
+        setLogin(loginData.access_token, loginData.user, true)
+        addLog(`User ${loginData.user.email} authenticated via Google Secure SSO.`)
         navigate('/')
       } catch (err: any) {
-        setError(err.response?.data?.error || 'Google Sign-Up failed.')
-        addLog('Google registration failure.')
+        setError(err.response?.data?.error || 'Google Identity Verification failed. Please try again.')
+        addLog('Google authentication failure.')
       } finally {
         setIsSubmitting(false)
       }
     },
     onError: () => {
-      setError('Google Sign-up was cancelled or failed.')
+      setError('Google Login was cancelled or encountered a network error.')
     }
   })
 
-
+  useEffect(() => {
+    stegoApi.checkHealth().catch(() => {});
+  }, [])
 
   return (
     <div className="h-full flex items-center justify-center p-4">
@@ -49,25 +50,23 @@ export function Signup() {
         
         <div className="text-center mb-10">
           <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 mb-6 shadow-[0_0_20px_var(--primary-glow)]">
-            <UserPlus className="h-8 w-8 text-primary" />
+            <Shield className="h-8 w-8 text-primary" />
           </div>
-          <h2 className="text-2xl font-bold tracking-tight text-[var(--fg)] leading-none">Register Account</h2>
-          <p className="text-xs font-medium mt-2 text-[var(--fg-dim)]">Setup your verified steganography profile</p>
+          <h2 className="text-2xl font-bold tracking-tight text-[var(--fg)] leading-none">DeepStegAI Gateway</h2>
+          <p className="text-xs font-medium mt-2 text-[var(--fg-dim)]">Verified Access Protocol</p>
         </div>
 
         <div className="space-y-6">
           <div className="bg-primary/5 border border-primary/10 rounded-2xl p-5 flex items-start gap-4">
-             <div className="bg-primary/20 p-2 rounded-xl">
-               <ShieldCheck className="h-5 w-5 text-primary" />
-             </div>
+             <ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
              <p className="text-[10px] text-[var(--fg-dim)] leading-relaxed">
-               The DeepStegAI Protocol enforces <span className="text-primary font-bold uppercase tracking-wider">Identity Integrity</span>. Registration is exclusively restricted to verified Google accounts to maintain the highest standard of cybersecurity and audit transparency.
+               To ensure maximum security and prevent unauthorized access, DeepStegAI uses <span className="text-primary font-bold">Google Verified Identity</span> as the sole authentication gateway.
              </p>
           </div>
 
           <button
             type="button"
-            onClick={() => signupWithGoogle()}
+            onClick={() => loginWithGoogle()}
             disabled={isSubmitting}
             className="w-full bg-primary text-[var(--btn-text)] group font-bold tracking-wide text-sm rounded-2xl py-4 shadow-[0_0_20px_var(--primary-glow)] hover:opacity-90 hover:shadow-[0_0_35px_var(--primary-glow)] transition-all active:scale-[0.98] disabled:opacity-30 flex items-center justify-center gap-3"
           >
@@ -79,7 +78,7 @@ export function Signup() {
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
               </svg>
             </div>
-            {isSubmitting ? 'Verifying Identity...' : 'Sign Up with Google'}
+            {isSubmitting ? 'Authenticating...' : 'Continue with Google'}
             <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
           </button>
 
@@ -93,14 +92,10 @@ export function Signup() {
               <p className="text-xs font-medium leading-relaxed">{error}</p>
             </motion.div>
           )}
-        </div>       )}
+        </div>
 
         <div className="mt-8 pt-6 border-t border-[var(--border)] flex flex-col items-center gap-4">
-          <p className="text-xs font-medium text-[var(--fg-dim)]/60">Already have an account?</p>
-          <Link to="/login" className="flex items-center gap-2 text-sm font-semibold text-primary hover:glow-text transition-all">
-            Sign in
-          </Link>
-          <Link to="/" className="mt-1 flex items-center gap-2 text-xs font-medium text-[var(--fg-dim)] hover:text-primary transition-colors">
+          <Link to="/" className="flex items-center gap-2 text-xs font-medium text-[var(--fg-dim)] hover:text-primary transition-colors">
             ← Back to home
           </Link>
         </div>
