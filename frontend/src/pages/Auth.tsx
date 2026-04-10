@@ -26,7 +26,12 @@ export function Auth() {
       } catch (err: any) {
         const status = err.response?.status
         const detail = err.response?.data?.error || err.message
-        setError(`Security Check Failed (Status: ${status || 'Unknown'}). Detail: ${detail}`)
+        
+        if (status === 503) {
+          setError(`Neural Gateway Initializing... (Status: 503). The secure backend is waking up from standby. Please wait 60 seconds and try again.`)
+        } else {
+          setError(`Security Check Failed (Status: ${status || 'Unknown'}). Detail: ${detail}`)
+        }
         addLog(`Google verification failure: ${detail}`)
       } finally {
         setIsSubmitting(false)
