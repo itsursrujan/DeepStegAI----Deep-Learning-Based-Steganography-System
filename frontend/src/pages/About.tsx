@@ -7,12 +7,12 @@ import { DecryptTitle } from '@/components/effects/DecryptTitle'
 import { useStore } from '@/store/useStore'
 
 // Team Image Imports
-import varshaImg from '/images/team/varsha.jpeg'
-import rajImg from '/images/team/raj.jpg'
-import sudarshanImg from '/images/team/sudarshan.png'
-import aryanImg from '/images/team/aryan.jpeg'
-import srujanImg from '/images/team/srujan.jpeg'
-import dhruvImg from '/images/team/dhruv.jpeg'
+import varshaImg from '@/assets/team/varsha.jpeg'
+import rajImg from '@/assets/team/raj.jpg'
+import sudarshanImg from '@/assets/team/sudarshan.png'
+import aryanImg from '@/assets/team/aryan.jpeg'
+import srujanImg from '@/assets/team/srujan.jpeg'
+import dhruvImg from '@/assets/team/dhruv.jpeg'
 
 // ─── DATA ───
 const TEAM = {
